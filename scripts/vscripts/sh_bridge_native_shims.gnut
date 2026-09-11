@@ -1,0 +1,36 @@
+#if SERVER
+global function EmitSoundOnEntityOnlyToPlayer_PredictedByPlayer
+global function GetClosestPointOnZiplineWithinRange
+#endif
+
+struct
+{
+	bool warnedNoZiplineSearch = false
+} file
+
+#if SERVER
+// The server has no predicted emitter, so the sound is sent rather than played
+// locally. The player still hears it, one round trip later.
+void function EmitSoundOnEntityOnlyToPlayer_PredictedByPlayer( entity ent, entity player, string alias )
+{
+	if ( !IsValid( ent ) || !IsValid( player ) || alias == "" )
+		return
+
+	EmitSoundOnEntityOnlyToPlayer( ent, player, alias )
+}
+
+
+// Ziprail launchers use this to size their launch so the player arrives at the
+// rope above them. Searching for that rope is not available here, so callers
+// fall back to their fixed launch height.
+vector function GetClosestPointOnZiplineWithinRange( vector startPoint, vector endPoint, float range, entity ignoreEnt )
+{
+	if ( !file.warnedNoZiplineSearch )
+	{
+		file.warnedNoZiplineSearch = true
+		Warning( "GetClosestPointOnZiplineWithinRange is not implemented on this server - ziprail launchers will use their default launch height" )
+	}
+
+	return < 0, 0, 0 >
+}
+#endif // SERVER

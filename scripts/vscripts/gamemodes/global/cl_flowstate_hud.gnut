@@ -1,0 +1,811 @@
+// Client HUD framework for Flowstate custom modes: combat cockpit, FreeDM
+// scorebar, and the FSLeaderboard board. Modes call these instead of
+// re-deriving the survival HUD wiring.
+
+global function FS_Hud_RegisterFreeDMScorebar
+global function FS_Hud_BindScoreBarRules
+global function FS_Hud_CombatHudInit
+global function FS_Hud_EnsureSurvivalHudSignals
+global function FS_Hud_ToggleLeaderboard
+global function FS_Hud_LeaderboardFromMenu
+global function FS_Hud_LeaderboardClosedFromUI
+global function FS_Hud_IsLeaderboardOpen
+global function FS_Hud_OpenRoundEndLeaderboard
+global function FS_Hud_CloseRoundEndLeaderboard
+global function FS_Hud_SetScorebarClock
+global function FS_Hud_ApplyModeChrome
+global function FS_Hud_SetModeChromeVisible
+global function FS_Hud_TryGetCharacterFlavor
+global function FS_Hud_GetCharacterFlavor
+global function FS_Hud_RefreshPlayerInfo
+global function FS_Hud_BindScoreboardKeys
+global function FS_Hud_StartEnemyMinimap
+
+struct
+{
+	bool scorebarSetupDone = false
+	string deathArg = "?"
+	bool leaderboardOpen = false
+	string leaderboardMode = "dm"
+	bool modeChromeApplied = false
+	bool modeChromeOverlayReady = false
+	int modeChromeOverlayMisses = 0
+	asset modeChromeEmblem = $""
+	bool scoreboardKeysBound = false
+	bool enemyMinimapStarted = false
+	bool roundEndLock = false
+	table<entity, var> enemyMinimapRuis
+} file
+
+// Must run before ClGameState_Init creates the score RUI.
+void function FS_Hud_RegisterFreeDMScorebar( string leaderboardMode = "dm" )
+{
+	file.leaderboardMode = leaderboardMode
+	ClGameState_RegisterGameStateAsset( $"ui/gamestate_freedm_mode.rpak" )
+	ClGameState_RegisterGameStateFullmapAsset( $"ui/gamestate_info_fullmap_freedm.rpak" )
+	FS_Hud_BindScoreBarRules()
+
+	// Cl_Survival_AddClient builds the waiting-for-players overlay and its only
+	// teardown hook lives in Cl_GamemodeSurvival_Init, which custom modes skip.
+	// Registered here so it lands before the mode forces the Playing shell.
+	AddCallback_GameStateEnter( eGameState.Playing, WaitingForPlayersOverlay_Destroy )
+
+	FS_Hud_EnsureSurvivalHudSignals()
+}
+
+void function FS_Hud_BindScoreBarRules()
+{
+	SetGameModeScoreBarUpdateRulesWithFlags( FS_Hud_ScoreBarRules, sbflag.SKIP_STANDARD_UPDATE )
+}
+
+// The pilot HUD's weapon/ammo trackers signal these, but they are registered in
+// ClGamemodeSurvival_Init -- a function no custom mode runs.
+void function FS_Hud_EnsureSurvivalHudSignals()
+{
+	array<string> signals = [
+		"Sur_EndTrackPrimary",
+		"Sur_EndTrackAmmo",
+		"Sur_EndTrackOffhandWeaponSlot0",
+		"StopShowingRodeoOfferingPrompt",
+		"ReloadPressed",
+		"ClearSwapOnUseThread",
+		"DroppodLanded",
+		"SquadEliminated"
+	]
+
+	foreach ( string name in signals )
+	{
+		if ( !IsValidSignal( name ) )
+			RegisterSignal( name )
+	}
+}
+
+void function FS_Hud_CombatHudInit()
+{
+	FS_Hud_EnsureSurvivalHudSignals()
+	Survival_ClientCombatHudInit()
+
+	// The pilot HUD paints "NEXT EVO" off the armor tier alone, and no custom
+	// mode runs the evo-point path that would ever clear it.
+	var pilotRui = GetPilotRui()
+	if ( pilotRui != null )
+		RuiSetBool( pilotRui, "isEvolvingShield", false )
+
+	Obituary_SetAlwaysShow( true )
+	Obituary_SetMaxEntries( 8 )
+
+	entity player = GetLocalClientPlayer()
+	if ( IsValid( player ) && player.IsPlayer() )
+		UpdateGamestateRuiTracking( player )
+
+	FS_Hud_RefreshPlayerInfo()
+}
+
+void function FS_Hud_RefreshPlayerInfo()
+{
+	thread FS_Hud_RefreshPlayerInfo_THREAD()
+}
+
+void function FS_Hud_RefreshPlayerInfo_THREAD()
+{
+	wait 0.2
+
+	entity player = GetLocalViewPlayer()
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		player = GetLocalClientPlayer()
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	var rui = GetPilotRui()
+	if ( rui == null )
+		return
+
+	SURVIVAL_PopulatePlayerInfoRui( player, rui )
+	printt( "[FS-HUD] refresh populate settings=" + string( player.GetPlayerSettings() ) )
+}
+
+// HUD character. Playlist force outranks the slot; otherwise the live setfile
+// is the body. Local persistence is already "ready" (usually the lobby pick)
+// and on this dedi it does not round-trip, so the slot is the wrong legend.
+ItemFlavor ornull function FS_Hud_TryGetCharacterFlavor( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return null
+
+	if ( FS_1v1_IsForceCharacter() && !FlowState_ForceAdminCharacter() )
+		return FS_1v1_GetForcedCharacterFlavor()
+
+	asset settings = player.GetPlayerSettings()
+	if ( settings != $"" && settings != SPECTATOR_SETTINGS )
+	{
+		foreach ( ItemFlavor character in GetAllCharacters() )
+		{
+			if ( ItemFlavor_GetAsset( character ) == CHARACTER_RANDOM )
+				continue
+			if ( CharacterClass_GetSetFile( character ) == settings )
+				return character
+		}
+	}
+
+	EHI ehi = ToEHI( player )
+	if ( LoadoutSlot_IsReady( ehi, Loadout_Character() ) )
+	{
+		ItemFlavor slot = LoadoutSlot_GetItemFlavor( ehi, Loadout_Character() )
+		if ( ItemFlavor_GetType( slot ) == eItemType.character )
+			return slot
+	}
+
+	return null
+}
+
+ItemFlavor function FS_Hud_GetCharacterFlavor( entity player )
+{
+	ItemFlavor ornull flav = FS_Hud_TryGetCharacterFlavor( player )
+	if ( flav != null )
+		return expect ItemFlavor( flav )
+
+	if ( FS_1v1_IsForceCharacter() )
+		return FS_1v1_GetForcedCharacterFlavor()
+
+	return LoadoutSlot_WaitForItemFlavor( ToEHI( player ), Loadout_Character() )
+}
+
+void function FS_Hud_RuiSetBoolSafe( var rui, string argName, bool value )
+{
+	try
+	{
+		RuiSetBool( rui, argName, value )
+	}
+	catch ( eArg )
+	{
+	}
+}
+
+void function FS_Hud_RuiSetIntSafe( var rui, string argName, int value )
+{
+	try
+	{
+		RuiSetInt( rui, argName, value )
+	}
+	catch ( eArg )
+	{
+	}
+}
+
+void function FS_Hud_RuiSetStringSafe( var rui, string argName, string value )
+{
+	try
+	{
+		RuiSetString( rui, argName, value )
+	}
+	catch ( eArg )
+	{
+	}
+}
+
+string function FS_Hud_ModeChromeName( string pl )
+{
+	switch ( pl )
+	{
+		case "fs_1v1":
+			return "FS 1v1"
+		case "fs_instagib":
+			return "INSTAGIB"
+		case "map_editor":
+			return "MAP EDITOR"
+	}
+	return GetCurrentPlaylistVarString( "name", "" )
+}
+
+bool function FS_Hud_ModeChromeNeedsOverlay( string pl )
+{
+	// fs_1v1 carries its logo inside the lobbyinfo RUI
+	return pl == "fs_instagib"
+}
+
+var function FS_Hud_ElementOrNull( string name )
+{
+	try
+	{
+		table elems = expect table( level.hudElements )
+		if ( name in elems )
+			delete elems[name]
+	}
+	catch ( eCache )
+	{
+	}
+
+	try
+	{
+		return HudElement( name )
+	}
+	catch ( errHud )
+	{
+		return null
+	}
+}
+
+bool function FS_Hud_SetVisibleSafe( var el, bool show )
+{
+	if ( el == null )
+		return false
+	try
+	{
+		Hud_SetVisible( el, show )
+		return true
+	}
+	catch ( eVis )
+	{
+		return false
+	}
+}
+
+void function FS_Hud_SetModeChromeVisible( bool show )
+{
+	if ( !file.modeChromeOverlayReady && show )
+		return
+
+	var logo = FS_Hud_ElementOrNull( "FS_ModeLogo" )
+	// a rebuilt panel comes back with basic_image's white default; re-push
+	if ( show && logo != null && file.modeChromeEmblem != $"" )
+	{
+		try
+		{
+			var logoRui = Hud_GetRui( logo )
+			if ( logoRui != null )
+				RuiSetImage( logoRui, "basicImage", file.modeChromeEmblem )
+		}
+		catch ( eImg )
+		{
+		}
+	}
+
+	if ( !FS_Hud_SetVisibleSafe( logo, show ) )
+	{
+		if ( show )
+			file.modeChromeOverlayReady = false
+		return
+	}
+	FS_Hud_SetVisibleSafe( FS_Hud_ElementOrNull( "FS_ModeName" ), show )
+}
+
+void function FS_Hud_TryShowModeChromeOverlay( string pl, string modeName, asset emblem )
+{
+	if ( !FS_Hud_ModeChromeNeedsOverlay( pl ) )
+		return
+	if ( emblem == $"" )
+		return
+
+	var logo = FS_Hud_ElementOrNull( "FS_ModeLogo" )
+	if ( logo == null )
+	{
+		file.modeChromeOverlayMisses++
+		if ( file.modeChromeOverlayMisses == 1 )
+			printt( "[FS-HUD] mode chrome overlay: FS_ModeLogo missing" )
+		return
+	}
+
+	try
+	{
+		var logoRui = Hud_GetRui( logo )
+		if ( logoRui == null )
+			return
+		RuiSetImage( logoRui, "basicImage", emblem )
+		file.modeChromeEmblem = emblem
+	}
+	catch ( eImg )
+	{
+		return
+	}
+
+	if ( !FS_Hud_SetVisibleSafe( logo, true ) )
+		return
+
+	var nameEl = FS_Hud_ElementOrNull( "FS_ModeName" )
+	if ( nameEl != null )
+	{
+		try
+		{
+			if ( modeName != "" )
+				Hud_SetText( nameEl, modeName )
+		}
+		catch ( eText )
+		{
+		}
+		FS_Hud_SetVisibleSafe( nameEl, true )
+	}
+
+	if ( !file.modeChromeOverlayReady )
+	{
+		file.modeChromeOverlayReady = true
+		printt( "[FS-HUD] mode chrome overlay pl='" + pl + "' name='" + modeName + "'" )
+	}
+}
+
+void function FS_Hud_ApplyModeChrome( var rui )
+{
+	// no one-shot latch: a rebuilt panel recreates its RUI with default args
+	// (basic_image's default is the white texture), so every apply re-pushes
+	string pl = GetCurrentPlaylistName()
+	string modeName = FS_Hud_ModeChromeName( pl )
+	asset emblem = GetModeEmblemImage( pl )
+
+	if ( rui != null )
+	{
+		if ( modeName != "" )
+			FS_Hud_RuiSetStringSafe( rui, "gameModeString", modeName )
+
+		if ( emblem != $"" )
+		{
+			try
+			{
+				RuiSetAsset( rui, "emblemImage", emblem )
+			}
+			catch ( eAsset )
+			{
+				try
+				{
+					RuiSetImage( rui, "emblemImage", emblem )
+				}
+				catch ( eImg )
+				{
+				}
+			}
+
+			try
+			{
+				RuiSetImage( rui, "gameModeIcon", emblem )
+			}
+			catch ( eIcon )
+			{
+			}
+		}
+
+		if ( !file.modeChromeApplied )
+		{
+			file.modeChromeApplied = true
+			printt( "[FS-HUD] mode chrome pl='" + pl + "' name='" + modeName + "'" )
+		}
+	}
+
+	// FreeDM keeps the emblem/name arg slots from the shared template, but the
+	// scorestrip layout never paints them. HudScripted overlay is the draw path.
+	FS_Hud_TryShowModeChromeOverlay( pl, modeName, emblem )
+}
+
+int function FS_Hud_NetInt( entity p, string name )
+{
+	if ( !IsValid( p ) )
+		return 0
+	try
+	{
+		return p.GetPlayerNetInt( name )
+	}
+	catch ( eNet )
+	{
+		return 0
+	}
+}
+
+float function FS_Hud_GlobalNetTime( string name )
+{
+	try
+	{
+		return GetGlobalNetTime( name )
+	}
+	catch ( eTime )
+	{
+		return 0.0
+	}
+}
+
+int function FS_Hud_Damage( entity p )
+{
+	int dmg = FS_Hud_NetInt( p, "damage" )
+	if ( dmg == 0 )
+		dmg = FS_Hud_NetInt( p, "damageDealt" )
+	return dmg
+}
+
+void function FS_Hud_ScoreBarRules( var gamestateRui )
+{
+	entity player = GetLocalViewPlayer()
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		player = GetLocalClientPlayer()
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( !file.scorebarSetupDone )
+	{
+		// ScorebarInitTracking would bind squadsRemainingCount/livingPlayerCount,
+		// neither of which a FFA/duel mode publishes.
+		FS_Hud_RuiSetBoolSafe( gamestateRui, "shouldDisplayLivingPlayerCount", false )
+		FS_Hud_RuiSetBoolSafe( gamestateRui, "hideSquadsRemaining", true )
+		FS_Hud_RuiSetBoolSafe( gamestateRui, "hideWaitingForPlayers", true )
+		file.scorebarSetupDone = true
+	}
+
+	FS_Hud_ApplyModeChrome( gamestateRui )
+
+	// The kill/damage widgets are gated on gamestateIsPlaying, which survival's
+	// OnGameStateChanged would normally set.
+	FS_Hud_RuiSetBoolSafe( gamestateRui, "gamestateIsPlaying", true )
+	FS_Hud_RuiSetBoolSafe( gamestateRui, "gamestateWaitingForPlayers", false )
+	FS_Hud_RuiSetBoolSafe( gamestateRui, "gamestateIsEpilogue", false )
+	FS_Hud_RuiSetIntSafe( gamestateRui, "gamestate", eGameState.Playing )
+
+	FS_Hud_RuiSetIntSafe( gamestateRui, "killCount", FS_Hud_NetInt( player, "kills" ) )
+	FS_Hud_RuiSetIntSafe( gamestateRui, "damageDealt", FS_Hud_Damage( player ) )
+	FS_Hud_RuiSetIntSafe( gamestateRui, "assistCount", FS_Hud_NetInt( player, "assists" ) )
+	FS_Hud_FeedDeaths( gamestateRui, FS_Hud_NetInt( player, "deaths" ) )
+
+	if ( GetCurrentPlaylistVarBool( "freedm_ffa_active", false ) )
+	{
+		float endTime = FS_Hud_GlobalNetTime( "flowstate_DMRoundEndTime" )
+		if ( endTime > 0 )
+		{
+			float startTime = FS_Hud_GlobalNetTime( "flowstate_DMStartTime" )
+			if ( startTime <= 0 )
+				startTime = Time()
+			FS_Hud_SetGameTimeSafe( gamestateRui, "matchStartTime", startTime )
+			FS_Hud_SetGameTimeSafe( gamestateRui, "matchEndTime", endTime )
+			FS_Hud_SetGameTimeSafe( gamestateRui, "endTime", endTime )
+			FS_Hud_SetGameTimeSafe( gamestateRui, "roundEndTime", endTime )
+		}
+	}
+}
+
+// Each bar layout exposes a different name for deaths, so probe once and then
+// feed whichever one took.
+void function FS_Hud_FeedDeaths( var gamestateRui, int deaths )
+{
+	if ( file.deathArg == "" )
+		return
+
+	if ( file.deathArg == "?" )
+	{
+		array<string> candidates = [ "deathCount", "deaths", "playerDeaths" ]
+		foreach ( string argName in candidates )
+		{
+			try
+			{
+				RuiSetInt( gamestateRui, argName, deaths )
+				file.deathArg = argName
+				return
+			}
+			catch ( eProbe )
+			{
+			}
+		}
+
+		file.deathArg = ""
+		return
+	}
+
+	try
+	{
+		RuiSetInt( gamestateRui, file.deathArg, deaths )
+	}
+	catch ( eDeaths )
+	{
+	}
+}
+
+void function FS_Hud_SetScorebarClock( float endTime, float startTime = 0.0 )
+{
+	var rui = ClGameState_GetRui()
+	if ( rui == null )
+		return
+
+	array<string> startArgs = [ "matchStartTime" ]
+	array<string> endArgs = [ "matchEndTime", "endTime", "roundEndTime" ]
+
+	if ( endTime <= 0 )
+	{
+		foreach ( string argName in startArgs )
+			FS_Hud_SetGameTimeSafe( rui, argName, RUI_BADGAMETIME )
+		foreach ( string argName in endArgs )
+			FS_Hud_SetGameTimeSafe( rui, argName, RUI_BADGAMETIME )
+		return
+	}
+
+	if ( startTime <= 0 )
+		startTime = Time()
+
+	foreach ( string argName in startArgs )
+		FS_Hud_SetGameTimeSafe( rui, argName, startTime )
+	foreach ( string argName in endArgs )
+		FS_Hud_SetGameTimeSafe( rui, argName, endTime )
+}
+
+void function FS_Hud_SetGameTimeSafe( var rui, string argName, float value )
+{
+	if ( !RuiHasGameTimeArg( rui, argName ) )
+		return
+	try
+	{
+		RuiSetGameTime( rui, argName, value )
+	}
+	catch ( eTime )
+	{
+	}
+}
+
+bool function FS_Hud_IsLeaderboardOpen()
+{
+	return file.leaderboardOpen
+}
+
+// Single-realm board: every scoring player is an entity this client already
+// holds, so no server-side packing is needed.
+void function FS_Hud_PushLeaderboard()
+{
+	RunUIScript( "Leaderboard_Clear" )
+	RunUIScript( "Leaderboard_SetGamemode", file.leaderboardMode )
+
+	float endTime = FS_Hud_GlobalNetTime( "flowstate_DMRoundEndTime" )
+	if ( file.roundEndLock )
+		RunUIScript( "Leaderboard_SetRoundTimer", "Round ended" )
+	else if ( endTime > 0 )
+	{
+		float remaining = endTime - Time()
+		if ( remaining > 0 )
+			RunUIScript( "Leaderboard_SetRoundTimer", format( "Round: %d:%02d", int( remaining / 60.0 ), int( remaining ) % 60 ) )
+		else
+			RunUIScript( "Leaderboard_SetRoundTimer", "Round ended" )
+	}
+
+	entity localPlayer = GetLocalClientPlayer()
+
+	foreach ( entity p in GetPlayerArray() )
+	{
+		if ( !IsValid( p ) || !p.IsPlayer() )
+			continue
+
+		int kills = FS_Hud_NetInt( p, "kills" )
+		int deaths = FS_Hud_NetInt( p, "deaths" )
+		float kd = deaths > 0 ? float( kills ) / float( deaths ) : float( kills )
+
+		RunUIScript( "Leaderboard_ReceivePlayerData",
+			p.GetPlayerName(), kills, kills, deaths,
+			kd, FS_Hud_Damage( p ), FS_Hud_NetInt( p, "latency" ), ( p == localPlayer ) ? 1 : 0, 0 )
+	}
+
+	RunUIScript( "Leaderboard_Refresh" )
+}
+
+void function FS_Hud_ToggleLeaderboard( entity player )
+{
+	if ( player != GetLocalClientPlayer() )
+		return
+
+	if ( file.roundEndLock )
+		return
+
+	if ( Flowstate_IsGame1v1Type() )
+	{
+		FS_1v1_ToggleFullScoreboard( player )
+		return
+	}
+
+	if ( file.leaderboardOpen )
+	{
+		file.leaderboardOpen = false
+		if ( IsValid( player ) )
+			player.Signal( "FS_Hud_LeaderboardWatch" )
+		RunUIScript( "CloseMatchLeaderboard" )
+		return
+	}
+
+	file.leaderboardOpen = true
+	RunUIScript( "OpenMatchLeaderboard" )
+	FS_Hud_PushLeaderboard()
+	thread FS_Hud_LeaderboardWatch_THREAD( player )
+}
+
+void function FS_Hud_LeaderboardFromMenu()
+{
+	entity player = GetLocalClientPlayer()
+	if ( !IsValid( player ) )
+		return
+
+	// The System menu is the active menu; OpenMatchLeaderboard closes it.
+	file.leaderboardOpen = false
+	FS_Hud_ToggleLeaderboard( player )
+}
+
+// Every UI close path (X, back, CloseAllMenus) lands here. The duel modes route
+// to their own handler instead; this must not reach into them.
+void function FS_Hud_LeaderboardClosedFromUI()
+{
+	if ( file.roundEndLock )
+		return
+
+	file.leaderboardOpen = false
+	entity player = GetLocalClientPlayer()
+	if ( IsValid( player ) )
+		player.Signal( "FS_Hud_LeaderboardWatch" )
+}
+
+void function FS_Hud_OpenRoundEndLeaderboard()
+{
+	entity player = GetLocalClientPlayer()
+	if ( !IsValid( player ) )
+		return
+
+	if ( !IsValidSignal( "FS_Hud_LeaderboardWatch" ) )
+		RegisterSignal( "FS_Hud_LeaderboardWatch" )
+
+	file.roundEndLock = true
+	file.leaderboardOpen = true
+	player.Signal( "FS_Hud_LeaderboardWatch" )
+	RunUIScript( "Leaderboard_SetRoundEndMode", 1 )
+	RunUIScript( "Leaderboard_SetRoundTimer", "Round ended" )
+	RunUIScript( "OpenMatchLeaderboard" )
+	FS_Hud_PushLeaderboard()
+	thread FS_Hud_LeaderboardWatch_THREAD( player )
+}
+
+void function FS_Hud_CloseRoundEndLeaderboard()
+{
+	if ( !file.roundEndLock && !file.leaderboardOpen )
+		return
+
+	file.roundEndLock = false
+	file.leaderboardOpen = false
+	entity player = GetLocalClientPlayer()
+	if ( IsValid( player ) )
+		player.Signal( "FS_Hud_LeaderboardWatch" )
+	RunUIScript( "Leaderboard_SetRoundEndMode", 0 )
+	RunUIScript( "CloseMatchLeaderboard" )
+}
+
+void function FS_Hud_LeaderboardWatch_THREAD( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+
+	if ( !IsValidSignal( "FS_Hud_LeaderboardWatch" ) )
+		RegisterSignal( "FS_Hud_LeaderboardWatch" )
+
+	EndSignal( player, "FS_Hud_LeaderboardWatch" )
+	EndSignal( player, "OnDestroy" )
+
+	while ( file.leaderboardOpen )
+	{
+		FS_Hud_PushLeaderboard()
+		wait 0.5
+	}
+}
+
+void function FS_Hud_BindScoreboardKeys()
+{
+	if ( file.scoreboardKeysBound )
+		return
+	file.scoreboardKeysBound = true
+
+	if ( !IsValidSignal( "FS_Hud_LeaderboardWatch" ) )
+		RegisterSignal( "FS_Hud_LeaderboardWatch" )
+
+	RegisterConCommandTriggeredCallback( "toggle_map", FS_Hud_ToggleLeaderboard )
+	RegisterConCommandTriggeredCallback( "+showscores", FS_Hud_ToggleLeaderboard )
+	printt( "[FS-HUD] scoreboard keys bound (TAB + map)" )
+}
+
+void function FS_Hud_StartEnemyMinimap()
+{
+	if ( file.enemyMinimapStarted )
+		return
+	file.enemyMinimapStarted = true
+
+	if ( !IsValidSignal( "FS_Hud_EnemyMinimapStop" ) )
+		RegisterSignal( "FS_Hud_EnemyMinimapStop" )
+
+	thread FS_Hud_EnemyMinimapThink_THREAD()
+	printt( "[FS-HUD] enemy minimap started" )
+}
+
+var function FS_Hud_CreateEnemyMinimapRui( entity enemy )
+{
+	entity viewPlayer = GetLocalViewPlayer()
+	if ( !IsValid( viewPlayer ) )
+		viewPlayer = GetLocalClientPlayer()
+	if ( !IsValid( viewPlayer ) || !IsValid( enemy ) )
+		return null
+
+	var rui = Minimap_CommonAdd( MINIMAP_OBJECT_RUI, MINIMAP_Z_BASE + 20, enemy.GetOrigin(), enemy.GetAngles() )
+	RuiTrackInt( rui, "objectFlags", viewPlayer, RUI_TRACK_MINIMAP_FLAGS )
+	RuiTrackInt( rui, "customState", viewPlayer, RUI_TRACK_MINIMAP_CUSTOM_STATE )
+	RuiSetFloat2( rui, "iconScale", <1.0, 1.0, 0> )
+	RuiSetBool( rui, "alwaysShowOnMinimap", true )
+	RuiSetBool( rui, "useTeamColor", false )
+	RuiSetFloat3( rui, "iconColor", GetKeyColor( COLORID_MINIMAP_ENEMY_REF ) * ( 1.0 / 255.0 ) )
+	RuiSetImage( rui, "defaultIcon", $"rui/hud/minimap/compass_icon_player" )
+	RuiSetImage( rui, "clampedDefaultIcon", $"rui/hud/minimap/compass_icon_player_clamped" )
+	RuiTrackFloat3( rui, "objectPos", enemy, RUI_TRACK_ABSORIGIN_FOLLOW )
+	RuiTrackFloat3( rui, "objectAngles", enemy, RUI_TRACK_CAMANGLES_FOLLOW )
+	return rui
+}
+
+void function FS_Hud_EnemyMinimapThink_THREAD()
+{
+	entity localPlayer
+	while ( true )
+	{
+		localPlayer = GetLocalClientPlayer()
+		if ( IsValid( localPlayer ) && localPlayer.IsPlayer() )
+			break
+		WaitFrame()
+	}
+
+	EndSignal( localPlayer, "FS_Hud_EnemyMinimapStop" )
+	EndSignal( localPlayer, "OnDestroy" )
+
+	OnThreadEnd(
+		function() : ()
+		{
+			foreach ( entity enemy, var rui in file.enemyMinimapRuis )
+			{
+				if ( rui != null )
+					Minimap_CommonCleanup( rui )
+			}
+			file.enemyMinimapRuis.clear()
+		}
+	)
+
+	while ( true )
+	{
+		array<entity> live
+		foreach ( entity p in GetPlayerArray() )
+		{
+			if ( !IsValid( p ) || p == localPlayer || !p.IsPlayer() )
+				continue
+			if ( !IsAlive( p ) )
+				continue
+			live.append( p )
+			if ( !( p in file.enemyMinimapRuis ) )
+			{
+				var rui = FS_Hud_CreateEnemyMinimapRui( p )
+				if ( rui != null )
+					file.enemyMinimapRuis[p] <- rui
+			}
+		}
+
+		array<entity> stale
+		foreach ( entity enemy, var rui in file.enemyMinimapRuis )
+		{
+			if ( !live.contains( enemy ) )
+				stale.append( enemy )
+		}
+
+		foreach ( entity enemy in stale )
+		{
+			var rui = file.enemyMinimapRuis[enemy]
+			if ( rui != null )
+				Minimap_CommonCleanup( rui )
+			delete file.enemyMinimapRuis[enemy]
+		}
+
+		wait 0.1
+	}
+}

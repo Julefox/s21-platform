@@ -1,0 +1,151 @@
+global function NessieHunt_Init
+global function NessieHunt_AddCallback_OnNessieHuntCompleted
+
+
+const string NESSIE_MODEL_SCRIPTNAME = "NessieModel"
+const string NESSIE_SPAWN_NODE_SCRIPTNAME = "nessie_hunt_nessie_spawn_node"
+
+const float NESSIE_FADE_DISTANCE = 30000.0
+const int NESSIE_HEALTH = 1
+
+// MODEL
+const asset NESSIE_MODEL = $"mdl/props/nessie/nessie_april_fools.rmdl"
+// END MODEL
+
+// AUDIO
+const string SFX_NESSIE_CRY = "AFLTM_Vocal_Death"
+const string SFX_NESSIE_EXPLOSION = "AFLTM_Vocal_Wander"
+// END AUDIO
+
+// VFX
+const asset FX_NESSIE_EXPLOSION	= $"P_env_TD2_Nessie_Poof"
+// END VFX
+
+struct NessieSpawnData
+{
+	vector											location
+	vector											angles
+}
+
+struct
+{
+	int												nessiesToSpawn
+	int												nessiesToHunt
+
+	array< NessieSpawnData >						nessieSpawnData
+	array< entity >									nessies
+
+	array< void functionref() >						callbacks_OnNessieHuntCompleted
+} file
+
+void function NessieHunt_Init()
+{
+	if ( !IsNessieHuntEnabled() )
+		return
+
+	PrecacheModel( NESSIE_MODEL )
+	PrecacheParticleSystem( FX_NESSIE_EXPLOSION )
+
+	AddSpawnCallback_ScriptName( NESSIE_SPAWN_NODE_SCRIPTNAME, OnNessieSpawnNodeSpawned )
+
+	AddCallback_EntitiesDidLoad( EntitiesDidLoad )
+
+	file.nessiesToSpawn = GetCurrentPlaylistVarInt( "nessie_hunt_nessies_to_spawn", 0 )
+	file.nessiesToHunt = GetCurrentPlaylistVarInt( "nessie_hunt_nessies_to_hunt", 0 )
+}
+
+void function OnNessieSpawnNodeSpawned( entity node )
+{
+	if ( !IsValid( node ) )
+		return
+
+	NessieSpawnData spawnData
+	spawnData.location = node.GetOrigin()
+	spawnData.angles = node.GetAngles()
+	node.Destroy()
+
+	file.nessieSpawnData.append( spawnData )
+}
+
+void function EntitiesDidLoad()
+{
+	// SPAWN NESSIES
+	{
+		int nessiesToSpawn = minint( file.nessiesToSpawn, file.nessieSpawnData.len() )
+		file.nessiesToHunt = minint( nessiesToSpawn, file.nessiesToHunt )
+
+		if ( nessiesToSpawn < 1 )
+			return
+
+		file.nessieSpawnData.randomize()
+		for ( int spawnCount = 0; spawnCount < nessiesToSpawn; spawnCount++ )
+		{
+			NessieSpawnData currentSpawnData = file.nessieSpawnData[ spawnCount ]
+			entity spawnedNessie = CreatePropDynamic( NESSIE_MODEL, currentSpawnData.location, currentSpawnData.angles, SOLID_VPHYSICS )
+			spawnedNessie.SetScriptName( NESSIE_MODEL_SCRIPTNAME )
+
+			spawnedNessie.kv.fadedist = NESSIE_FADE_DISTANCE
+
+			spawnedNessie.SetCanBeMeleed( true )
+			spawnedNessie.SetTakeDamageType( DAMAGE_YES )
+			spawnedNessie.SetDamageNotifications( true )
+			spawnedNessie.SetDeathNotifications( true )
+			spawnedNessie.SetTouchTriggers( true )
+			spawnedNessie.EnableAttackableByAI( AI_PRIORITY_NO_THREAT, 0, AI_AP_FLAG_NONE ) //Hack to make IsAlive() return true
+			spawnedNessie.SetMaxHealth( NESSIE_HEALTH )
+			spawnedNessie.SetHealth( NESSIE_HEALTH )
+			spawnedNessie.DisableHibernation()
+
+			spawnedNessie.e.noOwnerFriendlyFire      = false
+			spawnedNessie.e.noFriendlyFireProtection = false
+			spawnedNessie.e.canBurn                  = true
+			spawnedNessie.e.canBeDamagedFromGas      = true
+
+			// Highlight
+			spawnedNessie.Highlight_Enable()
+
+			AddEntityCallback_OnKilled( spawnedNessie, OnNessieKilled )
+
+			file.nessies.append( spawnedNessie )
+		}
+	}
+	// END SPAWN NESSIES
+}
+
+bool function IsNessieHuntEnabled()
+{
+	return GetCurrentPlaylistVarBool( "nessie_hunt_enabled", false )
+}
+
+void function NessieHunt_AddCallback_OnNessieHuntCompleted( void functionref() callbackFunc )
+{
+	Assert( !file.callbacks_OnNessieHuntCompleted.contains( callbackFunc ), "Already added " + string( callbackFunc ) + " to callbacks_OnNessieHuntCompleted" )
+	file.callbacks_OnNessieHuntCompleted.append( callbackFunc )
+}
+
+void function OnNessieKilled( entity killedNessie, var damageInfo )
+{
+	if ( !file.nessies.contains( killedNessie ) )
+		return
+
+	file.nessies.fastremovebyvalue( killedNessie )
+	file.nessiesToHunt--
+
+	vector fxOrg = killedNessie.GetOrigin()
+	int expFX    = GetParticleSystemIndex( FX_NESSIE_EXPLOSION )
+	entity fx    = StartParticleEffectInWorld_ReturnEntity( expFX, fxOrg, killedNessie.GetAngles() )
+
+	thread DestroyAfterDelay( fx, 3.0 )
+
+	EmitSoundAtPosition( TEAM_UNASSIGNED, fxOrg, SFX_NESSIE_CRY, killedNessie )
+	EmitSoundAtPosition( TEAM_UNASSIGNED, fxOrg, SFX_NESSIE_EXPLOSION, killedNessie )
+
+	// Check if the nessie hunt is complete
+	if ( file.nessiesToHunt == 0 )
+	{
+		foreach ( void functionref() callbackFunc in file.callbacks_OnNessieHuntCompleted )
+		{
+			callbackFunc()
+		}
+	}
+}

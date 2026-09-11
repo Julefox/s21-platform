@@ -1,0 +1,110 @@
+global function InitBlimpDrones
+global function EntitiesDidLoadBlimpDrones
+
+global function BlimpDrones_GetTrainNodesArray
+
+global function BlimpDrones_CreateBlimpDrone
+global function BlimpDrones_DestroyAllBlimpDrones
+
+struct
+{
+	array<entity> initOnly_blimpDroneTrainNodes
+} file
+
+void function InitBlimpDrones()
+{
+	Assert( !Flag( "EntitiesDidLoad" ), "Warning! You need to call InitBlimpDrones() before entities loaded!" )
+	AddSpawnCallback_ScriptName( BLIMP_DRONE_NODE_SCRIPT_NAME, OnBlimpDroneNodeSpawned )
+}
+
+void function EntitiesDidLoadBlimpDrones()
+{
+	PrecacheScriptString( BLIMP_DRONE_MODEL_SCRIPTNAME )
+	PrecacheScriptString( BLIMP_DRONE_MOVER_SCRIPTNAME )
+	PrecacheScriptString( BLIMP_DRONE_ROTATOR_SCRIPTNAME )
+
+	PrecacheScriptString( BLIMP_DRONE_NODE_SCRIPT_NAME )
+}
+
+void function OnBlimpDroneNodeSpawned( entity node )
+{
+	string nodeType = node.GetClassName()
+	switch ( nodeType )
+	{
+		case DRONE_TRACK_NODE_CLASS_NAME:
+			AddNodeToTrainNodeArray( node )
+			break
+	}
+}
+
+void function AddNodeToTrainNodeArray( entity node )
+{
+	if ( !file.initOnly_blimpDroneTrainNodes.contains( node ) )
+		file.initOnly_blimpDroneTrainNodes.append( node )
+}
+
+array<entity> function BlimpDrones_GetTrainNodesArray()
+{
+	return file.initOnly_blimpDroneTrainNodes
+}
+
+DroneData function BlimpDrones_CreateBlimpDrone( vector origin, vector angles )
+{
+	DroneData data
+	entity droneModel = CreatePropDynamic( BLIMP_DRONE_MODEL, origin, angles )
+	droneModel.SetScriptName( BLIMP_DRONE_MODEL_SCRIPTNAME )
+
+	droneModel.kv.CollisionGroup = TRACE_COLLISION_GROUP_NONE
+	droneModel.NotSolid()
+
+	droneModel.SetModelScale( ShBlimpDrones_GetScale() )
+
+	entity mover = CreateScriptMover( BLIMP_DRONE_MOVER_SCRIPTNAME, origin, angles )
+	mover.DisallowZiplines()
+
+	droneModel.SetParent( mover )
+	data.model = droneModel
+
+	data.mover = mover
+	data.__accel = ShBlimpDrones_GetFlightAcceleration()
+	data.__maxSpeed = ShBlimpDrones_GetFlightSpeedMax()
+	data.droneType = eDroneType.BLIMP_DRONE
+
+	AddEntityDestroyedCallback( droneModel, BlimpDrones_OnBlimpDroneDestroyed )
+	MarkEntForCleanupOnRoundEnd( droneModel )
+
+	entity soundEntity = CreateEntity( "ambient_generic" )
+	soundEntity.SetOrigin( droneModel.GetOrigin() )
+	soundEntity.SetSoundName( BLIMP_DRONE_LIVING_SOUND )
+	soundEntity.SetParent( droneModel )
+	soundEntity.SetEnabled( true )
+	data.soundEntity = soundEntity
+
+	Drones_GetAllActiveDrones().append( data )
+	ShDrones_DroneSpawned( data.model )
+
+	return data
+}
+
+void function BlimpDrones_OnBlimpDroneDestroyed( entity droneModel )
+{
+	if ( ShDrones_IsValidDrone( droneModel ) )
+	{
+		DroneData data = Drones_GetDroneDataFromDroneModelEnt( droneModel )
+		if ( data.droneType != eDroneType.BLIMP_DRONE )
+			return
+
+		Drones_DestroyDrone( data )
+	}
+}
+
+void function BlimpDrones_DestroyAllBlimpDrones()
+{
+	foreach ( DroneData data in Drones_GetAllActiveDrones() )
+	{
+		if ( data.droneType == eDroneType.BLIMP_DRONE )
+		{
+			Drones_DestroyDrone( data )
+		}
+	}
+}

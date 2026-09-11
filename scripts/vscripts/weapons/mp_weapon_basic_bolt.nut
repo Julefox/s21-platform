@@ -1,0 +1,94 @@
+
+global function MpWeaponBasicBolt_Init
+
+global function BasicBoltPrecache
+global function OnWeaponActivate_weapon_basic_bolt
+global function OnWeaponPrimaryAttack_weapon_basic_bolt
+global function OnProjectileCollision_weapon_basic_bolt
+
+#if CLIENT
+global function OnClientAnimEvent_weapon_basic_bolt
+#endif // #if CLIENT
+
+#if SERVER
+global function OnWeaponNpcPrimaryAttack_weapon_basic_bolt
+#endif // #if SERVER
+
+void function MpWeaponBasicBolt_Init()
+{
+	BasicBoltPrecache()
+}
+
+void function BasicBoltPrecache()
+{
+	PrecacheParticleSystem( $"wpn_mflash_snp_hmn_smoke_side_FP" )
+	PrecacheParticleSystem( $"wpn_mflash_snp_hmn_smoke_side" )
+}
+
+void function OnWeaponActivate_weapon_basic_bolt( entity weapon )
+{
+#if CLIENT
+	UpdateViewmodelAmmo( false, weapon )
+#endif // #if CLIENT
+#if SERVER
+	if ( weapon.GetWeaponSettingFloat( eWeaponVar.regen_ammo_refill_rate ) > 0.0 && !weapon.GetWeaponSettingBool( eWeaponVar.uses_ammo_pool ) )
+		EnergyAmmoRegen_Start( weapon )
+#endif
+}
+
+#if CLIENT
+void function OnClientAnimEvent_weapon_basic_bolt( entity weapon, string name )
+{
+	GlobalClientEventHandler( weapon, name )
+}
+
+#endif // #if CLIENT
+
+var function OnWeaponPrimaryAttack_weapon_basic_bolt( entity weapon, WeaponPrimaryAttackParams attackParams )
+{
+	weapon.EmitWeaponNpcSound( LOUD_WEAPON_AI_SOUND_RADIUS_MP, 0.2 )
+
+	return FireWeaponPlayerAndNPC( weapon, attackParams, true )
+}
+
+#if SERVER
+var function OnWeaponNpcPrimaryAttack_weapon_basic_bolt( entity weapon, WeaponPrimaryAttackParams attackParams )
+{
+	weapon.EmitWeaponNpcSound( LOUD_WEAPON_AI_SOUND_RADIUS_MP, 0.2 )
+
+	return FireWeaponPlayerAndNPC( weapon, attackParams, false )
+}
+#endif // #if SERVER
+
+int function FireWeaponPlayerAndNPC( entity weapon, WeaponPrimaryAttackParams attackParams, bool playerFired )
+{
+	bool shouldCreateProjectile = false
+	if ( IsServer() || weapon.ShouldPredictProjectiles() )
+		shouldCreateProjectile = true
+
+	#if CLIENT
+		if ( !playerFired )
+			shouldCreateProjectile = false
+	#endif
+
+	if ( shouldCreateProjectile )
+		entity bolt = FireBallisticRoundWithDrop( weapon, attackParams.pos, attackParams.dir, playerFired, false, 0, false )
+
+	return 1
+}
+
+#if SERVER
+void function OnProjectileCollision_weapon_basic_bolt( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+#else
+void function OnProjectileCollision_weapon_basic_bolt( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+#endif
+{
+	#if SERVER
+		Assert( false, "deprecated: OnProjectileCollision forces generation of script instances of projectile entities and is a major performance impact" )
+		int bounceCount = projectile.GetProjectileWeaponSettingInt( eWeaponVar.projectile_ricochet_max_count )
+		if ( projectile.proj.projectileBounceCount >= bounceCount )
+			return
+
+		projectile.proj.projectileBounceCount++
+	#endif
+}

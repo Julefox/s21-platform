@@ -1,0 +1,231 @@
+//TODO: This would work better if it was run at the end of a frame...
+
+global function HealingFXRequest_Init
+global function Player3pHealFXAddRequest
+global function Player3pHealFXRemoveRequest
+global function StartManagingHealingFXRequestsForNonPlayerEntity
+
+
+global const asset PLAYER_SHIELD_CHARGE_FX = $"P_armor_3P_loop_CP"
+
+struct NonPlayerFXInfo
+{
+	entity ent
+	bool functionref( entity, entity, int ) additionalValidationFunc = null
+}
+
+struct {
+	table< entity, array<NonPlayerFXInfo> > playerToNonPlayerFXInfo
+} file
+
+void function HealingFXRequest_Init()
+{
+	AddCallback_OnPlayerKilled( HealingRequest_OnPlayerKilled )
+	AddCallback_OnClientDisconnected( HealingRequest_CleanupDecoyTable )
+
+	//Should be registered by mirage, but just incase there isn't a mirage
+	RegisterSignal( "CleanupFXAndSoundsForDecoy" )
+	RegisterSignal( "HealingRequestStopFX" )
+
+	PrecacheParticleSystem( PLAYER_SHIELD_CHARGE_FX )
+}
+
+RecoveryHealingFXRequest function Player3pHealFXAddRequest( entity player, int type )
+{
+	RecoveryHealingFXRequest newRequest
+	newRequest.type = type
+	if ( !IsValid( player ) || !player.IsPlayer() )
+	{
+		Assert( false, "Trying to make a healing request on a non-player entity. This won't work." )
+		return newRequest
+	}
+
+	player.p.healingFXRequests.append( newRequest )
+
+	if ( player.p.healingFXRequests.len() == 1 )
+	{
+		thread ManagePlayer3pHealFX_Thread( player )
+
+		if ( player in file.playerToNonPlayerFXInfo )
+		{
+			foreach( NonPlayerFXInfo info in file.playerToNonPlayerFXInfo[player])
+			{
+				if ( !IsValid( info.ent ) )
+					continue
+
+				thread ManagePlayer3pHealFX_Thread( player, info.ent, info.additionalValidationFunc )
+			}
+		}
+	}
+
+	return newRequest
+}
+
+void function Player3pHealFXRemoveRequest( entity player, RecoveryHealingFXRequest request )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+	{
+		Assert( player.IsPlayer(), "Trying to remove a healing request on a non-player entity. This won't work." )
+		return
+	}
+
+	player.p.healingFXRequests.fastremovebyvalue( request )
+
+	if ( player.p.healingFXRequests.len() == 0 )
+	{
+		Signal( player, "HealingRequestStopFX" )
+	}
+}
+
+void function StartManagingHealingFXRequestsForNonPlayerEntity( entity owningPlayer, entity entityToShowFXOn, bool functionref( entity, entity, int ) additionalValidationFunc = null  )
+{
+	if ( IsValid( owningPlayer ) && IsValid( entityToShowFXOn ) )
+	{
+		Assert( owningPlayer != entityToShowFXOn, "You shouldn't call this on yourself, it's registered automatically" )
+		Assert( !entityToShowFXOn.IsPlayer(), "You shouldn't call this on a player, it's registered automatically" )
+		Assert( owningPlayer.IsPlayer(), "The owning player needs to be a player, it'll crash otherwise" )
+
+		if ( !(owningPlayer in file.playerToNonPlayerFXInfo) )
+		{
+			file.playerToNonPlayerFXInfo[owningPlayer] <- []
+		}
+
+		NonPlayerFXInfo info
+
+		info.ent = entityToShowFXOn
+		info.additionalValidationFunc = additionalValidationFunc
+
+		file.playerToNonPlayerFXInfo[owningPlayer].append( info )
+
+		if ( owningPlayer.p.healingFXRequests.len() > 0 )
+		{
+			thread ManagePlayer3pHealFX_Thread( owningPlayer, info.ent, info.additionalValidationFunc )
+		}
+	}
+}
+
+void function HealingRequest_OnPlayerKilled( entity victim, entity attacker, var damageInfo )
+{
+	HealingRequest_CleanupDecoyTable( victim )
+}
+
+void function HealingRequest_CleanupDecoyTable( entity player )
+{
+	if ( player in file.playerToNonPlayerFXInfo )
+	{
+		delete file.playerToNonPlayerFXInfo[player]
+	}
+}
+
+void function ManagePlayer3pHealFX_Thread( entity player, entity entityToShowFXOn = null, bool functionref( entity, entity, int ) additionalValidationFunc = null )
+{
+	EndSignal( player, "OnDeath", "OnDestroy", "HealingRequestStopFX" )
+	if ( entityToShowFXOn != null  )
+	{
+		EndSignal( entityToShowFXOn, "OnDeath", "OnDestroy", "CleanupFXAndSoundsForDecoy" )
+	}
+
+	bool shownOnPlayer 	 = entityToShowFXOn == null
+	if ( shownOnPlayer )
+	{
+		entityToShowFXOn = player
+	}
+
+	int attachID         = entityToShowFXOn.LookupAttachment( "CHESTFOCUS" )
+	int shieldChargeFXID = GetParticleSystemIndex( PLAYER_SHIELD_CHARGE_FX )
+
+	entity fx = StartParticleEffectOnEntity_ReturnEntity( entityToShowFXOn, shieldChargeFXID, FX_PATTACH_POINT_FOLLOW, attachID )
+	fx.SetOwner( player )
+	SetTeam( fx, player.GetTeam() )
+	//don't show it to the person getting healed as the FX obstruct the camera a bit
+	fx.kv.VisibilityFlags = (shownOnPlayer ? (ENTITY_VISIBLE_TO_FRIENDLY | ENTITY_VISIBLE_TO_ENEMY) : ENTITY_VISIBLE_TO_EVERYONE)
+
+	OnThreadEnd(
+		function() : ( fx, player, entityToShowFXOn, shownOnPlayer )
+		{
+			if ( IsValid( fx ) )
+			{
+				EffectStop( fx )
+			}
+
+			if ( !shownOnPlayer && !IsValid( entityToShowFXOn ))
+			{
+				for ( int i = 0; i < file.playerToNonPlayerFXInfo.len(); i++ )
+				{
+					NonPlayerFXInfo info = file.playerToNonPlayerFXInfo[player][i]
+
+					if ( info.ent == entityToShowFXOn )
+					{
+						file.playerToNonPlayerFXInfo[player].fastremove( i )
+						break
+					}
+				}
+			}
+		}
+	)
+
+	while ( true )
+	{
+		if ( IsValid( fx ) )
+		{
+			WaitEndFrame()
+			bool hasShieldRequest = false
+			bool hasHealthRequest = false
+			bool blockedByDefaultRules = false
+
+			if ( entityToShowFXOn.IsCloaked( true ) || entityToShowFXOn.IsPhaseShifted() )
+			{
+				blockedByDefaultRules = true
+			}
+
+			if ( !blockedByDefaultRules )
+			{
+				foreach ( RecoveryHealingFXRequest request in player.p.healingFXRequests )
+				{
+					if ( additionalValidationFunc != null )
+					{
+						if ( !additionalValidationFunc( player, entityToShowFXOn, request.type ) )
+							continue
+					}
+
+					if ( request.requestShieldFX )
+					{
+						hasShieldRequest = true
+						break
+					}
+					else if ( !shownOnPlayer && request.decoyShieldFXIfValidatorPasses )
+					{
+						hasShieldRequest = true
+						break
+					}
+
+					if ( request.requestHealthFX )
+					{
+						hasHealthRequest = true
+						break
+					}
+					else if ( !shownOnPlayer && request.decoyHealthFXIfValidatorPasses )
+					{
+						hasHealthRequest = true
+						break
+					}
+				}
+			}
+
+			vector colour = < 0, 0, 0>
+			if ( hasShieldRequest )
+			{
+				int armorTier      = EquipmentSlot_GetEquipmentTier( player, "armor" )
+				colour = GetFXRarityColorForTier( armorTier )
+			}
+			else if ( hasHealthRequest )
+			{
+				colour =  <  0, 128, 128> //teal
+			}
+
+			EffectSetControlPointVector( fx, 2, colour )
+		}
+
+		WaitFrame()
+	}
+}

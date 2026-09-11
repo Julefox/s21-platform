@@ -1,0 +1,197 @@
+#if SERVER
+
+//////////////////////////////
+///////// IMPORTANT //////////
+//////////////////////////////
+
+/*
+	This allows scripts to cache player inventories if they die
+	and restore them when the player respawns by calling the global
+	functions.
+
+	Currently this only caches and restore weapons and ammo + attachments.
+	Consumables and Equipment currently stay with the player on death
+	unless ResetPlayerInventory is called.
+*/
+
+
+
+
+global function InventoryCache_CacheInventory
+global function InventoryCache_RebuildInventoryFromCache
+
+struct {
+	table<entity, array<StoredWeapon>  > playerStoredWeapons
+	table<entity, table< int, int > >    playerStoredAmmo
+	table<entity, string>				 playerStoredLastWeapon
+} file
+
+
+
+
+
+void function InventoryCache_CacheInventory( entity player )
+{
+	StoreOwnedWeaponsForPlayer( player )
+	StoreOwnedAmmoForPlayer( player )
+}
+
+void function InventoryCache_RebuildInventoryFromCache( entity player )
+{
+	wait 0.5
+
+	if ( !IsValid( player ) )
+		return
+
+	RebuildOwnedWeaponsForPlayer( player )
+	RebuildOwnedAmmoForPlayer( player )
+	Remote_CallFunction_NonReplay( player, "ServerCallback_RefreshInventory" )
+}
+
+
+
+
+
+
+///// INTERNAL /////
+void function StoreOwnedWeaponsForPlayer( entity player )
+{
+	array<StoredWeapon> storedWeapons
+	array<entity> currentWeapons = SURVIVAL_GetPrimaryWeapons( player )
+
+	for ( int i = 0; i < currentWeapons.len(); i++ )
+	{
+		StoredWeapon weaponData
+		entity currentWeapon = currentWeapons[i]
+
+		weaponData.inventoryIndex = i
+		weaponData.activeWeapon   = player.GetActiveWeapon( eActiveInventorySlot.mainHand ) == currentWeapon
+		weaponData.clipCount      = currentWeapon.GetWeaponPrimaryClipCount()
+		weaponData.modBitfield    = currentWeapon.GetModBitField()
+		weaponData.skinGUID       = currentWeapon.e.skinItemFlavorGUID
+		weaponData.charmGUID      = currentWeapon.e.charmItemFlavorGUID
+		weaponData.name           = currentWeapon.GetWeaponClassName()
+
+		if ( currentWeapon.GetActiveAmmoSource() == AMMOSOURCE_POOL )
+		{
+			weaponData.ammoCount = currentWeapon.GetWeaponPrimaryClipCount()
+			weaponData.lifetimeShots = -1
+		}
+		else
+		{
+			weaponData.ammoCount = currentWeapon.GetWeaponPrimaryClipCount()
+			weaponData.lifetimeShots = currentWeapon.GetWeaponPrimaryAmmoCount( AMMOSOURCE_STOCKPILE )
+		}
+
+		storedWeapons.append( weaponData )
+	}
+
+	if ( player in file.playerStoredWeapons )
+	{
+		file.playerStoredWeapons[player] = storedWeapons
+	}
+	else
+	{
+		file.playerStoredWeapons[player] <- storedWeapons
+	}
+
+	if ( player.GetActiveWeapon( eActiveInventorySlot.mainHand ) != null )
+	{
+		if ( player in file.playerStoredLastWeapon )
+			file.playerStoredLastWeapon[player] = player.GetActiveWeapon( eActiveInventorySlot.mainHand ).GetWeaponClassName()
+		else
+			file.playerStoredLastWeapon[player] <- player.GetActiveWeapon( eActiveInventorySlot.mainHand ).GetWeaponClassName()
+	}
+}
+
+void function StoreOwnedAmmoForPlayer( entity player )
+{
+	table< int, int > ammoCountbyType
+
+	foreach ( ammoType in eAmmoPoolType )
+	{
+		int ammoCount = player.AmmoPool_GetCount( ammoType )
+		ammoCountbyType[ammoType] <- ammoCount
+	}
+
+	if ( player in file.playerStoredAmmo )
+	{
+		file.playerStoredAmmo[player] = ammoCountbyType
+	}
+	else
+	{
+		file.playerStoredAmmo[player] <- ammoCountbyType
+	}
+}
+
+void function RebuildOwnedWeaponsForPlayer( entity player )
+{
+	if ( player in file.playerStoredWeapons && IsValid( player ) )
+	{
+		array<StoredWeapon> storedWeapons = file.playerStoredWeapons[player]
+
+		for ( int i = 0; i < storedWeapons.len(); i++ )
+		{
+			StoredWeapon weaponData = storedWeapons[i]
+
+			if ( weaponData.name == "" )
+				continue
+
+			entity weapon
+			if ( weaponData.activeWeapon )
+			{
+				weapon = player.GiveWeapon( weaponData.name, i, [], false )
+			}
+			else
+			{
+				weapon = player.GiveWeapon_NoDeploy( weaponData.name, i, [], true )
+			}
+			weapon.SetModBitField( weaponData.modBitfield )
+
+			if ( weaponData.lifetimeShots == -1  && weapon.UsesClipsForAmmo() )
+			{
+				weapon.SetWeaponPrimaryClipCount( weapon.GetWeaponPrimaryClipCountMax() )
+			}
+			else if ( weapon.UsesClipsForAmmo() )
+			{
+				weapon.SetWeaponPrimaryClipCount( weapon.GetWeaponPrimaryClipCountMax() )
+				weapon.SetWeaponPrimaryAmmoCount( AMMOSOURCE_STOCKPILE, weaponData.lifetimeShots )
+			}
+
+			ItemFlavor ornull weaponSkin = null
+			if ( IsValidItemFlavorGUID( weaponData.skinGUID, eValidation.DONT_ASSERT ) )
+				weaponSkin = GetItemFlavorByGUID( weaponData.skinGUID )
+
+			ItemFlavor ornull weaponCharm = null
+			if ( IsValidItemFlavorGUID( weaponData.charmGUID, eValidation.DONT_ASSERT ) )
+				weaponCharm = GetItemFlavorByGUID( weaponData.charmGUID )
+
+			if ( weaponSkin != null || weaponCharm != null )
+				WeaponCosmetics_Apply( weapon, weaponSkin, weaponCharm )
+		}
+
+		delete file.playerStoredWeapons[player]
+	}
+
+	if ( player in file.playerStoredLastWeapon && IsValid( player ) )
+	{
+		string lastWeapon = file.playerStoredLastWeapon[player]
+		player.SetActiveWeaponByName( eActiveInventorySlot.mainHand, lastWeapon )
+		delete file.playerStoredLastWeapon[player]
+	}
+}
+
+void function RebuildOwnedAmmoForPlayer( entity player )
+{
+	if ( player in file.playerStoredAmmo )
+	{
+		foreach( ammoType in eAmmoPoolType )
+		{
+			player.AmmoPool_SetCount( ammoType, file.playerStoredAmmo[player][ammoType] )
+		}
+
+		delete file.playerStoredAmmo[player]
+	}
+}
+
+#endif // #if SERVER

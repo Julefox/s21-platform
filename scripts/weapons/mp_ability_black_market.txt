@@ -1,0 +1,179 @@
+"WeaponData"
+{
+	"printname" "#LOBA_ULT_BLACK_MARKET_NAME"
+	"shortprintname" "#LOBA_ULT_BLACK_MARKET_NAME"
+	"description" "#LOBA_ULT_BLACK_MARKET_DESC"
+	"longdesc" "#LOBA_ULT_BLACK_MARKET_LONGDESC"
+	"menu_icon" "white"
+	"hud_icon" "rui/hud/ultimate_icons/ultimate_loba"
+	"fire_mode" "offhandHybrid"
+	"offhand_cancelled_by_melee" "1"
+	"offhand_interupts_weapon_anims" "1"
+	"cooldown_type" "ammo_timed"
+	"regen_ammo_refill_rate" "1.000000"
+	"reload_enabled" "0"
+	"ammo_default_total" "0"
+	"fire_rate" "99.000000"
+	"r_trig_custom_str" "2"
+	"r_trig_custom_mode" "2"
+	"fire_duration" "0.500000"
+	"deploy_time" "1.900000"
+	"holster_time" "0.150000"
+	"raise_time" "1.900000"
+	"lower_time" "0.150000"
+	"play_offhand_start_end_anim" "1"
+	"ammo_clip_size" "150"
+	"ammo_per_shot" "150"
+	"ammo_min_to_fire" "150"
+	"aimassist_disable_hipfire" "1"
+	"aimassist_disable_ads" "1"
+	"bob_cycle_time" "0.400000"
+	"bob_vert_dist" "0.190000"
+	"bob_horz_dist" "0.100000"
+	"bob_max_speed" "150"
+	"bob_pitch" "0.750000"
+	"bob_yaw" "-1.700000"
+	"bob_roll" "1.200000"
+	"sway_rotate_attach" "SWAY_ROTATE"
+	"sway_min_x" "-0.500000"
+	"sway_min_y" "-0.500000"
+	"sway_min_z" "-0.600000"
+	"sway_max_x" "0.500000"
+	"sway_max_y" "0.500000"
+	"sway_max_z" "0.600000"
+	"sway_min_pitch" "-3"
+	"sway_min_yaw" "-2.500000"
+	"sway_min_roll" "-4"
+	"sway_max_pitch" "3"
+	"sway_max_yaw" "2.500000"
+	"sway_max_roll" "4"
+	"sway_translate_gain" "2.500000"
+	"sway_rotate_gain" "7"
+	"sway_move_forward_translate_x" "-0.100000"
+	"sway_move_forward_translate_z" "-0.500000"
+	"sway_move_back_translate_x" "0.200000"
+	"sway_move_back_translate_z" "-0.200000"
+	"sway_move_left_translate_y" "-1"
+	"sway_move_left_translate_z" "-0.500000"
+	"sway_move_left_rotate_roll" "-4"
+	"sway_move_right_translate_y" "1"
+	"sway_move_right_translate_z" "-0.500000"
+	"sway_move_right_rotate_roll" "4"
+	"sway_move_up_translate_z" "-1"
+	"sway_move_down_translate_z" "1"
+	"sway_turn_left_rotate_yaw" "-2.500000"
+	"sway_turn_right_rotate_yaw" "2.500000"
+	"sway_turn_left_translate_y" "0.500000"
+	"sway_turn_right_translate_y" "-0.500000"
+	"sway_turn_up_translate_z" "0.200000"
+	"sway_turn_down_translate_z" "-0.200000"
+	"sway_turn_up_translate_x" "0.100000"
+	"sway_turn_down_translate_x" "-0.100000"
+	"sway_turn_left_rotate_roll" "4"
+	"sway_turn_right_rotate_roll" "-4"
+	"sway_turn_up_rotate_pitch" "3"
+	"sway_turn_down_rotate_pitch" "-3"
+	"sway_turn_up_rotate_roll" "-0.800000"
+	"sway_turn_down_rotate_roll" "0.800000"
+	"viewdrift_hipfire_stand_scale_pitch" "0.325000"
+	"viewdrift_hipfire_crouch_scale_pitch" "0.275000"
+	"viewdrift_hipfire_air_scale_pitch" "0.500000"
+	"viewdrift_hipfire_stand_scale_yaw" "0.120000"
+	"viewdrift_hipfire_crouch_scale_yaw" "0.100000"
+	"viewdrift_hipfire_air_scale_yaw" "0.220000"
+	"viewdrift_hipfire_speed_pitch" "0.600000"
+	"viewdrift_hipfire_speed_yaw" "1.220000"
+	"zoom_effects" "0"
+	"viewmodel" "mdl/weapons/loba_loot_stick/ptpov_loba_loot_stick.rmdl"
+	"playermodel" "mdl/weapons/loba_loot_stick/w_loba_loot_stick.rmdl"
+	"sound_deploy_1p" "weapon_sentryfragdrone_pinpull_1p"
+	"sound_deploy_3p" "weapon_sentryfragdrone_pinpull_3p"
+	"viewkick_spring" "pistol"
+	"offhand_include_primary_activity_mods" "0"
+	"OnWeaponRegenEnd" "OnWeaponRegenEnd_ability_black_market"
+	"OnWeaponAttemptOffhandSwitch" "OnWeaponAttemptOffhandSwitch_ability_black_market"
+	"OnWeaponPrimaryAttack" "OnWeaponPrimaryAttack_ability_black_market"
+	"OnWeaponActivate" "OnWeaponActivate_ability_black_market"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_ability_black_market"
+	"weapon_type_flags" "WPT_ULTIMATE"
+	"offhand_default_inventory_slot" "4"
+	"OnWeaponRegenBegin" "Ultimate_OnWeaponRegenBegin"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "Survival_UI_Ultimate_Ready"
+	"drops_on_death" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"survival_finite_ordnance"
+		{
+
+		}
+
+		"s17cr_p1_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "0"
+
+		}
+
+		"s17cr_p2_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "60"
+
+		}
+
+		"upgrade_core_loba_ult_black_market_scan"
+		{
+
+		}
+
+		"upgrade_core_loba_ult_extra_item"
+		{
+
+		}
+
+		"ultimates_charge_over_time_disabled"
+		{
+			"regen_ammo_refill_rate" "0"
+
+		}
+
+		"copycat_mod"
+		{
+			"weapon_type_flags" "WPT_SURVIVAL"
+
+		}
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+	}
+}

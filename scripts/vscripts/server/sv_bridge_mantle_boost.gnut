@@ -1,0 +1,14 @@
+//=============================================================================
+// World-space mantle-boost cue. 1P FX is client-side.
+//=============================================================================
+
+global function CodeCallback_OnPlayerMantleBoosted
+
+void function CodeCallback_OnPlayerMantleBoosted( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+
+	// Missing alias no-ops.
+	EmitSoundOnEntityExceptToPlayer( player, player, "MantleBoost_3p" )
+}

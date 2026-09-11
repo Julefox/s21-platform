@@ -1,0 +1,1055 @@
+// Freeplay aim trainer client HUD (DevMenu Flowstate Aim Trainer)
+// Live: dyn stats top (S21 fullscreen) + VGUI Countdown/CountdownFrame.
+// End: ui/fr_challenge_timer post recap only (skippable) + dyn save+reset.
+
+global function AimTrainer_CL_Init
+global function AimTrainer_CL_ChallengeStart
+global function AimTrainer_CL_ChallengeEnd
+global function AimTrainer_CL_OfferRestartChallenge
+global function AimTrainer_CL_RestartChallengeTimer
+global function AimTrainer_CL_OnDummieKilled
+global function AimTrainer_CL_ShowDynStats
+global function AimTrainer_CL_ResetStats
+global function AimTrainer_CL_OnModeEnter
+global function AimTrainer_CL_OnModeExit
+global function AimTrainer_CL_DevPreviewResults
+global function AimTrainer_CL_DevPreviewFRCRecap
+global function AimTrainer_CL_PushChallengeFlagToUI
+global function AimTrainer_CL_SyncDevMenuState
+
+const string AIMTRAINER_SFX_DYNSTAT_RESET = "FiringRangeMu1_UI_Range_Stats_ManualReset_1P"
+const string AIMTRAINER_SFX_DYNSTAT_HOLD = "FiringRangeMu1_UI_Range_Stats_ManualReset_ProgressBar_1P"
+const float AIMTRAINER_RESULTS_ANNOUNCE_DURATION = 4.5
+const string AIMTRAINER_INTRO_TEXT = "Starting challenge.."
+// %&<bind>% resolves to the player's own binding and swaps to the pad glyph on
+// controller, so both hint fields take the same token (_sh_tutorial reload hint).
+const string AIMTRAINER_RESTART_BIND_TOKEN = "%&reload%"
+// Max time the FR recap stays if the player does not skip.
+const float AIMTRAINER_FRC_RECAP_HOLD = 10.0
+
+// Flowstate VGUI countdown (hudscripted_mp.res Countdown + CountdownFrame).
+const string AIMTRAINER_HUD_COUNTDOWN      = "Countdown"
+const string AIMTRAINER_HUD_COUNTDOWN_FRAME = "CountdownFrame"
+const string AIMTRAINER_SIGNAL_TIMER_STOP  = "AimTrainer_CL_TimerStop"
+const string AIMTRAINER_SIGNAL_RECAP_STOP  = "AimTrainer_CL_RecapStop"
+
+struct
+{
+	bool inited = false
+	bool hudVisible = false
+	bool challengeActive = false
+	var dynamicStatsRui = null
+	// Seconds for the live countdown (set by ChallengeStart remote).
+	int challengeDurationSec = int( AIMTRAINER_CHALLENGE_DURATION )
+
+	// VGUI live countdown
+	bool challengeTimerVisible = false
+	int challengeTimerGen = 0
+
+	// FR post recap only (not used live)
+	var recapRui = null
+	int recapGen = 0
+
+	int shotsFired = 0
+	float damage = 0.0
+	int shotsHit = 0
+	int critShotsHit = 0
+	int kills = 0
+
+	int lastShotsFired = 0
+	float lastDamage = 0.0
+	int lastShotsHit = 0
+	int lastCritShotsHit = 0
+	int lastKills = 0
+
+	bool compassSuppressed = false
+	bool minimapSuppressed = false
+
+	bool resetInputRegistered = false
+
+	// Post-challenge one-key restart offer.
+	var restartPromptRui = null
+	bool restartPromptRegistered = false
+	int restartPromptGen = 0
+
+#if NX_PROG
+	int resetStatsButton = BUTTON_Y
+#else
+	int resetStatsButton = BUTTON_X
+#endif
+
+} file
+
+void function AimTrainer_CL_Init()
+{
+	// Stock loadout selector for freeroam weapons menu
+	LoadoutSelection_SetFreeroamForceEnable( true )
+	if ( file.inited )
+		return
+	file.inited = true
+
+	RegisterSignal( AIMTRAINER_SIGNAL_TIMER_STOP )
+	RegisterSignal( AIMTRAINER_SIGNAL_RECAP_STOP )
+	AddCallback_OnWeaponAttack( AimTrainer_CL_OnWeaponFired )
+	AddLocalPlayerDidDamageCallback( AimTrainer_CL_OnDidDamage )
+	AddCallback_OnClientScriptInit( AimTrainer_CL_RequestDevMenuSync )
+	printt( "[AimTrainer] ClientInit" )
+}
+
+// UI VM outlives level change / restart; this client VM and the server's player struct do not. Pull DevMenu state on init.
+void function AimTrainer_CL_RequestDevMenuSync( entity player )
+{
+	if ( !IsValid( player ) || player != GetLocalClientPlayer() )
+		return
+
+	player.ClientCommand( "dev_aimtrainer sync" )
+	player.ClientCommand( "cafemod sync" )
+	player.ClientCommand( "cafeitems sync" )
+}
+
+var function AimTrainer_CL_HudElementOrNull( string name )
+{
+	try
+	{
+		return HudElement( name )
+	}
+	catch ( errHud )
+	{
+		printt( format( "[AimTrainer] missing HUD element '%s': %s", name, string( errHud ) ) )
+		return null
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Minimap / compass
+// ---------------------------------------------------------------------------
+
+void function AimTrainer_CL_SetMinimapForMode( bool hide )
+{
+	if ( hide )
+	{
+		if ( file.minimapSuppressed )
+			return
+		Minimap_DisableDraw()
+		file.minimapSuppressed = true
+		printt( "[AimTrainer] Minimap disabled (mode)" )
+	}
+	else
+	{
+		if ( !file.minimapSuppressed )
+			return
+		Minimap_EnableDraw()
+		file.minimapSuppressed = false
+		printt( "[AimTrainer] Minimap restored" )
+	}
+}
+
+void function AimTrainer_CL_OnModeEnter()
+{
+	AimTrainer_CL_SetMinimapForMode( true )
+	// Same native-panel kill as FR: ui_targetinfo is aisettings, this zeroes isVisible for every target.
+	HudTargetInfo_Enable( false )
+	printt( "[AimTrainer] native target-info panel disabled (mode)" )
+}
+
+// UI may lag client script reloads -- never let a missing UI symbol kill challenge start.
+void function AimTrainer_CL_PushChallengeFlagToUI()
+{
+	try
+	{
+		RunUIScript( "SetAimTrainerChallengeInProgress", file.challengeActive )
+	}
+	catch ( eUI )
+	{
+		printt( format( "[AimTrainer] PushChallengeFlagToUI failed (restart client to load UI): %s", string( eUI ) ) )
+	}
+}
+
+// Server truth for DevMenu ON/OFF labels -- flags bitfield + duration.
+void function AimTrainer_CL_SyncDevMenuState( int flags, int durationSec )
+{
+	bool hit = ( flags & 1 ) != 0
+	bool shot = ( flags & 2 ) != 0
+	bool kill = ( flags & 4 ) != 0
+	bool dynStats = ( flags & 8 ) != 0
+	bool reconBars = ( flags & 16 ) != 0
+
+	ClDamageHealthBar_SetEnabled( reconBars )
+
+	printt( format( "[AimTrainer] CL SyncDevMenu hit=%s shot=%s kill=%s dyn=%s bars=%s dur=%d",
+		string( hit ), string( shot ), string( kill ), string( dynStats ), string( reconBars ), durationSec ) )
+
+	try
+	{
+		RunUIScript( "AimTrainer_UI_SyncDevMenuState", hit, shot, kill, dynStats, reconBars, durationSec )
+	}
+	catch ( eUI )
+	{
+		printt( format( "[AimTrainer] SyncDevMenuState UI failed (restart client): %s", string( eUI ) ) )
+	}
+}
+
+void function AimTrainer_CL_OnModeExit()
+{
+	AimTrainer_CL_DestroyChallengeTimer()
+	file.challengeActive = false
+	AimTrainer_CL_PushChallengeFlagToUI()
+	AimTrainer_CL_HideDynStatsRUI()
+	AimTrainer_CL_SetMinimapForMode( false )
+	ClDamageHealthBar_SetEnabled( false )
+	if ( !GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_FIRING_RANGE ) && !GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_TRAINING ) )
+		HudTargetInfo_Enable( true )
+	printt( "[AimTrainer] CL ModeExit" )
+}
+
+void function AimTrainer_CL_SetCompassForDynStats( bool dynStatsShowing )
+{
+	var compassRui = GetCompassRui()
+	if ( compassRui == null )
+		return
+
+	if ( dynStatsShowing )
+	{
+		if ( file.compassSuppressed )
+			return
+		RuiSetBool( compassRui, "isVisible", false )
+		file.compassSuppressed = true
+		printt( "[AimTrainer] Compass hidden (dyn stats)" )
+	}
+	else
+	{
+		if ( !file.compassSuppressed )
+			return
+		RuiSetBool( compassRui, "isVisible", true )
+		file.compassSuppressed = false
+		printt( "[AimTrainer] Compass restored" )
+	}
+}
+
+bool function AimTrainer_CL_HudActive()
+{
+	return file.hudVisible || file.challengeActive
+}
+
+// ---------------------------------------------------------------------------
+// Combat counters
+// ---------------------------------------------------------------------------
+
+void function AimTrainer_CL_OnWeaponFired( entity player, entity weapon, string weaponName, int ammoUsed, vector attackOrigin, vector attackDir )
+{
+	if ( !AimTrainer_CL_HudActive() )
+		return
+	if ( !IsValid( player ) || !IsValid( weapon ) || ammoUsed <= 0 )
+		return
+	if ( !InPrediction() || !IsFirstTimePredicted() )
+		return
+
+	if ( weapon.IsWeaponOffhand()
+		 || IsBitFlagSet( weapon.GetWeaponTypeFlags(), WPT_TACTICAL )
+		 || IsBitFlagSet( weapon.GetWeaponTypeFlags(), WPT_ULTIMATE )
+		 || IsBitFlagSet( weapon.GetWeaponTypeFlags(), WPT_GRENADE )
+		 || IsBitFlagSet( weapon.GetWeaponTypeFlags(), WPT_CONSUMABLE )
+		 || IsBitFlagSet( weapon.GetWeaponTypeFlags(), WPT_SURVIVAL ) )
+	{
+		if ( weaponName != "mp_ability_sniper_ult" && weaponName != "mp_weapon_mobile_hmg" )
+			return
+	}
+
+	file.shotsFired += weapon.GetProjectilesPerShot()
+	AimTrainer_CL_UpdateStatsRUI()
+}
+
+void function AimTrainer_CL_OnDidDamage( entity attacker, entity victim, vector damagePosition, int damageType, float damageAmount )
+{
+	if ( !AimTrainer_CL_HudActive() )
+		return
+	if ( !IsValid( attacker ) || !IsValid( victim ) || !attacker.IsPlayer() )
+		return
+
+	bool isBullet = IsBitFlagSet( damageType, DF_BULLET )
+	bool isSniper = IsBitFlagSet( damageType, DF_SNIPER )
+	bool isMelee = IsBitFlagSet( damageType, DF_MELEE )
+	bool isHeadshot = IsBitFlagSet( damageType, DF_HEADSHOT )
+	bool isShieldBreak = IsBitFlagSet( damageType, DF_SHIELD_BREAK )
+	bool isShieldDamage = IsBitFlagSet( damageType, DF_SHIELD_DAMAGE )
+
+	if ( damageAmount <= 0 || isMelee || !isBullet )
+	{
+		if ( !isSniper )
+			return
+	}
+
+	int damageInt = int( damageAmount )
+	if ( isShieldBreak )
+	{
+		if ( !isShieldDamage )
+		{
+			file.damage += float( damageInt )
+			AimTrainer_CL_UpdateStatsRUI()
+			return
+		}
+	}
+
+	file.damage += float( damageInt )
+	file.shotsHit++
+	if ( isHeadshot )
+		file.critShotsHit++
+
+	AimTrainer_CL_UpdateStatsRUI()
+}
+
+void function AimTrainer_CL_OnDummieKilled()
+{
+	if ( !AimTrainer_CL_HudActive() )
+		return
+	file.kills++
+	AimTrainer_CL_UpdateStatsRUI()
+}
+
+void function AimTrainer_CL_ZeroCurrent()
+{
+	file.shotsFired = 0
+	file.damage = 0.0
+	file.shotsHit = 0
+	file.critShotsHit = 0
+	file.kills = 0
+}
+
+void function AimTrainer_CL_SnapshotLast()
+{
+	file.lastShotsFired = file.shotsFired
+	file.lastDamage = file.damage
+	file.lastShotsHit = file.shotsHit
+	file.lastCritShotsHit = file.critShotsHit
+	file.lastKills = file.kills
+}
+
+void function AimTrainer_CL_ResetStats()
+{
+	entity player = GetLocalViewPlayer()
+	if ( IsValid( player ) )
+		EmitSoundOnEntity( player, AIMTRAINER_SFX_DYNSTAT_RESET )
+
+	AimTrainer_CL_SnapshotLast()
+	AimTrainer_CL_ZeroCurrent()
+	AimTrainer_CL_UpdateStatsRUI()
+	printt( format( "[AimTrainer] CL ResetStats challengeActive=%s", string( file.challengeActive ) ) )
+}
+
+// Hold-R: practice = snapshot+zero. Challenge = full lifecycle restart of same run.
+void function AimTrainer_CL_ResetStatsAndMaybeRestartChallenge()
+{
+	if ( file.challengeActive )
+	{
+		// Dismiss recap if player hold-R during post panel.
+		AimTrainer_CL_DestroyRecap()
+
+		entity player = GetLocalViewPlayer()
+		if ( IsValid( player ) )
+			EmitSoundOnEntity( player, AIMTRAINER_SFX_DYNSTAT_RESET )
+
+		AimTrainer_CL_SnapshotLast()
+		AimTrainer_CL_ZeroCurrent()
+		AimTrainer_CL_UpdateStatsRUI()
+		printt( "[AimTrainer] Hold-R full challenge restart request" )
+		Remote_ServerCallFunction( "AimTrainer_SV_OnStatsReset" )
+		return
+	}
+
+	AimTrainer_CL_ResetStats()
+}
+
+void function AimTrainer_CL_RegisterResetInput()
+{
+	if ( file.resetInputRegistered )
+		return
+	RegisterButtonPressedCallback( file.resetStatsButton, AimTrainer_CL_OnReloadHoldResetController )
+	RegisterConCommandTriggeredCallback( "+reload", AimTrainer_CL_OnReloadHoldResetPC )
+	file.resetInputRegistered = true
+}
+
+void function AimTrainer_CL_DeregisterResetInput()
+{
+	if ( !file.resetInputRegistered )
+		return
+	DeregisterButtonPressedCallback( file.resetStatsButton, AimTrainer_CL_OnReloadHoldResetController )
+	DeregisterConCommandTriggeredCallback( "+reload", AimTrainer_CL_OnReloadHoldResetPC )
+	file.resetInputRegistered = false
+}
+
+void function AimTrainer_CL_OnReloadHoldResetController( var button )
+{
+	if ( !file.hudVisible || file.dynamicStatsRui == null )
+		return
+
+	thread function() : ()
+	{
+		entity player = GetLocalViewPlayer()
+		if ( !IsValid( player ) )
+			return
+		EndSignal( player, "OnDestroy" )
+
+		float endTime = ClientTime() + 1.0
+		RuiSetGameTime( file.dynamicStatsRui, "reloadStartTime", ClientTime() )
+		EmitSoundOnEntity( player, AIMTRAINER_SFX_DYNSTAT_HOLD )
+
+		while ( InputIsButtonDown( file.resetStatsButton ) && Time() < endTime )
+		{
+			WaitFrame()
+			if ( !IsValid( player ) )
+				return
+		}
+
+		if ( InputIsButtonDown( file.resetStatsButton ) )
+			AimTrainer_CL_ResetStatsAndMaybeRestartChallenge()
+		else if ( file.dynamicStatsRui != null )
+			RuiSetGameTime( file.dynamicStatsRui, "reloadStartTime", RUI_BADGAMETIME )
+
+		if ( IsValid( player ) )
+			StopSoundOnEntity( player, AIMTRAINER_SFX_DYNSTAT_HOLD )
+	}()
+}
+
+void function AimTrainer_CL_OnReloadHoldResetPC( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+	if ( !file.hudVisible || file.dynamicStatsRui == null )
+		return
+
+	thread function() : ( player )
+	{
+		player.EndSignal( "OnDestroy" )
+
+		float endTime = ClientTime() + 1.0
+		RuiSetGameTime( file.dynamicStatsRui, "reloadStartTime", ClientTime() )
+		EmitSoundOnEntity( player, AIMTRAINER_SFX_DYNSTAT_HOLD )
+
+		while ( player.IsInputCommandHeld( IN_RELOAD ) && Time() < endTime )
+		{
+			WaitFrame()
+			if ( !IsValid( player ) )
+				return
+		}
+
+		if ( player.IsInputCommandHeld( IN_RELOAD ) )
+			AimTrainer_CL_ResetStatsAndMaybeRestartChallenge()
+		else if ( file.dynamicStatsRui != null )
+			RuiSetGameTime( file.dynamicStatsRui, "reloadStartTime", RUI_BADGAMETIME )
+
+		if ( IsValid( player ) )
+			StopSoundOnEntity( player, AIMTRAINER_SFX_DYNSTAT_HOLD )
+	}()
+}
+
+// ---------------------------------------------------------------------------
+// Dyn stats (top / S21 fullscreen)
+// ---------------------------------------------------------------------------
+
+void function AimTrainer_CL_EnsureDynStatsRUI()
+{
+	if ( file.dynamicStatsRui != null )
+		return
+	file.dynamicStatsRui = CreateFullscreenPostFXRui( $"ui/dynamic_stats_rui.rpak" )
+	printt( format( "[AimTrainer] dynamic_stats fullscreen = %s", string( file.dynamicStatsRui ) ) )
+}
+
+void function AimTrainer_CL_ShowDynStatsRUI()
+{
+	AimTrainer_CL_EnsureDynStatsRUI()
+	if ( file.dynamicStatsRui == null )
+		return
+	if ( file.hudVisible )
+	{
+		AimTrainer_CL_SetCompassForDynStats( true )
+		AimTrainer_CL_RegisterResetInput()
+		return
+	}
+
+	RuiSetGameTime( file.dynamicStatsRui, "animateInTime", ClientTime() )
+	RuiSetBool( file.dynamicStatsRui, "animateInOut", true )
+	file.hudVisible = true
+	AimTrainer_CL_SetCompassForDynStats( true )
+	AimTrainer_CL_RegisterResetInput()
+	AimTrainer_CL_UpdateStatsRUI()
+}
+
+void function AimTrainer_CL_HideDynStatsRUI()
+{
+	if ( !file.hudVisible || file.dynamicStatsRui == null )
+		return
+	RuiSetGameTime( file.dynamicStatsRui, "animateOutTime", ClientTime() )
+	RuiSetBool( file.dynamicStatsRui, "animateInOut", false )
+	file.hudVisible = false
+	AimTrainer_CL_DeregisterResetInput()
+	if ( !file.challengeActive )
+		AimTrainer_CL_SetCompassForDynStats( false )
+}
+
+void function AimTrainer_CL_ShowDynStats( bool show )
+{
+	if ( show )
+		AimTrainer_CL_ShowDynStatsRUI()
+	else if ( !file.challengeActive )
+		AimTrainer_CL_HideDynStatsRUI()
+}
+
+void function AimTrainer_CL_UpdateStatsRUI()
+{
+	if ( file.dynamicStatsRui == null )
+		return
+
+	float accuracy = 0.0
+	if ( file.shotsFired != 0 )
+	{
+		accuracy = ( float( file.shotsHit ) / float( file.shotsFired ) ) * 100.0
+		if ( accuracy > 100.0 )
+			accuracy = 100.0
+	}
+
+	RuiSetFloat( file.dynamicStatsRui, "accuracy", accuracy )
+	RuiSetString( file.dynamicStatsRui, "damageDone", LocalizeAndShortenNumber_Float( file.damage, 5, 2 ) )
+	RuiSetString( file.dynamicStatsRui, "critShots", LocalizeAndShortenNumber_Int( file.critShotsHit, 5, 2 ) )
+	RuiSetString( file.dynamicStatsRui, "shotsFired", LocalizeAndShortenNumber_Int( file.shotsFired, 5, 2 ) )
+	RuiSetString( file.dynamicStatsRui, "kills", LocalizeAndShortenNumber_Int( file.kills, 5, 2 ) )
+
+	float lastAccuracy = 0.0
+	if ( file.lastShotsFired != 0 )
+	{
+		lastAccuracy = ( float( file.lastShotsHit ) / float( file.lastShotsFired ) ) * 100.0
+		if ( lastAccuracy > 100.0 )
+			lastAccuracy = 100.0
+	}
+
+	RuiSetFloat( file.dynamicStatsRui, "lastAccuracy", lastAccuracy )
+	RuiSetString( file.dynamicStatsRui, "lastDamageDone", LocalizeAndShortenNumber_Float( file.lastDamage, 5, 2 ) )
+	RuiSetString( file.dynamicStatsRui, "lastCritShots", LocalizeAndShortenNumber_Int( file.lastCritShotsHit, 5, 2 ) )
+	RuiSetString( file.dynamicStatsRui, "lastShotsFired", LocalizeAndShortenNumber_Int( file.lastShotsFired, 5, 2 ) )
+	RuiSetString( file.dynamicStatsRui, "lastKills", LocalizeAndShortenNumber_Int( file.lastKills, 5, 2 ) )
+}
+
+// ---------------------------------------------------------------------------
+// Live VGUI countdown
+// ---------------------------------------------------------------------------
+
+void function AimTrainer_CL_HideChallengeTimerHud()
+{
+	var text = AimTrainer_CL_HudElementOrNull( AIMTRAINER_HUD_COUNTDOWN )
+	var frame = AimTrainer_CL_HudElementOrNull( AIMTRAINER_HUD_COUNTDOWN_FRAME )
+	if ( text != null )
+		Hud_SetVisible( text, false )
+	if ( frame != null )
+		Hud_SetVisible( frame, false )
+	file.challengeTimerVisible = false
+}
+
+void function AimTrainer_CL_DestroyChallengeTimer()
+{
+	file.challengeTimerGen++
+	entity player = GetLocalClientPlayer()
+	if ( IsValid( player ) )
+		Signal( player, AIMTRAINER_SIGNAL_TIMER_STOP )
+	AimTrainer_CL_HideChallengeTimerHud()
+}
+
+void function AimTrainer_CL_ShowChallengeTimer()
+{
+	AimTrainer_CL_DestroyChallengeTimer()
+	thread AimTrainer_CL_CountdownThread()
+}
+
+void function AimTrainer_CL_CountdownThread()
+{
+	entity player = GetLocalClientPlayer()
+	if ( !IsValid( player ) )
+		return
+
+	file.challengeTimerGen++
+	int myGen = file.challengeTimerGen
+
+	EndSignal( player, AIMTRAINER_SIGNAL_TIMER_STOP )
+	EndSignal( player, "OnDestroy" )
+
+	var text = AimTrainer_CL_HudElementOrNull( AIMTRAINER_HUD_COUNTDOWN )
+	var frame = AimTrainer_CL_HudElementOrNull( AIMTRAINER_HUD_COUNTDOWN_FRAME )
+	if ( text == null || frame == null )
+	{
+		printt( "[AimTrainer] Countdown VGUI missing -- Countdown/CountdownFrame in hudscripted_mp.res" )
+		return
+	}
+
+	OnThreadEnd(
+		function() : ( myGen )
+		{
+			if ( file.challengeTimerGen != myGen )
+				return
+			AimTrainer_CL_HideChallengeTimerHud()
+		}
+	)
+
+	int remaining = file.challengeDurationSec
+	if ( remaining <= 0 )
+		remaining = int( AIMTRAINER_CHALLENGE_DURATION )
+
+	Hud_SetVisible( frame, true )
+	Hud_SetVisible( text, true )
+	Hud_SetText( text, remaining.tostring() )
+	file.challengeTimerVisible = true
+	printt( format( "[AimTrainer] VGUI Countdown start remaining=%d gen=%d", remaining, myGen ) )
+
+	// Unlimited: keep 999 on screen until challenge ends.
+	if ( remaining == AIMTRAINER_CHALLENGE_DURATION_UNLIMITED )
+	{
+		while ( true )
+		{
+			wait 1.0
+			if ( file.challengeTimerGen != myGen )
+				return
+			if ( text != null )
+				Hud_SetText( text, "999" )
+		}
+	}
+
+	while ( remaining > 0 )
+	{
+		wait 1.0
+		if ( file.challengeTimerGen != myGen )
+			return
+		remaining--
+		if ( text != null )
+			Hud_SetText( text, remaining.tostring() )
+	}
+}
+
+// ---------------------------------------------------------------------------
+// FR recap only (post) + skip
+// ---------------------------------------------------------------------------
+
+void function AimTrainer_CL_DestroyRecap()
+{
+	file.recapGen++
+	entity player = GetLocalClientPlayer()
+	if ( IsValid( player ) )
+		Signal( player, AIMTRAINER_SIGNAL_RECAP_STOP )
+
+	if ( file.recapRui != null )
+	{
+		RuiDestroyIfAlive( file.recapRui )
+		file.recapRui = null
+	}
+}
+
+// Nested post rows -- ServerCallback_FRC_PostGameStats contract.
+void function AimTrainer_CL_ApplyRecapStats( var rui, int kills, float damage, int shotsFired, int shotsHit, int crits )
+{
+	float accuracy = ( shotsFired > 0 ) ? ( float( shotsHit ) / float( shotsFired ) ) * 100.0 : 0.0
+	if ( accuracy > 100.0 )
+		accuracy = 100.0
+
+	RuiSetString( rui, "challengeTitle", "CHALLENGE RESULTS" )
+	RuiSetString( rui, "altIconText", "CHALLENGE RESULTS" )
+	RuiSetString( rui, "challengeScoreText", "#CHALLENGE_TARGETS_DAMAGE" )
+	// Goal already elapsed so the panel is in post/timeout face.
+	RuiSetGameTime( rui, "countdownGoalTime", Time() )
+	RuiSetFloat( rui, "timeOutTime", AIMTRAINER_FRC_RECAP_HOLD )
+	RuiSetInt( rui, "target", int( damage ) )
+	RuiSetInt( rui, "challengeProgress", int( damage ) )
+	RuiSetInt( rui, "totalStatRows", 4 )
+
+	var nestedRui = RuiCreateNested( rui, "stat" + 0 + "NestedHandle", $"ui/fr_challenge_stat_float.rpak" )
+	RuiSetString( nestedRui, "label", Localize( "#FR_CHALLENGE_PG_STAT_1" ) )
+	RuiSetFloat( nestedRui, "value", accuracy )
+
+	nestedRui = RuiCreateNested( rui, "stat" + 1 + "NestedHandle", $"ui/fr_challenge_stat_int.rpak" )
+	RuiSetString( nestedRui, "label", Localize( "#FR_CHALLENGE_PG_STAT_4" ) )
+	RuiSetInt( nestedRui, "value", shotsHit )
+
+	nestedRui = RuiCreateNested( rui, "stat" + 2 + "NestedHandle", $"ui/fr_challenge_stat_int.rpak" )
+	RuiSetString( nestedRui, "label", Localize( "#FR_CHALLENGE_PG_STAT_3" ) )
+	RuiSetInt( nestedRui, "value", int( damage ) )
+
+	nestedRui = RuiCreateNested( rui, "stat" + 3 + "NestedHandle", $"ui/fr_challenge_stat_int.rpak" )
+	RuiSetString( nestedRui, "label", Localize( "#FR_CHALLENGE_PG_STAT_2" ) )
+	RuiSetInt( nestedRui, "value", crits )
+
+	printt( format( "[AimTrainer] Recap stats acc=%.1f hits=%d dmg=%.0f hs=%d", accuracy, shotsHit, damage, crits ) )
+}
+
+// Skip: attack / jump / use / reload press, or timeout. Hold-R full restart also kills recap.
+bool function AimTrainer_CL_RecapSkipPressed( entity player )
+{
+	if ( !IsValid( player ) )
+		return false
+
+	if ( player.IsInputCommandPressed( IN_ATTACK ) )
+		return true
+	if ( player.IsInputCommandPressed( IN_JUMP ) )
+		return true
+	if ( player.IsInputCommandPressed( IN_USE ) )
+		return true
+	if ( player.IsInputCommandPressed( IN_RELOAD ) )
+		return true
+
+	// Controller face / confirm equivalents where available.
+	if ( InputIsButtonDown( BUTTON_A ) || InputIsButtonDown( BUTTON_X ) || InputIsButtonDown( BUTTON_B ) )
+		return true
+
+	return false
+}
+
+void function AimTrainer_CL_RecapHoldThread( int myGen )
+{
+	entity player = GetLocalClientPlayer()
+	if ( !IsValid( player ) )
+		return
+
+	EndSignal( player, "OnDestroy" )
+	EndSignal( player, AIMTRAINER_SIGNAL_RECAP_STOP )
+
+	OnThreadEnd(
+		function() : ( myGen )
+		{
+			if ( file.recapGen != myGen )
+				return
+			if ( file.recapRui != null )
+			{
+				RuiDestroyIfAlive( file.recapRui )
+				file.recapRui = null
+			}
+		}
+	)
+
+	// Brief grace so the press that stopped the challenge cannot auto-skip.
+	wait 0.25
+
+	float endTime = Time() + AIMTRAINER_FRC_RECAP_HOLD
+	printt( format( "[AimTrainer] Recap open -- skip: attack/jump/use/reload (or wait %.0fs)", AIMTRAINER_FRC_RECAP_HOLD ) )
+
+	while ( Time() < endTime )
+	{
+		if ( file.recapGen != myGen )
+			return
+		if ( AimTrainer_CL_RecapSkipPressed( player ) )
+		{
+			printt( "[AimTrainer] Recap skipped by input" )
+			return
+		}
+		WaitFrame()
+	}
+
+	printt( "[AimTrainer] Recap timeout" )
+}
+
+void function AimTrainer_CL_ShowFRCRecap( int kills, float damage, int shotsFired, int shotsHit, int crits )
+{
+	AimTrainer_CL_DestroyRecap()
+
+	file.recapGen++
+	int myGen = file.recapGen
+
+	var rui = CreateCockpitPostFXRui( $"ui/fr_challenge_timer.rpak", 0 )
+	file.recapRui = rui
+	if ( rui == null )
+	{
+		printt( "[AimTrainer] fr_challenge_timer recap Create FAILED" )
+		return
+	}
+
+	AimTrainer_CL_ApplyRecapStats( rui, kills, damage, shotsFired, shotsHit, crits )
+	thread AimTrainer_CL_RecapHoldThread( myGen )
+}
+
+// ---------------------------------------------------------------------------
+// Challenge lifecycle
+// ---------------------------------------------------------------------------
+
+// Same description RUI the original aim trainer used: id_dev_text on a plane
+// slightly above screen center, alive only for the pre-start window.
+void function AimTrainer_CL_IntroDescriptionThread()
+{
+	entity player = GetLocalClientPlayer()
+	if ( !IsValid( player ) )
+		return
+
+	player.EndSignal( "OnDestroy" )
+	EndSignal( player, AIMTRAINER_SIGNAL_TIMER_STOP )
+
+	UISize screenSize = GetScreenSize()
+	var topo = RuiTopology_CreatePlane(
+		< 0, screenSize.height * -0.1, 0 >,
+		< float( screenSize.width ), 0, 0 >,
+		< 0, float( screenSize.height ), 0 >,
+		false )
+	var rui = RuiCreate( $"ui/id_dev_text.rpak", topo, RUI_DRAW_HUD, 0 )
+	if ( rui == null )
+	{
+		printt( "[AimTrainer] id_dev_text intro Create FAILED" )
+		return
+	}
+
+	OnThreadEnd(
+		function() : ( rui )
+		{
+			RuiDestroyIfAlive( rui )
+		}
+	)
+
+	float duration = AIMTRAINER_PRE_START_TIME - 0.01
+	RuiSetFloat( rui, "startTime", Time() )
+	RuiSetString( rui, "speaker", "" )
+	RuiSetString( rui, "text", AIMTRAINER_INTRO_TEXT )
+	RuiSetFloat( rui, "duration", duration )
+	RuiSetResolutionToScreenSize( rui )
+	printt( format( "[AimTrainer] Intro: %s", AIMTRAINER_INTRO_TEXT ) )
+
+	wait duration
+}
+
+// ---------------------------------------------------------------------------
+// Post-challenge restart offer
+// ---------------------------------------------------------------------------
+
+void function AimTrainer_CL_CancelRestartPrompt()
+{
+	file.restartPromptGen++
+
+	if ( file.restartPromptRegistered )
+	{
+		DeregisterButtonPressedCallback( file.resetStatsButton, AimTrainer_CL_OnRestartPromptController )
+		DeregisterConCommandTriggeredCallback( "+reload", AimTrainer_CL_OnRestartPromptPC )
+		file.restartPromptRegistered = false
+	}
+
+	if ( file.restartPromptRui != null )
+	{
+		RuiDestroyIfAlive( file.restartPromptRui )
+		file.restartPromptRui = null
+	}
+}
+
+void function AimTrainer_CL_AcceptRestartPrompt()
+{
+	if ( !file.restartPromptRegistered )
+		return
+
+	AimTrainer_CL_CancelRestartPrompt()
+	AimTrainer_CL_DestroyRecap()
+	Remote_ServerCallFunction( "AimTrainer_SV_RestartLastChallenge" )
+	printt( "[AimTrainer] Restart challenge accepted" )
+}
+
+void function AimTrainer_CL_OnRestartPromptController( var button )
+{
+	AimTrainer_CL_AcceptRestartPrompt()
+}
+
+void function AimTrainer_CL_OnRestartPromptPC( entity player )
+{
+	AimTrainer_CL_AcceptRestartPrompt()
+}
+
+// The run is over and the mode kit is gone -- offer the same drill back for one keypress.
+void function AimTrainer_CL_OfferRestartChallenge()
+{
+	AimTrainer_CL_CancelRestartPrompt()
+
+	entity player = GetLocalClientPlayer()
+	if ( !IsValid( player ) )
+		return
+
+	var rui = CreateFullscreenRui( $"ui/tutorial_hint_line.rpak" )
+	if ( rui == null )
+	{
+		printt( "[AimTrainer] tutorial_hint_line restart prompt Create FAILED" )
+		return
+	}
+
+	RuiSetString( rui, "buttonText", AIMTRAINER_RESTART_BIND_TOKEN )
+	RuiSetString( rui, "gamepadButtonText", AIMTRAINER_RESTART_BIND_TOKEN )
+	RuiSetString( rui, "hintText", "Restart challenge" )
+	RuiSetInt( rui, "hintOffset", 0 )
+	RuiSetBool( rui, "hideWithMenus", true )
+	file.restartPromptRui = rui
+
+	RegisterButtonPressedCallback( file.resetStatsButton, AimTrainer_CL_OnRestartPromptController )
+	RegisterConCommandTriggeredCallback( "+reload", AimTrainer_CL_OnRestartPromptPC )
+	file.restartPromptRegistered = true
+
+	int myGen = file.restartPromptGen
+	thread function() : ( player, myGen )
+	{
+		player.EndSignal( "OnDestroy" )
+
+		OnThreadEnd(
+			function() : ( myGen )
+			{
+				if ( file.restartPromptGen == myGen )
+					AimTrainer_CL_CancelRestartPrompt()
+			}
+		)
+
+		wait AIMTRAINER_RESTART_PROMPT_DURATION
+	}()
+
+	printt( format( "[AimTrainer] Restart prompt shown for %.1fs", AIMTRAINER_RESTART_PROMPT_DURATION ) )
+}
+
+// durationSec, freeroamMode (desc), skipIntro (1 = hold-R / no freeze wait on client UI)
+// Remote type is exact void functionref( int, int, int ) -- no default args.
+void function AimTrainer_CL_ChallengeStart( int durationSec, int freeroamMode, int skipIntro )
+{
+	// New run clears any leftover recap + prior intro/timer threads.
+	AimTrainer_CL_CancelRestartPrompt()
+	AimTrainer_CL_DestroyRecap()
+	AimTrainer_CL_DestroyChallengeTimer()
+
+	if ( durationSec <= 0 )
+		durationSec = int( AIMTRAINER_CHALLENGE_DURATION )
+	file.challengeDurationSec = durationSec
+
+	file.challengeActive = true
+	AimTrainer_CL_ZeroCurrent()
+	AimTrainer_CL_SetMinimapForMode( true )
+	// ESC SystemMenu shows FINISH CHALLENGE while this is true.
+	AimTrainer_CL_PushChallengeFlagToUI()
+
+	bool doIntro = ( skipIntro == 0 ) && ( AIMTRAINER_PRE_START_TIME > 0.0 )
+	if ( doIntro )
+	{
+		thread AimTrainer_CL_IntroDescriptionThread()
+		// Delay dyn stats + countdown until freeze ends (server waits same PRE_START).
+		thread function() : ( durationSec, freeroamMode )
+		{
+			entity player = GetLocalClientPlayer()
+			if ( !IsValid( player ) )
+				return
+			player.EndSignal( "OnDestroy" )
+			EndSignal( player, AIMTRAINER_SIGNAL_TIMER_STOP )
+			wait AIMTRAINER_PRE_START_TIME
+			if ( !file.challengeActive )
+				return
+			AimTrainer_CL_ShowDynStatsRUI()
+			// ShowChallengeTimer Signals TIMER_STOP, which kills THIS thread (EndSignaled above).
+			thread AimTrainer_CL_CountdownThread()
+			AimTrainer_CL_UpdateStatsRUI()
+			printt( format( "[AimTrainer] CL ChallengeStart post-intro duration=%ds mode=%d", durationSec, freeroamMode ) )
+		}()
+		printt( format( "[AimTrainer] CL ChallengeStart intro duration=%ds mode=%d", durationSec, freeroamMode ) )
+		return
+	}
+
+	AimTrainer_CL_ShowDynStatsRUI()
+	AimTrainer_CL_ShowChallengeTimer()
+	AimTrainer_CL_UpdateStatsRUI()
+	printt( format( "[AimTrainer] CL ChallengeStart duration=%ds mode=%d skipIntro=%d", durationSec, freeroamMode, skipIntro ) )
+}
+
+void function AimTrainer_CL_RestartChallengeTimer()
+{
+	if ( !file.challengeActive )
+		return
+	AimTrainer_CL_DestroyRecap()
+	AimTrainer_CL_ShowChallengeTimer()
+	printt( "[AimTrainer] CL Challenge timer restarted (VGUI)" )
+}
+
+void function AimTrainer_CL_ChallengeEnd()
+{
+	if ( !file.challengeActive && !file.challengeTimerVisible && file.recapRui == null )
+		return
+
+	int kills = file.kills
+	float damage = file.damage
+	int shotsFired = file.shotsFired
+	int shotsHit = file.shotsHit
+	int crits = file.critShotsHit
+
+	printt( format( "[AimTrainer] CL ChallengeEnd shots=%d dmg=%.0f hits=%d crits=%d kills=%d",
+		shotsFired, damage, shotsHit, crits, kills ) )
+
+	AimTrainer_CL_DestroyChallengeTimer()
+	// Snapshot -> previous, zero current (hold-R contract).
+	AimTrainer_CL_ResetStats()
+	file.challengeActive = false
+	AimTrainer_CL_PushChallengeFlagToUI()
+	// Dyn stats are challenge-only -- hide when the run ends (recap is separate).
+	AimTrainer_CL_HideDynStatsRUI()
+
+	// FR recap only (skippable).
+	AimTrainer_CL_ShowFRCRecap( kills, damage, shotsFired, shotsHit, crits )
+}
+
+// ---------------------------------------------------------------------------
+// Dev probes
+// ---------------------------------------------------------------------------
+
+void function AimTrainer_CL_FlashChallengeResults( int kills, float damage, int shotsFired, int shotsHit, int crits )
+{
+	entity player = GetLocalClientPlayer()
+	if ( !IsValid( player ) )
+		return
+
+	float acc = 0.0
+	if ( shotsFired > 0 )
+	{
+		acc = ( float( shotsHit ) / float( shotsFired ) ) * 100.0
+		if ( acc > 100.0 )
+			acc = 100.0
+	}
+
+	string line = format( "%d kills  |  %.0f dmg  |  %d hits  |  %d hs  |  %.0f%%",
+		kills, damage, shotsHit, crits, acc )
+
+	AnnouncementData announcement = Announcement_Create( "CHALLENGE OVER" )
+	Announcement_SetSubText( announcement, line )
+	Announcement_SetStyle( announcement, ANNOUNCEMENT_STYLE_RESULTS )
+	Announcement_SetDuration( announcement, AIMTRAINER_RESULTS_ANNOUNCE_DURATION )
+	Announcement_SetPurge( announcement, true )
+	Announcement_SetHideOnDeath( announcement, false )
+	Announcement_SetPriority( announcement, 200 )
+	Announcement_SetSoundAlias( announcement, "UI_Menu_MatchSummary_Appear" )
+	AnnouncementFromClass( player, announcement )
+	printt( format( "[AimTrainer] Results announce: %s", line ) )
+}
+
+void function AimTrainer_CL_DevPreviewResults()
+{
+	int kills = file.kills
+	float damage = file.damage
+	int shotsFired = file.shotsFired
+	int shotsHit = file.shotsHit
+	int crits = file.critShotsHit
+
+	if ( kills == 0 && damage <= 0.0 && shotsFired == 0 )
+	{
+		kills = 12
+		damage = 1840.0
+		shotsFired = 48
+		shotsHit = 31
+		crits = 9
+		printt( "[AimTrainer] DevPreviewResults using demo numbers" )
+	}
+
+	AimTrainer_CL_FlashChallengeResults( kills, damage, shotsFired, shotsHit, crits )
+}
+
+void function AimTrainer_CL_DevPreviewFRCRecap()
+{
+	int kills = file.kills
+	float damage = file.damage
+	int shotsFired = file.shotsFired
+	int shotsHit = file.shotsHit
+	int crits = file.critShotsHit
+
+	if ( kills == 0 && damage <= 0.0 && shotsFired == 0 )
+	{
+		kills = 12
+		damage = 1840.0
+		shotsFired = 48
+		shotsHit = 31
+		crits = 9
+		printt( "[AimTrainer] DevPreviewFRCRecap using demo numbers" )
+	}
+
+	AimTrainer_CL_ShowFRCRecap( kills, damage, shotsFired, shotsHit, crits )
+}

@@ -1,0 +1,17 @@
+# Chat lines. Edit this file, then changelevel (or restart the dedi).
+#
+# kind:    rotate  = looping server messages
+#          welcome = shown once after a player joins
+# tag:     cyan prefix, e.g. [Flowstate]. Blank = none.
+# text:    the line. Max 64 characters. Quote the cell if it has a comma.
+# color:   blank/white, red, gold, green, cyan, rainbow, or 255 80 80
+# sustain: seconds fully visible. Blank = 8
+# fade:    seconds to fade out. Blank = 2
+# wait:    rotate  = seconds until the next rotate line. Blank = 60
+#          welcome = seconds after join before it shows. Blank = 10
+#
+kind,tag,text,color,sustain,fade,wait
+string,string,string,string,float,float,float
+rotate,[Flowstate],Have fun and be respectful.,,8,2,60
+rotate,[Flowstate],Join the community at play.r5flowstate.org,,8,2,60
+welcome,,Welcome to R5Flowstate! Good luck out there,green,8,2,10

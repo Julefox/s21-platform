@@ -1,0 +1,106 @@
+//
+
+
+/////////////
+/////////////
+//// HEH ////
+/////////////
+/////////////
+// see sh_ehi.gnut
+
+global typedef EncodedEHandle int
+global const EncodedEHandle EncodedEHandle_null = 0
+
+#if SERVER
+
+global typedef EHI entity
+global const EHI EHI_null = null
+
+#elseif CLIENT || UI
+
+global typedef EHI EncodedEHandle
+global const EHI EHI_null = EncodedEHandle_null
+
+#endif
+
+
+#if SERVER || CLIENT || UI
+global struct EHIScriptStruct
+{
+	EHI ehi
+
+	// general cached data
+	bool isPlayer = false
+	bool isConnected = false
+	string name = ""
+	string tag = ""
+	int  team = TEAM_INVALID
+	int  teamMemberIndex
+	int platformID = -1
+	#if CLIENT || UI
+		bool   isLocalClientPlayer = false
+	#endif
+
+	// loadouts
+	#if SERVER
+		bool isValidated = false
+		bool HACK_wasJustValidated = false // TODO - R5DEV-356547: DELETE ME! Once Loadout refactor is complete
+		// Authoritative copy of this player's loadout slot writes; engine pdata on
+		// this server does not round-trip them for every player class.
+		table<string, int> loadoutSlotShadow
+	#endif
+	#if SERVER || CLIENT || UI
+		table<int, array<void functionref( EHI, ItemFlavor )> > itemFlavorLoadoutSlotChangedCallbacksMap
+	#endif
+	#if CLIENT
+		array<int> netVarsLastSeenValuesMap
+		string obfuscatedID = ""
+		string uid
+		string unspoofedUid
+		string playerEAID
+		string hardware
+	#endif
+	#if UI
+		array<int> loadoutSlotsLastSeenContentsMap
+	#endif
+
+	// commentary
+	#if SERVER
+		int kills = 0
+	#endif
+
+	// stats
+	#if SERVER
+		int  gaveFinisherCount = 0
+		bool noWitnessess = true // no enemies downed were revived or respawned
+		int  gotDownedCount = 0
+	#endif
+
+	//Ranked: Available on Server, Client and UI, only really read from Client and UI.
+	int rankScore = -1 //SHARED_RANKED_INVALID_RANK_SCORE
+	int rankedLadderPosition = -1 // SHARED_RANKED_INVALID_LADDER_POSITION
+	table< string, int > platformLadderPosition = {}
+
+	int rankScorePrevSeason = -1 //SHARED_RANKED_INVALID_RANK_SCORE
+	int rankedLadderPositionPrevSeason = -1 // SHARED_RANKED_INVALID_LADDER_POSITION
+
+	                     
+		int arenasRankScore = 0 //ARENAS_RANKED_PLACEMENT_SCORE
+		int arenasRankedLadderPosition = -1 // SHARED_RANKED_INVALID_LADDER_POSITION
+       
+
+	//Clubs
+	string clubName = ""
+	string clubTag = ""
+	string clubLogo = ""
+
+	array< ItemFlavor > legendaryItemsOwnedByPlayer = []
+}
+#endif
+
+
+#if SERVER
+global typedef EHISignalDummy entity
+#elseif CLIENT || UI
+global typedef EHISignalDummy EHIScriptStruct
+#endif

@@ -1,0 +1,66 @@
+// Map editor shared gate and constants.
+// Mode reuses SURVIVAL inits and self-gates on the playlist var.
+
+global function MapEditor_IsEnabled
+global function MapEditor_SharedInit
+
+global const int   MAPEDIT_PROP_CAP_GLOBAL   = 1500
+global const int   MAPEDIT_PROP_CAP_PLAYER   = 300
+global const float MAPEDIT_MAX_PLACE_DIST    = 4096.0
+global const float MAPEDIT_WORLD_LIMIT       = 65536.0
+global const float MAPEDIT_ANGLE_LIMIT       = 1000000.0
+global const int   MAPEDIT_PLACE_RATE_MAX    = 10
+global const float MAPEDIT_PLACE_RATE_WINDOW = 1.0
+global const int   MAPEDIT_UNDO_DEPTH        = 64
+
+// Models precached for the editor, on top of everything the map already
+// precaches. Kept small on purpose: model indices past 8192 leave the client's
+// inline precache array and land in a shadow buffer, and a big map plus a big
+// editor list is enough to cross that line and take the client down during
+// signon. Raising this needs the resulting index range measured first.
+global const int   MAPEDIT_PRECACHE_MAX      = 256
+
+// Extended palette / zipline
+global const float MAPEDIT_ZIPLINE_MAX_DIST  = 8192.0
+global const float MAPEDIT_JUMP_PAD_RADIUS   = 32.0
+global const float MAPEDIT_JUMP_PAD_HEIGHT   = 32.0
+global const float MAPEDIT_JUMP_PAD_BELOW    = 16.0
+global const float MAPEDIT_JUMP_PAD_VELOCITY = 1150.0
+global const float MAPEDIT_JUMP_PAD_VERT     = 2.0
+global const float MAPEDIT_DOOR_DOUBLE_GAP   = 64.0
+
+// Client tool
+global const float MAPEDIT_TRACE_DIST        = 4000.0
+global const float MAPEDIT_Z_STEP            = 16.0
+global const float MAPEDIT_Z_LIMIT           = 2048.0
+global const int   MAPEDIT_ANGLE_STEP        = 15
+
+// Seconds for the drawn preview to catch up to where the trace says it goes.
+global const float MAPEDIT_GHOST_SMOOTH_TIME = 0.05
+// Past this jump the preview cuts instead of sliding, so looking from a near
+// wall to the skybox does not drag the model across the level.
+global const float MAPEDIT_GHOST_CUT_DIST    = 600.0
+
+// Bind panel elements, added to resource/ui/hudscripted_mp.res.
+global const string MAPEDIT_HUD_FRAME        = "MapEditFrame"
+global const string MAPEDIT_HUD_TITLE        = "MapEditTitle"
+global const string MAPEDIT_HUD_STATUS       = "MapEditStatus"
+global const string MAPEDIT_HUD_HINT_PREFIX  = "MapEditHint"
+global const int    MAPEDIT_HUD_HINT_COUNT   = 12
+
+bool function MapEditor_IsEnabled()
+{
+#if SERVER || CLIENT
+	return GetCurrentPlaylistVarBool( "mapeditor_enabled", false )
+#else
+	return false
+#endif
+}
+
+void function MapEditor_SharedInit()
+{
+	if ( !MapEditor_IsEnabled() )
+		return
+
+	printt( "[MAPEDIT] shared init" )
+}

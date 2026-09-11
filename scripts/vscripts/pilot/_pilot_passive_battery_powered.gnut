@@ -1,0 +1,43 @@
+global function PassiveBatteryPowered_Init
+
+void function PassiveBatteryPowered_Init()
+{
+	//Bleedout_AddCallback_OnPlayerGotFirstAid( PassiveBatteryPowered_OnPlayerGotFirstAid )
+	#if SERVER
+		AddCallback_OnPassiveChanged( ePassives.PAS_BATTERY_POWERED, BatteryPowered_PassiveToggle )
+	#endif
+}
+
+void function PassiveBatteryPowered_OnPlayerGotFirstAid( entity target, entity reviver )
+{
+	if ( PlayerHasPassive( reviver, ePassives.PAS_BATTERY_POWERED ) || PlayerHasPassive( target, ePassives.PAS_BATTERY_POWERED ) )
+	{
+		int shieldHealthMax = target.GetShieldHealthMax()
+		target.SetShieldHealth( shieldHealthMax )
+	}
+}
+
+#if SERVER
+void function BatteryPowered_PassiveToggle( entity player, int passive, bool didHave, bool nowHas )
+{
+	if ( !IsAlive( player ) )
+		return
+
+	array<ConsumableInventoryItem> playerInventory = SURVIVAL_GetPlayerInventory( player )
+	
+	//Clear excess ultimate accelerants
+	if ( didHave )
+	{
+		SURVIVAL_ClearExcessInventoryItems( player, playerInventory )
+		SURVIVAL_ConsolidateInventoryItems( player, playerInventory )
+		SetPlayerInventory( player, playerInventory )
+	}
+
+	//Stack ultimate accelerants that are spread out
+	if ( nowHas )
+	{
+		SURVIVAL_ConsolidateInventoryItems( player, playerInventory )
+		SetPlayerInventory( player, playerInventory )
+	}
+}
+#endif // #if SERVER

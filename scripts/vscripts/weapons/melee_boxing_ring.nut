@@ -1,0 +1,22 @@
+global function MeleeBoxingRing_Init
+
+global function OnWeaponActivate_melee_boxing_ring
+global function OnWeaponDeactivate_melee_boxing_ring
+
+
+void function MeleeBoxingRing_Init()
+{
+	//future: precache particles etc.
+}
+
+// this weapon is only used for attacks (not "primary weapon" idling onscreen)
+// - activate = attack start; deactivate = attack finished
+void function OnWeaponActivate_melee_boxing_ring( entity weapon )
+{
+	//printt( "melee_pathfinder_gloves activated" )
+}
+
+void function OnWeaponDeactivate_melee_boxing_ring( entity weapon )
+{
+	//printt( "melee_pathfinder_gloves deactivated" )
+}

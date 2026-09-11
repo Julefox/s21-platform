@@ -1,0 +1,386 @@
+// Freeroam weapons menu -- triple-VM safe shared helpers.
+// SERVER: kit resolve + slot/tier parse only.
+// UI/CLIENT: catalog browse (ItemFlavor + Localize).
+// Equip is server-only (sv_freeroam_weapons_menu).
+
+untyped
+
+global function FreeroamWeaponsMenu_ResolveKitRef
+global function FreeroamWeaponsMenu_IsExcludedBaseWeapon
+global function FreeroamWeaponsMenu_ClassnameEndsWithCrate
+global function FreeroamWeaponsMenu_IsCarePackageRef
+global function FreeroamWeaponsMenu_SlotFromArg
+global function FreeroamWeaponsMenu_TierFromArg
+#if UI || CLIENT
+global function FreeroamWeaponsMenu_GetCategoryWeapons
+global function FreeroamWeaponsMenu_DisplayNameForBase
+#endif
+
+global const string FREEROAM_WM_TIER_AUTO = "auto"
+global const string FREEROAM_WM_TIER_GOLD = "gold"
+global const string FREEROAM_WM_TIER_PURPLE = "purple"
+global const string FREEROAM_WM_TIER_BLUE = "blue"
+global const string FREEROAM_WM_TIER_WHITE = "white"
+global const string FREEROAM_WM_TIER_BARE = "bare"
+
+// Match sh_survival_loot WEAPON_LOCKEDSET_SUFFIX_* (local for UI without loot headers).
+global const string FREEROAM_WM_SUFFIX_GOLD = "_gold"
+global const string FREEROAM_WM_SUFFIX_PURPLE = "_purpleset"
+global const string FREEROAM_WM_SUFFIX_BLUE = "_blueset"
+global const string FREEROAM_WM_SUFFIX_WHITE = "_whiteset"
+global const string FREEROAM_WM_SUFFIX_CRATE = "_crate"
+
+// Gold-first walk for freeroam defaults.
+global const array<string> FREEROAM_WM_KIT_WALK = [
+	FREEROAM_WM_SUFFIX_GOLD,
+	FREEROAM_WM_SUFFIX_PURPLE,
+	FREEROAM_WM_SUFFIX_BLUE,
+	FREEROAM_WM_SUFFIX_WHITE,
+	"",
+]
+
+// Engine WEAPON_INVENTORY_SLOT_PRIMARY_* is not registered on UI VM.
+// S21 primary mains are 0/1 (same values the engine uses on SERVER/CLIENT).
+global const int FREEROAM_WM_SLOT_PRIMARY_0 = 0
+global const int FREEROAM_WM_SLOT_PRIMARY_1 = 1
+
+const array<string> FREEROAM_WM_EXCLUDE_SUBSTR = [
+	"mobile_hmg",
+	"mounted_turret",
+	"npc_",
+	"mp_ability_",
+	"melee_",
+	"emptyhanded",
+	"consumable",
+	"incap_shield",
+	"dummy",
+]
+
+const array<string> FREEROAM_WM_KIT_SUFFIXES = [
+	FREEROAM_WM_SUFFIX_GOLD,
+	FREEROAM_WM_SUFFIX_PURPLE,
+	FREEROAM_WM_SUFFIX_BLUE,
+	FREEROAM_WM_SUFFIX_WHITE,
+	"_paintball",
+	"_cupid",
+]
+
+string function FreeroamWeaponsMenu_SuffixForTier( string tier )
+{
+	switch ( tier )
+	{
+		case FREEROAM_WM_TIER_GOLD:
+			return FREEROAM_WM_SUFFIX_GOLD
+		case FREEROAM_WM_TIER_PURPLE:
+			return FREEROAM_WM_SUFFIX_PURPLE
+		case FREEROAM_WM_TIER_BLUE:
+			return FREEROAM_WM_SUFFIX_BLUE
+		case FREEROAM_WM_TIER_WHITE:
+			return FREEROAM_WM_SUFFIX_WHITE
+		case FREEROAM_WM_TIER_BARE:
+			return ""
+	}
+	return "auto"
+}
+
+bool function FreeroamWeaponsMenu_LooksLikeKitSuffixRef( string ref )
+{
+	foreach ( string suffix in FREEROAM_WM_KIT_SUFFIXES )
+	{
+		if ( suffix == "" )
+			continue
+		int sl = suffix.len()
+		if ( ref.len() > sl && ref.slice( ref.len() - sl ) == suffix )
+			return true
+	}
+	return false
+}
+
+// Best valid loot ref for base (may equal base when bare). SERVER uses loot tables.
+string function FreeroamWeaponsMenu_ResolveKitRef( string baseWeapon, string tier = FREEROAM_WM_TIER_AUTO )
+{
+	if ( baseWeapon == "" )
+		return ""
+
+	string base = baseWeapon
+
+	#if SERVER || CLIENT
+	if ( SURVIVAL_Loot_IsRefValid( baseWeapon ) && !FreeroamWeaponsMenu_IsCarePackageRef( baseWeapon ) )
+		base = GetBaseWeaponRef( baseWeapon )
+	#endif
+
+	string forced = FreeroamWeaponsMenu_SuffixForTier( tier )
+	if ( forced != "auto" )
+	{
+		string forcedRef = base + forced
+		if ( forced == "" )
+		{
+			#if SERVER || CLIENT
+			if ( SURVIVAL_Loot_IsRefValid( base ) )
+				return base
+			#else
+			return base
+			#endif
+		}
+		#if SERVER || CLIENT
+		if ( SURVIVAL_Loot_IsRefValid( forcedRef ) )
+			return forcedRef
+		#endif
+	}
+
+	foreach ( string suffix in FREEROAM_WM_KIT_WALK )
+	{
+		string candidate = base + suffix
+		#if SERVER || CLIENT
+		if ( SURVIVAL_Loot_IsRefValid( candidate ) )
+			return candidate
+		#else
+		// UI: gold preference; server re-resolves on give.
+		if ( suffix == FREEROAM_WM_SUFFIX_GOLD )
+			return candidate
+		#endif
+	}
+
+	#if SERVER || CLIENT
+	if ( SURVIVAL_Loot_IsRefValid( base ) )
+		return base
+	#endif
+
+	return base
+}
+
+// A care-package weapon is already its own complete kit, so it must not be
+// collapsed to its base weapon: the tier walk would then hand back the gold set
+// instead. Most are identifiable by the _crate suffix, but not all -- the Cupid
+// bow is a care-package ref named mp_weapon_bow_cupid, and collapsing it
+// returned mp_weapon_bow_gold. The loot row is the authority, so use it where
+// the loot tables are readable and fall back to the name on the UI VM.
+bool function FreeroamWeaponsMenu_IsCarePackageRef( string ref )
+{
+	#if SERVER || CLIENT
+	if ( SURVIVAL_Loot_IsRefValid( ref ) )
+		return SURVIVAL_Loot_GetLootDataByRef( ref ).baseMods.contains( "crate" )
+	#endif
+
+	return FreeroamWeaponsMenu_ClassnameEndsWithCrate( ref )
+}
+
+bool function FreeroamWeaponsMenu_ClassnameEndsWithCrate( string classname )
+{
+	int sl = FREEROAM_WM_SUFFIX_CRATE.len()
+	return classname.len() > sl && classname.slice( classname.len() - sl ) == FREEROAM_WM_SUFFIX_CRATE
+}
+
+bool function FreeroamWeaponsMenu_IsExcludedBaseWeapon( string baseClass )
+{
+	if ( baseClass == "" )
+		return true
+
+	string lower = baseClass.tolower()
+	foreach ( string part in FREEROAM_WM_EXCLUDE_SUBSTR )
+	{
+		if ( lower.find( part ) != -1 )
+			return true
+	}
+
+	if ( lower.find( "mp_weapon_" ) != 0 )
+		return true
+
+	// Keep *_crate classnames giveable (Crate category freeform path).
+	if ( FreeroamWeaponsMenu_ClassnameEndsWithCrate( lower ) )
+		return false
+
+	if ( FreeroamWeaponsMenu_LooksLikeKitSuffixRef( lower ) )
+		return true
+
+	return false
+}
+
+int function FreeroamWeaponsMenu_SlotFromArg( string arg )
+{
+	switch ( arg )
+	{
+		case "0":
+		case "p":
+		case "primary":
+		case "PRIMARY_0":
+			return FREEROAM_WM_SLOT_PRIMARY_0
+		case "1":
+		case "s":
+		case "secondary":
+		case "PRIMARY_1":
+			return FREEROAM_WM_SLOT_PRIMARY_1
+	}
+	return FREEROAM_WM_SLOT_PRIMARY_0
+}
+
+string function FreeroamWeaponsMenu_TierFromArg( string arg )
+{
+	string t = arg.tolower()
+	switch ( t )
+	{
+		case "auto":
+		case "gold":
+		case "purple":
+		case "blue":
+		case "white":
+		case "bare":
+			return t
+		case "purpleset":
+			return FREEROAM_WM_TIER_PURPLE
+		case "blueset":
+			return FREEROAM_WM_TIER_BLUE
+		case "whiteset":
+			return FREEROAM_WM_TIER_WHITE
+	}
+	return FREEROAM_WM_TIER_AUTO
+}
+
+#if UI || CLIENT
+string function FreeroamWeaponsMenu_LocalizeOrRaw( string token, string fallback )
+{
+	if ( token == "" )
+		return fallback
+
+	string loc = Localize( token )
+	if ( loc != "" )
+		return loc
+
+	return fallback != "" ? fallback : token
+}
+
+// Catalog for the selector panel. ItemFlavor_GetLongName is CLIENT||UI only.
+array function FreeroamWeaponsMenu_GetCategoryWeapons()
+{
+	array result
+
+	array<ItemFlavor> categories = GetAllWeaponCategories()
+	foreach ( ItemFlavor cat in categories )
+	{
+		string statsKey = WeaponCategoryFlavor_GetStatsKey( cat )
+		string catLabel = FreeroamWeaponsMenu_LocalizeOrRaw( ItemFlavor_GetLongName( cat ), statsKey )
+		if ( catLabel == "" )
+			catLabel = statsKey
+
+		array weapons
+		array<ItemFlavor> weps = GetAllWeaponsInCategory( cat )
+		foreach ( ItemFlavor w in weps )
+		{
+			string classname = WeaponItemFlavor_GetClassname( w )
+			if ( FreeroamWeaponsMenu_IsExcludedBaseWeapon( classname ) )
+				continue
+
+			string display = FreeroamWeaponsMenu_LocalizeOrRaw( ItemFlavor_GetLongName( w ), classname )
+			if ( display == "" )
+				display = classname
+
+			table row
+			row.classname <- classname
+			row.display <- display
+			weapons.append( row )
+		}
+
+		if ( weapons.len() == 0 )
+			continue
+
+		table catRow
+		catRow.id <- statsKey
+		catRow.label <- catLabel
+		catRow.weapons <- weapons
+		result.append( catRow )
+	}
+
+	// Synthetic "Crate" bucket: care-package exclusives (statsCategory crate_unique)
+	// plus child *_crate classnames (locked care-package kits of ground guns).
+	array crateWeapons
+	table seenCrate
+	foreach ( ItemFlavor w in GetAllWeaponItemFlavors() )
+	{
+		string baseClass = WeaponItemFlavor_GetClassname( w )
+		string baseDisplay = FreeroamWeaponsMenu_LocalizeOrRaw( ItemFlavor_GetLongName( w ), baseClass )
+		if ( baseDisplay == "" )
+			baseDisplay = baseClass
+
+		if ( WeaponItemFlavor_GetStatsCategory( w ) == WEAPON_STAT_CATEGORY_CRATE_WEAPON )
+		{
+			// Floor guns whose ItemFlavor still says crate_unique stay in
+			// their real category; the *_crate child is the care-package entry.
+			bool hasCrateChild = false
+			foreach ( string child in WeaponItemFlavor_GetChildClassNames( w ) )
+			{
+				if ( FreeroamWeaponsMenu_ClassnameEndsWithCrate( child ) )
+				{
+					hasCrateChild = true
+					break
+				}
+			}
+			if ( !hasCrateChild && !FreeroamWeaponsMenu_IsExcludedBaseWeapon( baseClass ) && !( baseClass in seenCrate ) )
+			{
+				seenCrate[baseClass] <- true
+				table row
+				row.classname <- baseClass
+				row.display <- baseDisplay
+				crateWeapons.append( row )
+			}
+		}
+
+		foreach ( string child in WeaponItemFlavor_GetChildClassNames( w ) )
+		{
+			if ( !FreeroamWeaponsMenu_ClassnameEndsWithCrate( child ) )
+				continue
+			if ( child in seenCrate )
+				continue
+			if ( FreeroamWeaponsMenu_IsExcludedBaseWeapon( child ) )
+				continue
+
+			seenCrate[child] <- true
+			table crow
+			crow.classname <- child
+			crow.display <- format( FreeroamWeaponsMenu_LocalizeOrRaw( "#LAB_ARMORY_CRATE_FMT", "%s (Crate)" ), baseDisplay )
+			crateWeapons.append( crow )
+		}
+	}
+
+	if ( crateWeapons.len() > 0 )
+	{
+		string crateLabel = FreeroamWeaponsMenu_LocalizeOrRaw( "#WPN_CATEGORY_CRATE", "Crate" )
+		table crateCat
+		crateCat.id <- "crate"
+		crateCat.label <- crateLabel
+		crateCat.weapons <- crateWeapons
+		result.append( crateCat )
+	}
+
+	// Cafe-only ports (no ItemFlavor). Same freeform give path as *_crate.
+	// Parked: raygun is the only cafe port; restore the row when it is packed.
+	array cafeWeapons
+	// table raygunRow
+	// raygunRow.classname <- "mp_weapon_raygun"
+	// raygunRow.display <- "Ray Gun"
+	// cafeWeapons.append( raygunRow )
+
+	if ( cafeWeapons.len() > 0 )
+	{
+		table cafeCat
+		cafeCat.id <- "cafe_mods"
+		cafeCat.label <- "Cafe Mods"
+		cafeCat.weapons <- cafeWeapons
+		result.append( cafeCat )
+	}
+
+	return result
+}
+
+string function FreeroamWeaponsMenu_DisplayNameForBase( string baseClass )
+{
+	ItemFlavor ornull flav = GetWeaponItemFlavorByClass( baseClass )
+	if ( flav != null )
+	{
+		expect ItemFlavor( flav )
+		string n = FreeroamWeaponsMenu_LocalizeOrRaw( ItemFlavor_GetLongName( flav ), baseClass )
+		if ( n != "" )
+			return n
+	}
+	return baseClass
+}
+#endif // UI || CLIENT

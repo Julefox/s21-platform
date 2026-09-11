@@ -1,0 +1,110 @@
+global function ShPassiveMantleBoost_Init
+
+const int MANTLE_BOOST_STATE_UNBUFFERED = 0
+const int MANTLE_BOOST_STATE_INVALID    = 1
+
+struct
+{
+	var mantleBoostRui
+} file
+
+void function ShPassiveMantleBoost_Init()
+{
+	if ( !GetCurrentPlaylistVarBool( "mantle_boost_enabled", true ) )
+		return
+
+	AddCallback_CreatePlayerPassiveRui( PassiveMantleBoost_CreateHintRui )
+}
+
+void function PassiveMantleBoost_CreateHintRui( entity player )
+{
+	if ( file.mantleBoostRui != null )
+		return
+
+	// The asset name is only known once its pak is loaded, so it cannot be
+	// written as a file-scope $"..." literal.
+	asset hintAsset = GetKeyValueAsAsset( { kn = "ui/mantle_boost.rpak" }, "kn" )
+
+	file.mantleBoostRui = CreateCockpitRui( hintAsset, 32000 )
+	thread PassiveMantleBoost_ShowHint_Thread( player )
+}
+
+void function PassiveMantleBoost_ShowHint_Thread( entity player )
+{
+	player.EndSignal( "OnDestroy", "OnDeath" )
+
+	OnThreadEnd(
+		function() : ()
+		{
+			RuiDestroyIfAlive( file.mantleBoostRui )
+			file.mantleBoostRui = null
+		}
+	)
+
+	float showRuiPersistTime = GetCurrentPlaylistVarFloat( "mantle_boost_rui_persist_time", 0.25 )
+
+	float traversalProgress = 0.0
+	float lastMantleTime = 0.0
+	int mantleBoostState = MANTLE_BOOST_STATE_UNBUFFERED
+
+	while ( true )
+	{
+		bool showHint = false
+		int inputSetting = GetConVarInt( "mantle_boost_input_setting" )
+		int uiSetting = MantleBoost_GetUiSetting()
+
+		if ( IsValid( player ) )
+		{
+			bool isMantling = player.IsMantling()
+
+			if ( isMantling )
+			{
+				lastMantleTime = Time()
+				mantleBoostState = MantleBoost_GetState()
+				RuiSetFloat( file.mantleBoostRui, "viewBasedOffset", MantleBoost_GetViewAngleRuiOffset() )
+				RuiSetFloat( file.mantleBoostRui, "sweetSpotFrac", MantleBoost_GetSweetSpotFrac() )
+			}
+			else
+			{
+				traversalProgress = 0.0
+				if ( MantleBoost_GetState() > MANTLE_BOOST_STATE_UNBUFFERED )
+					mantleBoostState = MantleBoost_GetState()
+			}
+
+			// The indicator would otherwise sit under the muzzle flash of a shot
+			// fired after the mantle started.
+			bool shouldHideFromFiredWeapon = false
+			entity weapon = player.GetActiveWeapon( eActiveInventorySlot.mainHand )
+			if ( IsValid( weapon ) )
+				shouldHideFromFiredWeapon = weapon.GetLastWeaponFireTime() > lastMantleTime
+
+			showHint = inputSetting != 0
+				&& mantleBoostState != MANTLE_BOOST_STATE_INVALID
+				&& !shouldHideFromFiredWeapon
+				&& ( isMantling || ( mantleBoostState != MANTLE_BOOST_STATE_UNBUFFERED
+					&& ( Time() - lastMantleTime ) < showRuiPersistTime ) )
+
+			if ( mantleBoostState == MANTLE_BOOST_STATE_UNBUFFERED && isMantling )
+			{
+				// Progress only ever moves forward within one climb. Raw traversal
+				// progress, not the anim fraction: the sweet-spot window is derived
+				// in the raw domain, and the ring must move through the same one.
+				float curProgress = MantleBoost_GetTraversalProgress()
+				if ( curProgress > traversalProgress )
+				{
+					RuiSetFloat( file.mantleBoostRui, "progress", curProgress )
+					traversalProgress = curProgress
+				}
+
+				RuiSetFloat( file.mantleBoostRui, "inputOffset", MantleBoost_GetCrosshairRuiOffset() )
+			}
+		}
+
+		RuiSetInt( file.mantleBoostRui, "uiMode", uiSetting )
+		RuiSetInt( file.mantleBoostRui, "state", mantleBoostState )
+		RuiSetBool( file.mantleBoostRui, "isWallHang", showHint )
+		RuiSetInt( file.mantleBoostRui, "inputSetting", inputSetting )
+
+		WaitFrame()
+	}
+}

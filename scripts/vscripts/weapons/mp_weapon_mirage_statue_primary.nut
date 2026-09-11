@@ -1,0 +1,57 @@
+
+global function MpWeaponMirageStatuePrimary_Init
+
+global function OnWeaponActivate_weapon_mirage_statue_primary
+global function OnWeaponDeactivate_weapon_mirage_statue_primary
+
+// Future: Define Effects here, Currently defined inside of animation events
+
+                         
+                                
+      
+
+void function MpWeaponMirageStatuePrimary_Init()
+{
+	// Future: precache particles etc.
+
+                         
+                                  
+      
+
+}
+
+void function OnWeaponActivate_weapon_mirage_statue_primary( entity weapon )
+{
+	entity player = weapon.GetWeaponOwner()
+	string meleeSkinName = MeleeSkin_GetSkinNameFromPlayer( player )
+
+	if ( meleeSkinName == "statue" )
+	{
+		// Future: Play Effects Here
+	}
+                         
+                                           
+  
+                              
+  
+      
+
+}
+
+void function OnWeaponDeactivate_weapon_mirage_statue_primary( entity weapon )
+{
+	entity player = weapon.GetWeaponOwner()
+	string meleeSkinName = MeleeSkin_GetSkinNameFromPlayer( player )
+
+	if ( meleeSkinName == "statue" )
+	{
+		// Future: Stop Effects Here
+	}
+                         
+                                           
+  
+                              
+  
+      
+
+}

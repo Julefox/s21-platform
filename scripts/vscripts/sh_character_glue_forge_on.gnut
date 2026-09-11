@@ -1,0 +1,31 @@
+
+#if SERVER || CLIENT
+global function InitForgeAll
+global function IsDoingPullshot
+#endif //
+
+global const bool HAS_FORGE = false
+global const bool HAS_FORGE_ABILITIES = (HAS_FORGE && true)
+global const bool HAS_FORGE_ALT_SUPER = false
+#if HAS_FORGE
+global const string WEAPON_FORGE = "mp_ability_forge_gpound"
+global const asset CHARACTER_FORGE = $"settings/player/mp/pilot_survival_rosie.rpak"
+global const asset MODEL_FORGE = $"mdl/Humans/class/heavy/pilot_heavy_forge.rmdl"
+#endif //HAS_FORGE
+
+
+
+#if SERVER || CLIENT
+void function InitForgeAll()
+{
+	if ( WhenBuildFlag( "Season4Chars" ) )
+		Assert( HAS_FORGE, "Build merge mismatch again" )
+
+	RegisterSignal( "GPoundFinished" )
+}
+// Forge is cut (HAS_FORGE=false) but melee/bleedout still call this every finisher/revive check.
+bool function IsDoingPullshot( entity player )
+{
+	return false
+}
+#endif

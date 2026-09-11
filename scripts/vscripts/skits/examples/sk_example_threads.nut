@@ -1,0 +1,58 @@
+/*
+	Skit Example - "Threads"
+
+	To Show:
+		How skit subthreads should be done. Properly called, they'll shut down & clean up whenever the skit itself shuts down.
+
+	Does:
+		Starts a subthread that waits for the main skit to end, and prints a message in OnThreadEnd().
+*/
+
+
+#if SERVER
+global function LaunchTestSkit_Threads
+
+
+SkitInstance ornull function InitThisSkit()
+{
+	SkitInstance si = Skit_AllocInstance( Runtime, null )
+	return si
+}
+
+void function Runtime( SkitInstance si )
+{
+	thread MyThread( si )
+	wait 5.0
+
+	printf( "Skit is done: %s", FILE_NAME() )
+}
+
+void function MyThread( SkitInstance si )
+{
+	SkThread_MarkAsNewSubthread( si )
+
+	OnThreadEnd( function() : ( si ) {
+		BroadcastTestMsg( "Thread ending.", FILE_NAME() )
+	} )
+
+	BroadcastTestMsg( "Thread waiting.", FILE_NAME() )
+	WaitForever()
+}
+
+//////////////////////
+
+
+void function LaunchTestSkit_Threads()
+{
+	SkitInstance ornull siRaw = InitThisSkit()
+	if ( siRaw == null )
+	{
+		Warning( "%s() - Couldn't init skit.", FUNC_NAME() )
+		return
+	}
+
+	expect SkitInstance( siRaw )
+	Skit_LaunchInstance( siRaw )
+}
+
+#endif // #if SERVER

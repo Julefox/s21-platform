@@ -1,0 +1,200 @@
+"WeaponData"
+{
+	"printname" "#ABL_TAC_PHASE_DOOR"
+	"shortprintname" "#ABL_TAC_PHASE_DOOR_SHORT"
+	"description" "#ABL_TAC_PHASE_DOOR_DESC"
+	"longdesc" "#ABL_TAC_PHASE_DOOR_LONGDESC"
+	"menu_icon" "rui/hud/tactical_icons/tactical_alter"
+	"hud_icon" "rui/hud/tactical_icons/tactical_alter"
+	"viewmodel" "mdl/Weapons/alter_tail/alter_tail_base_v.rmdl"
+	"playermodel" ""
+	"projectilemodel" "mdl/dev/empty_model.rmdl"
+	"OnWeaponActivate" "OnWeaponActivate_ability_phase_door"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_ability_phase_door"
+	"OnWeaponTossReleaseAnimEvent" "OnWeaponTossReleaseAnimEvent_ability_phase_door"
+	"OnWeaponTossPrep" "Grenade_OnWeaponTossPrep"
+	"OnProjectileCollision" "OnProjectileCollision_ability_phase_door"
+	"OnCreateClientOnlyModel" "OnCreateClientOnlyModel_ability_phase_door"
+	"max_cook_time" "-1"
+	"rumble" "3"
+	"sway_rotate_attach" "SWAY_ROTATE"
+	"sway_min_x" "-0.100000"
+	"sway_min_y" "-0.500000"
+	"sway_min_z" "-0.600000"
+	"sway_max_x" "0.100000"
+	"sway_max_y" "0.500000"
+	"sway_max_z" "0.600000"
+	"sway_min_pitch" "-1"
+	"sway_min_yaw" "-1"
+	"sway_min_roll" "-0.250000"
+	"sway_max_pitch" "1"
+	"sway_max_yaw" "1"
+	"sway_max_roll" "0.250000"
+	"sway_translate_gain" "9"
+	"sway_rotate_gain" "5"
+	"sway_move_right_rotate_pitch" "0.500000"
+	"sway_move_right_rotate_yaw" "0.500000"
+	"sway_move_right_rotate_roll" "0.500000"
+	"sway_move_left_rotate_pitch" "0.200000"
+	"sway_move_left_rotate_yaw" "-0.500000"
+	"sway_move_left_rotate_roll" "-0.500000"
+	"sway_turn_right_rotate_yaw" "-5"
+	"sway_turn_left_rotate_yaw" "5"
+	"weaponType" "tactical"
+	"fire_mode" "offhand"
+	"offhand_interupts_weapon_anims" "1"
+	"offhand_activates_on_zoom" "0"
+	"offhand_default_inventory_slot" "0"
+	"offhand_switch_on_attack" "1"
+	"offhand_cancelled_by_melee" "1"
+	"offhand_toss_activates_on_attack" "0"
+	"offhand_toss_hold_is_resumable" "0"
+	"fire_rate" "10.000000"
+	"holster_time" "0.000000"
+	"deploy_time" "0.000000"
+	"toss_pullout_time" "0.200000"
+	"lower_time" "0.333000"
+	"raise_time" "0.050000"
+	"is_toss_weapon" "1"
+	"vortex_refire_behavior" "grenade"
+	"projectile_predict_move_to_impact" "false"
+	"is_semi_auto" "1"
+	"move_speed_modifier" "1.070000"
+	"allow_empty_fire" "0"
+	"reload_enabled" "0"
+	"empty_reload_only" "0"
+	"allow_empty_click" "1"
+	"aimassist_disable_hipfire" "1"
+	"aimassist_disable_ads" "1"
+	"zoom_effects" "0"
+	"object_placer" "1"
+	"object_placement_distance_max" "1750"
+	"object_placement_special" "1"
+	"object_placement_run_mode" "offhandHold"
+	"object_placement_last_good_distance_max" "100"
+	"object_placement_last_good_angle_max" "10"
+	"cooldown_type" "ammo_instant"
+	"ammo_display" "count"
+	"ammo_clip_size" "50"
+	"ammo_default_total" "50"
+	"ammo_min_to_fire" "25"
+	"ammo_per_shot" "25"
+	"ammo_stockpile_max" "50"
+	"ammo_drains_to_empty_on_fire" "0"
+	"ammo_no_remove_from_clip" "0"
+	"regen_ammo_refill_rate" "1.000000"
+	"regen_ammo_refill_start_delay" "0.000000"
+	"trophy_system_ignores" "always"
+	"damage_type" "none"
+	"damage_near_distance" "0"
+	"damage_far_distance" "0"
+	"damage_near_value" "0"
+	"damage_far_value" "0"
+	"damage_near_value_titanarmor" "0"
+	"damage_far_value_titanarmor" "0"
+	"explosion_damage" "0"
+	"explosion_damage_heavy_armor" "0"
+	"projectile_trail_effect_0_1p" "P_alter_tac_projectile"
+	"projectile_trail_effect_0_3p" "P_alter_tac_projectile"
+	"impact_effect_table" "none"
+	"bounce_effect_table" "none"
+	"fx_muzzle_flash_view" "P_alter_tac_muzzleflash"
+	"fx_muzzle_flash_world" "P_alter_tac_muzzleflash_3P"
+	"fx_muzzle_flash_attach" "muzzle_flash"
+	"sound_throw_1p" "Alter_Tac_Tail_Shot_1p"
+	"sound_throw_3p" "Alter_Tac_Tail_Shot_3p"
+	"idle_sound_player_1p" "Alter_Tac_Tail_Draw_Idle_1p"
+	"battle_chatter_event" "bc_tactical"
+	"grenade_fuse_time" "0"
+	"grenade_ignition_time" "5.000000"
+	"start_fuse_on_launch" "0"
+	"grenade_orient_to_velocity" "1"
+	"grenade_disc_throw" "0"
+	"show_grenade_indicator" "1"
+	"show_grenade_indicator_to_owner" "1"
+	"grenade_touch_triggers_on_impact" "1"
+	"grenade_arc_indicator_bounce_count" "1"
+	"grenade_arc_indicator_effect" "P_mm_breach_arc"
+	"grenade_arc_indicator_effect_first" "P_mm_breach_arc"
+	"grenade_arc_impact_indicator_effect" "P_mm_breach_arc_end"
+	"projectile_launch_speed" "3000"
+	"projectile_launch_pitch_offset" "0"
+	"projectile_ignores_vortex" "1"
+	"projectile_lifetime" "5.000000"
+	"projectile_adjust_to_gun_barrel" "1"
+	"projectile_adjust_to_hand" "0"
+	"projectile_gravity_scale" "0.000000"
+	"weapon_type_flags" "WPT_TACTICAL"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "survival_ui_tactical_ready"
+	"update_player_last_fire_time" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"placement_error"
+		{
+			"grenade_arc_impact_indicator_effect" "P_mm_breach_arc_end_fail"
+
+		}
+
+		"upgrade_core_tac_cooldown_reduction"
+		{
+			"ammo_clip_size" "15"
+			"ammo_default_total" "15"
+			"ammo_min_to_fire" "15"
+			"ammo_per_shot" "15"
+			"ammo_stockpile_max" "30"
+
+		}
+
+		"copycat_mod"
+		{
+			"weapon_type_flags" "WPT_SURVIVAL"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+	}
+
+	"RUI_CrosshairData"
+	{
+
+		"DefaultArgs"
+		{
+			"crosshairMovementX" "crosshair_movement_x"
+			"crosshairMovementY" "crosshair_movement_y"
+
+		}
+	}
+}

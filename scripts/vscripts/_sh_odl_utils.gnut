@@ -1,0 +1,67 @@
+global function WaitForOdlModelLoad
+
+void function WaitForOdlModelLoad( entity model, bool createLoadingSpinnerRuiClientOnly )
+{
+	if ( !IsValid( model ) )
+		return
+
+	#if CLIENT
+		#if UI
+		float startTime = UITime()
+		#else
+		float startTime = Time()
+		#endif
+		var loadingRui = null
+	#endif
+
+	int odlHandle = ODL_FindAsset( ODL_SKINS, model.GetModelName() ) // TODO: Make this pool generic
+	if ( odlHandle != -1 )
+	{
+		model.Hide()
+
+		while ( !ODL_IsLoaded( ODL_SKINS, odlHandle ) )
+		{
+			if ( !IsValid( model ) )
+			{
+				#if CLIENT
+					if ( loadingRui != null ) {
+						RuiDestroy( loadingRui )
+					}
+				#endif
+				return
+			}
+
+			#if CLIENT
+				if ( loadingRui == null && ( Time() - startTime ) > 0.5 )
+				{
+					// var topo = CreateRUITopology_Worldspace( model.GetOrigin() + (<0, 30, 50> * model.GetModelScale()), <0, 90, 0>, 5, 5 )
+					vector dim = <50, 50, 0>
+					float[2] screenPos = GetScreenSpace( model.GetOrigin() + (<0, 0, 50> * model.GetModelScale()) )
+					vector screenOrg = <screenPos[0], screenPos[1], 0> - ( dim * 0.5 )
+					var topo          = RuiTopology_CreatePlane( screenOrg, <dim.x, 0, 0>, <0, dim.y, 0>, false )
+					loadingRui = RuiCreate( $"ui/character_loading_spinner.rpak", topo, RUI_DRAW_POSTEFFECTS, 0 )
+				}
+			#endif
+
+			WaitFrame()
+		}
+
+		if ( !IsValid( model ) )
+		{
+			#if CLIENT
+				if ( loadingRui != null ) {
+					RuiDestroy( loadingRui )
+				}
+			#endif
+			return
+		}
+
+		model.Show()
+	}
+
+	#if CLIENT
+		if ( loadingRui != null ) {
+			RuiDestroy( loadingRui )
+		}
+	#endif
+}

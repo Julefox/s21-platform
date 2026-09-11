@@ -1,0 +1,1557 @@
+global function ShStatsInternals_LevelInit
+
+
+
+#if SERVER || CLIENT || UI
+global function ResolveStatEntry
+global function GetStat_Int
+global function GetStat_Float
+//global function GetStatTemplateByRef
+global function GetStatEntryByIndex
+global function IsValidStatEntryRef
+global function GetStatEntryByRef
+global function HasStatEntryByRef
+global function StatEntry_GetIndex
+global function StatEntry_GetRef
+global function StatEntry_GetType
+global function StatEntry_GetBehavior
+global function DoesStatSatisfyValue
+
+global function RegisterAccumulatedStat_Int
+global function RegisterVariableStat_Int
+global function RegisterExpensiveCalculatedStat_Int
+global function RegisterCachedCalculatedStat_Int
+global function RegisterBitfieldStat_Int
+global function RegisterStatEnumStruct
+global function HasStatCachingOptimizations
+#endif
+
+#if SERVER
+global function UpdateCalculatedStatCachedValue
+global function InitializeBitfieldStat
+
+global function __Mode_IncrementStat_Int
+global function __Mode_SetStat_Int
+
+global function __IncrementStat_Int
+global function __SetStat_Int
+global function __SetFlagStat_Int
+
+global function AddCallback_StatChanged_Int
+global function RemoveCallback_StatChanged_Int
+
+global function StatsInternals_EndStats
+global function StatsInternals_UpdatePersistenceOnDisconnect
+#endif
+
+#if SERVER
+#if DEVELOPER
+global function DEV_IncrementStat_Int // only global in dev for console commands (stats should never be incremented any where other than in this file)
+global function DEV_SetStatsMultiplier // only global in dev for console commands (stats should never be incremented any where other than in this file)
+#endif
+#endif
+
+#if SERVER || CLIENT || UI
+                  
+                                         
+      
+#endif
+
+const bool STATS_DEBUG_PRINT_SPAM = false
+const int UNINITIALIZED = -2 // Ranked uses -1 for players to indicate ladder position has been set by Stryder
+
+//////////////////////
+//////////////////////
+//// Global Types ////
+//////////////////////
+//////////////////////
+
+#if SERVER || CLIENT || UI
+global enum eStatType
+{
+	INVALID,
+	INT,
+}
+global enum eStatBehavior
+{
+	CALCULATED, // no value is stored, a function calculates the value on demand
+	ACCUMULATED, // starts at zero, only ever increases
+	VARIABLE, // starts at zero, can be given any value
+	BITFIELD, // starts at zero, can be given any value; when *setting*, raw persistence integer is fetched and bit(s) are flipped; when *getting*, use a calcfunc to tally the bit fields
+}
+
+// used to store expensive calculated stats - INT ONLY
+global struct CalcStatCache
+{
+	string statRef
+	int timeStamp
+	int value
+	int when
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+global enum eStatGetWhen
+{
+	CURRENT,
+	START_OF_CURRENT_MATCH,
+}
+
+global enum eStatFetchMode
+{
+	DEFAULT,
+	FORCE_NO_CACHE,
+	BITFIELD_RAW,
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+global typedef StatChangedCallbackType_Int void functionref( entity player, int oldValue, int newValue )
+#endif
+
+
+#if SERVER || CLIENT || UI
+global struct StatEntry
+{
+	int    index
+	int    indexWithinType
+	string persistenceFullKey_Current
+	var    persistenceFullKey_Current_Handle
+
+	int    type = eStatType.INVALID
+	int    behavior
+	bool   writeImmediately = false // cached in player.p and written back to persistence at match end
+	bool   shouldCache // for calculated stats only
+	int    gameMode // uses eChallengeGameMode
+
+	array<string> enumKeys
+
+	//StatCalcFuncInfo calcInfo // no cyclic type references...
+	int functionref( entity player, array<StatEntry> sourceEntries, int when )       calcFunc_Int
+	array<StatEntry> ornull															calcSourceEntries = null
+	array<StatEntry> ornull															dependents = null
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+global struct StatCalcFuncInfo
+{
+	int functionref( entity player, array<StatEntry> sourceEntries, int when )   calcFunc_Int
+
+	array<StatEntry> ornull															sourceEntries
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+global struct StatTemplateEnumKeyResolver
+{
+	bool isFinal
+
+	table<string, StatTemplateEnumKeyResolver> children // iff isFinal == false
+
+	table<string, StatEntry> entries // iff isFinal == true
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+global struct StatEnumStruct
+{
+	StatEnumStruct ornull parentEnumStruct
+
+	string fieldName
+	string enumName
+
+	array<string> choices // the key choices for the tailing enum (e.g.: eWeaponFlavor -> r97, hemlok, alternator, ...)
+
+	#if DEVELOPER
+		string structName
+	#endif
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+global struct StatTemplate
+{
+	//string ref
+
+	StatEnumStruct ornull parentEnumStruct
+
+	int  type = eStatType.INVALID // int
+	int  behavior // accumulated, calculated, variable
+	bool writeImmediately = false // cached in player.p and written back to persistence at match end
+	bool shouldCache = false // for calculated stats only
+	int  gameMode // uses eChallengeGameMode
+
+	string fieldName
+
+	int enumKeyCount
+
+	StatTemplateEnumKeyResolver& resolver // iff enumKeyCount > 0
+
+	StatEntry& rootEntry // iff enumKeyCount == 0
+
+	array<StatEntry> allEntries
+}
+#endif
+
+
+#if DEVELOPER
+struct StatEnumStruct_Children
+{
+	array<StatEnumStruct> childEnumStructs
+	array<StatTemplate>   childStatTemplates
+}
+#endif
+
+
+
+///////////////////////
+///////////////////////
+//// Private Types ////
+///////////////////////
+///////////////////////
+struct FileStruct_LifetimeLevel
+{
+	#if SERVER || CLIENT || UI
+		#if DEVELOPER
+			StatEnumStruct_Children                        rootFieldsList // only for generating pdef file
+			table<StatEnumStruct, StatEnumStruct_Children> sesChildrenMap // hack
+		#endif
+
+		array<StatEntry> stats_Int
+
+		array<StatEntry>         allStats
+		table<string, StatEntry> refStatEntryMap
+
+		table< entity, array<CalcStatCache> > calculatedStatsCache // player <-> cached stat
+	#endif
+
+	#if SERVER
+	#if DEVELOPER
+		float DEV_statsMultiplier = 1.0
+	#endif
+	#endif
+
+	int calculatedStatsCacheDurationSec = 30
+	bool doOnDemandStats = false
+
+	table< entity, array<StatEntry> > playerDirtyStats
+}
+FileStruct_LifetimeLevel& fileLevel
+
+const string STATS_PERSISTENCE_PREFIX_CURRENT = "stats"
+
+///////////////////////////
+// Stat Protection Check //
+///////////////////////////
+#if DEVELOPER
+// this function checks if we're in a prescribed "safe zone" for calling stat modifying functions
+// mainly the intent is to prevent say IncrementStat_Int() from being called in some buried gameplay or otherwise file (which would be difficult to track)
+const string STATS_SAFEZONE_FILENAME_FILTER = "sh_stats"
+void function StatCallStackCheck( bool DEV_isManualDevSet, int up = 2 )
+{
+	// up is how far up the stack we want to go. 0 will always be THIS file; Since we run this check internally, 1 will be the internal function that called this). And 2 is the calling script.
+	string fileName =  FILE_NAME( up )
+	if ( fileName.find(STATS_SAFEZONE_FILENAME_FILTER) == -1 && DEV_isManualDevSet == false )
+		Assert( false, "Tried to manipulate a stat from " + fileName + ". Do NOT call Stat manipulation functions directly EXCEPT in a DEV_ helper function or from the intended safe zone stat files." )
+}
+#endif
+
+
+
+/////////////////////////
+/////////////////////////
+//// Initialiszation ////
+/////////////////////////
+/////////////////////////
+
+#if SERVER || CLIENT || UI
+void function ShStatsInternals_LevelInit()
+{
+	FileStruct_LifetimeLevel newFileLevel
+	fileLevel = newFileLevel
+
+	#if SERVER
+		#if DEVELOPER
+			AddCallback_GeneratePDef( GenerateGameStatsPDef )
+			AddClientCommandCallback( "stats_dump", ClientCommand_stats_dump ) // dev
+			AddClientCommandCallback( "stats_set", ClientCommand_stats_set ) // dev
+		#endif
+
+		AddCallback_OnPersistentDataReady( Stats_OnPersistentDataReady )
+	#endif
+
+	#if SERVER
+	#if DEVELOPER
+		DEV_SetStatsMultiplier( GetCurrentPlaylistVarFloat( "stats_dev_multiplier", 1.0 ) )
+	#endif
+	#endif
+
+	int lobbyMultiplier = IsLobby() ? 10 : 1 // stats don't change in the lobby, so cache for 10X
+	fileLevel.calculatedStatsCacheDurationSec = lobbyMultiplier * GetCurrentPlaylistVarInt( "calc_stats_cache_duration_sec", 30 )
+	fileLevel.doOnDemandStats = GetCurrentPlaylistVarBool( "do_on_demand_stats", true )
+}
+#endif
+
+
+
+//////////////////////////
+//////////////////////////
+//// Global functions ////
+//////////////////////////
+//////////////////////////
+
+array<StatEntry> function GetCalcSourceEntriesFromEntry( StatEntry entry )
+{
+	array<StatEntry> calcSourceEntries
+	if ( entry.calcSourceEntries == null )
+		return []
+	return expect array<StatEntry>( entry.calcSourceEntries )
+}
+
+#if SERVER || CLIENT || UI
+bool function HasStatCachingOptimizations()
+{
+	return fileLevel.calculatedStatsCacheDurationSec > 0
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+int function GetStat_Int( entity player, StatEntry entry, int when = eStatGetWhen.CURRENT, int fetchMode = eStatFetchMode.DEFAULT )
+{
+	#if SERVER
+		if ( IsLowCostBot( player ) )
+			return 0
+	#endif
+
+	Assert( entry.type == eStatType.INT )
+	#if CLIENT || UI
+		if ( !entry.writeImmediately )
+			Assert( when != eStatGetWhen.CURRENT || IsLobby(), format( "Cannot get current stats in client or UI VM during a match (they could be out of date): %s", entry.persistenceFullKey_Current ) )
+	#endif
+
+	if ( HasStatCachingOptimizations() )
+	{
+		int unixTime = GetUnixTimestamp()
+		/* the "shouldCache" here refers to the broader ServerPlayerStruct-level support for caching of stats which we don't use for stats that change more frequently
+		 * E.g.: damage with shotguns is calculated and will change during a match, though not so often that we shouldn't cache it *periodically*
+		 * but BP level will only change at the end of a match, so we cache that in the actual stat entry on the ServerPlayerStruct ONCE
+
+		 * R5DEV-309611 aims to solve this. And should:
+		 * * put ALL calculated stats into the ServerPlayerStruct with caching
+		 * * introduce timing concepts to all stats ("shouldCache" really means - should cache for the WHOLE match)
+		 * * don't run calculations at the beginning of matches - use IsLobby more judiciously
+		 */
+		if ( ( when == eStatGetWhen.CURRENT || when == eStatGetWhen.START_OF_CURRENT_MATCH )
+				&& entry.behavior == eStatBehavior.CALCULATED && !entry.shouldCache )
+		{
+			if ( player in fileLevel.calculatedStatsCache )
+			{
+				foreach ( CalcStatCache calcStat in fileLevel.calculatedStatsCache[player] )
+				{
+					if ( fetchMode == eStatFetchMode.DEFAULT && calcStat.when == when && calcStat.statRef == entry.persistenceFullKey_Current && unixTime <= calcStat.timeStamp + fileLevel.calculatedStatsCacheDurationSec )
+						return calcStat.value
+					else if ( calcStat.when == when && calcStat.statRef == entry.persistenceFullKey_Current && ( unixTime > calcStat.timeStamp + fileLevel.calculatedStatsCacheDurationSec || fetchMode == eStatFetchMode.FORCE_NO_CACHE  ) ) // purge
+						fileLevel.calculatedStatsCache[player].fastremovebyvalue( calcStat )
+				}
+
+				// we have the player in the cache, but not this particular stat (or it expired)
+				CalcStatCache calcStat
+				calcStat.value = entry.calcFunc_Int( player, GetCalcSourceEntriesFromEntry( entry ), when )
+				calcStat.timeStamp = unixTime
+				calcStat.statRef = entry.persistenceFullKey_Current
+				calcStat.when = when
+				fileLevel.calculatedStatsCache[ player ].append( calcStat )
+
+				return calcStat.value
+			}
+			else
+			{
+				// put this new player and their first calc stat in the cache
+				CalcStatCache calcStat
+				calcStat.value = entry.calcFunc_Int( player, GetCalcSourceEntriesFromEntry( entry ), when )
+				calcStat.timeStamp = unixTime
+				calcStat.statRef = entry.persistenceFullKey_Current
+				calcStat.when = when
+				fileLevel.calculatedStatsCache[ player ] <- [ calcStat ]
+
+				return calcStat.value
+			}
+		}
+	}
+	else // original flow with no calculated stats caching
+	{
+		if ( (when == eStatGetWhen.CURRENT || when == eStatGetWhen.START_OF_CURRENT_MATCH)
+				&& entry.behavior == eStatBehavior.CALCULATED && !entry.shouldCache )
+			return entry.calcFunc_Int( player, GetCalcSourceEntriesFromEntry( entry ), when )
+	}
+
+	if ( entry.behavior == eStatBehavior.BITFIELD && fetchMode != eStatFetchMode.BITFIELD_RAW )
+		return entry.calcFunc_Int( player, GetCalcSourceEntriesFromEntry( entry ), when )
+
+	#if DEVELOPER
+		//if ( GetConVarBool( "persistence_development_mode", false ) )
+		if ( DEV_ShouldIgnorePersistence() )
+			return 0
+	#endif
+
+	#if SERVER
+		// TODO - R5DEV-350896: on demand stats
+		if ( fileLevel.doOnDemandStats )
+				LoadStatValuesFromPersistenceIntoPlayerStruct( player, entry, false )
+
+		if ( when == eStatGetWhen.CURRENT )
+		{
+			Assert( player.p.statValues_Int[entry.indexWithinType] != UNINITIALIZED )
+			return player.p.statValues_Int[entry.indexWithinType]
+		}
+		else if ( when == eStatGetWhen.START_OF_CURRENT_MATCH )
+		{
+			Assert( player.p.statValuesAtStart_Int[entry.indexWithinType] != UNINITIALIZED )
+			return player.p.statValuesAtStart_Int[entry.indexWithinType]
+		}
+		unreachable
+	#elseif CLIENT || UI
+		if ( when == eStatGetWhen.CURRENT || when == eStatGetWhen.START_OF_CURRENT_MATCH )
+		{
+			if ( !entry.writeImmediately )
+				Assert( when != eStatGetWhen.CURRENT || IsLobby() )
+			return expect int(player.GetPersistentVar( entry.persistenceFullKey_Current ))
+		}
+		unreachable
+	#endif
+}
+
+float function GetStat_Float( entity player, StatEntry entry, int when = eStatGetWhen.CURRENT )
+{
+	return 0.0
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+StatEntry function GetStatEntryByIndex( int index )
+{
+	return fileLevel.allStats[index]
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+bool function IsValidStatEntryRef( string ref )
+{
+	return (ref in fileLevel.refStatEntryMap)
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+StatEntry function GetStatEntryByRef( string ref )
+{
+	return fileLevel.refStatEntryMap[ref]
+}
+
+bool function HasStatEntryByRef( string ref )
+{
+	return (ref in fileLevel.refStatEntryMap)
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+int function StatEntry_GetIndex( StatEntry entry )
+{
+	return entry.index
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+string function StatEntry_GetRef( StatEntry entry )
+{
+	return entry.persistenceFullKey_Current
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+int function StatEntry_GetType( StatEntry entry )
+{
+	return entry.type
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+int function StatEntry_GetBehavior( StatEntry entry )
+{
+	return entry.behavior
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+bool function DoesStatSatisfyValue( entity player, StatEntry entry, float checkValue, int when = eStatGetWhen.CURRENT )
+{
+	Assert( float(int(checkValue)) == checkValue )
+	int value = GetStat_Int( player, entry, when )
+	return (value >= int(checkValue))
+}
+#endif
+
+
+#if SERVER
+void function AddCallback_StatChanged_Int( entity player, StatEntry entry, StatChangedCallbackType_Int cb )
+{
+	Assert( entry.type == eStatType.INT, format( "Player %s attempted to add callback for StatChanged_Int for stat %s", player.GetPlayerName(), StatEntry_GetRef( entry ) ) )
+	array<void functionref( entity player, int oldValue, int newValue )> callbacks
+	if ( entry.indexWithinType in player.p.statEntryChangeCallbacks_Int )
+		callbacks = player.p.statEntryChangeCallbacks_Int[entry.indexWithinType]
+	else
+		player.p.statEntryChangeCallbacks_Int[entry.indexWithinType] <- callbacks
+
+	Assert( !callbacks.contains( cb ), "Callback already added." )
+	callbacks.append( cb )
+}
+void function RemoveCallback_StatChanged_Int( entity player, StatEntry entry, StatChangedCallbackType_Int cb )
+{
+	Assert( entry.indexWithinType in player.p.statEntryChangeCallbacks_Int, "Callback wasn't added." )
+	array<void functionref( entity player, int oldValue, int newValue )> callbacks = player.p.statEntryChangeCallbacks_Int[entry.indexWithinType]
+	Assert( callbacks.contains( cb ), "Callback wasn't added." )
+	callbacks.fastremovebyvalue( cb )
+	if ( callbacks.len() == 0 )
+		delete player.p.statEntryChangeCallbacks_Int[ entry.indexWithinType ]
+}
+#endif
+
+
+#if SERVER
+void function StatsInternals_EndStats()
+{
+	//Signal( svGlobal.levelEnt, "StopTrackingStats" )
+	Assert( IsLobby() == false, "Called StatsInternals_EndStats in a Lobby server. This is for Match dedis ONLY." )
+	foreach ( player in GetPlayerArray() )
+	{
+		Stats_Save( player )
+	}
+}
+#endif
+
+
+#if SERVER
+void function Stats_OnPersistentDataReady( entity player )
+{
+	if ( fileLevel.doOnDemandStats )
+	{
+		player.p.statValues_Int.resize( fileLevel.stats_Int.len(), UNINITIALIZED )
+		player.p.statValuesAtStart_Int.resize( fileLevel.stats_Int.len(), UNINITIALIZED )
+	}
+	else
+	{
+		player.p.statValues_Int.resize( fileLevel.stats_Int.len(), 0 )
+		player.p.statValuesAtStart_Int.resize( fileLevel.stats_Int.len(), 0 )
+	}
+
+	#if DEVELOPER
+		//if ( GetConVarBool( "persistence_development_mode", false ) )
+		if ( DEV_ShouldIgnorePersistence() )
+			return
+	#endif
+
+	if ( fileLevel.doOnDemandStats == false )
+	{
+		foreach ( int index, StatEntry entry in fileLevel.stats_Int )
+		{
+			LoadStatValuesFromPersistenceIntoPlayerStruct( player, entry, true )
+		}
+	}
+	else if ( ( player in fileLevel.playerDirtyStats ) == false )
+	{
+		// initialize (otherwise .append doesn't work)
+		fileLevel.playerDirtyStats[ player ] <- []
+	}
+}
+#endif
+
+
+#if SERVER
+void function StatsInternals_UpdatePersistenceOnDisconnect( entity player )
+{
+	Stats_Save( player )
+	if ( IsLobby() )
+	{
+		if ( player in fileLevel.calculatedStatsCache )
+			delete fileLevel.calculatedStatsCache[ player ]
+
+		if ( player in fileLevel.playerDirtyStats )
+			delete fileLevel.playerDirtyStats[ player ]
+	}
+}
+#endif
+
+
+
+///////////////////////
+///////////////////////
+//// Dev functions ////
+///////////////////////
+///////////////////////
+
+#if SERVER || CLIENT || UI
+string function GetStatTemplateDebugName( StatTemplate template )
+{
+	string sesPart                 = ""
+	StatEnumStruct ornull ancestor = template.parentEnumStruct
+	while ( ancestor != null )
+	{
+		{
+			expect StatEnumStruct(ancestor)
+			sesPart = format( ".%s[%s]%s", ancestor.fieldName, ancestor.enumName, sesPart )
+		}
+		ancestor = expect StatEnumStruct(ancestor).parentEnumStruct
+	}
+
+	return format( "stats%s.%s", sesPart, template.fieldName )
+}
+#endif
+
+
+#if SERVER
+#if DEVELOPER
+void function DEV_IncrementStat_Int( entity player, StatEntry entry, int incrementAmount )
+{
+	bool DEV_manualSet = true
+	__IncrementStat_Int( player, entry, incrementAmount, DEV_manualSet )
+}
+#endif
+#endif
+
+
+#if SERVER
+#if DEVELOPER
+void function DEV_SetStatsMultiplier( float mul )
+{
+	fileLevel.DEV_statsMultiplier = mul
+	if ( fileLevel.DEV_statsMultiplier != 1.0 )
+	{
+		printf( "Stats are multiplied: stats_dev_multiplier = %f", fileLevel.DEV_statsMultiplier )
+		#if CLIENT
+			SendTeamChatMessage( format( "[!!!] Stats are amped by dev-only playlist var! Multiplier = %.1f", fileLevel.DEV_statsMultiplier ) )
+		#endif
+	}
+}
+#endif
+#endif
+
+
+#if SERVER
+#if DEVELOPER
+void function ClientCommand_stats_dump( entity player, array<string> args )
+{
+	printt( "--", "stats dump for", player )
+
+	foreach ( int index, StatEntry entry in fileLevel.stats_Int )
+		printt( "--", "", entry.persistenceFullKey_Current, player.p.statValues_Int[index] )
+}
+#endif
+#endif
+
+
+#if SERVER
+#if DEVELOPER
+void function ClientCommand_stats_set( entity player, array<string> args )
+{
+	string statRef = args[0]
+
+	if ( !IsValidStatEntryRef( statRef ) )
+	{
+		printt( "invalid stat ref" )
+		return
+	}
+
+	StatEntry entry = GetStatEntryByRef( statRef )
+	__SetStat_Int( player, entry, int(args[1]), true )
+}
+#endif
+#endif
+
+
+
+///////////////////
+///////////////////
+//// Internals ////
+///////////////////
+///////////////////
+
+#if SERVER
+StatEntry function ResolveStatEntryFromVargv( StatTemplate template, array<var> args )
+{
+	int keyArgCount = args.len()
+
+	switch ( keyArgCount )
+	{
+		case 0:
+			return ResolveStatEntry( template )
+			break
+		case 1:
+			return ResolveStatEntry( template, args[ 0 ] )
+			break
+		case 2:
+			return ResolveStatEntry( template, args[ 0 ], args[ 1 ] )
+			break
+		case 3:
+			return ResolveStatEntry( template, args[ 0 ], args[ 1 ], args[ 2 ] )
+			break
+	}
+
+	unreachable
+}
+
+void function __Mode_IncrementStat_Int( entity player, StatTemplate template, ... )
+{
+	string mode = GetCurrentPlaylistVarString( "stats_match_type", "survival" )
+
+	Assert( STATS_MATCH_TYPES.contains( mode ), "Invalid Playlist var stats_match_type " + mode )
+
+	if ( STATS_ALTERNATE_MODE_REFS.contains( mode ) )
+	{
+		int keyArgCount = expect int(vargc)
+
+		Assert( keyArgCount >= 1 )
+
+		int incrementAmount = expect int( vargv[ keyArgCount - 1 ] )
+
+		array<var> args = [ mode ]
+
+		for ( int i=0; i<keyArgCount-1; i++ )
+		{
+			args.append( vargv[ i ] )
+		}
+
+		keyArgCount = expect int(vargc)
+
+		StatEntry entry = ResolveStatEntryFromVargv( template, args )
+
+		__IncrementStat_Int( player, entry, incrementAmount )
+	}
+}
+
+void function __Mode_SetStat_Int( entity player, StatTemplate template, ... )
+{
+	string mode = GetCurrentPlaylistVarString( "stats_match_type", "survival" )
+
+	Assert( STATS_MATCH_TYPES.contains( mode ), "Invalid Playlist var stats_match_type " + mode )
+
+	if ( STATS_ALTERNATE_MODE_REFS.contains( mode ) )
+	{
+		int keyArgCount = expect int(vargc)
+
+		Assert( keyArgCount >= 1 )
+
+		int incrementAmount = expect int( vargv[ keyArgCount - 1 ] )
+
+		array<var> args = [ mode ]
+		for ( int i=0; i<keyArgCount-1; i++ )
+		{
+			args.append( vargv[ i ] )
+		}
+
+		keyArgCount = expect int(vargc)
+
+		StatEntry entry = ResolveStatEntryFromVargv( template, args )
+		__SetStat_Int( player, entry, incrementAmount )
+	}
+}
+
+void function CallOnDependentStatDependencyChangedOnDependents( entity player, StatEntry entry )
+{
+	if ( entry.dependents != null )
+	{
+		array<StatEntry> dependents = expect array<StatEntry>( entry.dependents )
+		foreach( StatEntry dependent in dependents )
+			OnDependentStatDependencyChanged( player, dependent )
+	}
+}
+
+bool function __SharedValidateUpdateStat_Int( entity player, StatEntry entry, bool DEV_isManualDevSet )
+{
+	#if DEVELOPER
+		StatCallStackCheck( DEV_isManualDevSet )
+	#endif
+
+	if ( IsLowCostBot( player ) )
+		return false
+
+	#if ASSERTS
+		if ( !GetCurrentPlaylistVarBool( "enable_stats", true ) && !IsLobby() && entry.gameMode != eChallengeGameMode.NON_MODE )
+		{
+			Assert( false, "tried to update a stat value when stats were disabled. Catch this earlier in the callstack." )
+			return false
+		}
+	#endif
+
+	if ( fileLevel.doOnDemandStats )
+		LoadStatValuesFromPersistenceIntoPlayerStruct( player, entry, false )
+
+	return true
+}
+
+void function __SharedUpdateStat_Int( entity player, StatEntry entry, int newValue, int oldValue )
+{
+	if ( STATS_DEBUG_PRINT_SPAM )
+		printt( "@@@@ STATS __SharedUpdateStat_Int @@@@", player, entry.persistenceFullKey_Current, newValue, "(was " + oldValue + ")" )
+
+	player.p.statValues_Int[entry.indexWithinType] = newValue
+
+	if ( entry.indexWithinType in player.p.statEntryChangeCallbacks_Int )
+		foreach( StatChangedCallbackType_Int cb in player.p.statEntryChangeCallbacks_Int[entry.indexWithinType] )
+			cb( player, oldValue, newValue )
+
+	CallOnDependentStatDependencyChangedOnDependents( player, entry )
+
+#if DEVELOPER
+	if ( !DEV_ShouldIgnorePersistence() )
+#endif
+	{
+		if ( IsLobby() || ( entry.writeImmediately && entry.behavior != eStatBehavior.CALCULATED ) )
+		{
+			player.SetPersistentVar( entry.persistenceFullKey_Current, newValue )
+		}
+		else if ( fileLevel.doOnDemandStats )
+		{
+			MarkStatAsDirtyForPlayer( player, entry )
+		}
+	}
+}
+
+void function __IncrementStat_Int( entity player, StatEntry entry, int incrementAmount, bool DEV_isManualDevSet = false )
+{
+	Assert( entry.type == eStatType.INT )
+	Assert( entry.behavior == eStatBehavior.VARIABLE || entry.behavior == eStatBehavior.ACCUMULATED )
+	Assert( incrementAmount >= 0 )
+
+	if ( !__SharedValidateUpdateStat_Int( player, entry, DEV_isManualDevSet ) )
+		return
+
+	#if DEVELOPER
+		if ( fileLevel.DEV_statsMultiplier != 1.0 )
+			incrementAmount = int( float( incrementAmount ) * fileLevel.DEV_statsMultiplier )
+	#endif
+
+	int oldValue = player.p.statValues_Int[entry.indexWithinType]
+	int newValue = oldValue + incrementAmount
+	
+	Assert( newValue != UNINITIALIZED )
+	if ( newValue == UNINITIALIZED )
+		return
+
+	__SharedUpdateStat_Int( player, entry, newValue, oldValue )
+}
+#endif // #if SERVER
+
+#if SERVER
+void function __SetFlagStat_Int( entity player, StatEntry entry, int bitFlagToSet, bool DEV_isManualDevSet = false )
+{
+	Assert( entry.type == eStatType.INT )
+	Assert( entry.behavior == eStatBehavior.BITFIELD )
+
+	if ( !__SharedValidateUpdateStat_Int( player, entry, DEV_isManualDevSet ) )
+		return
+
+	int oldValue = player.p.statValues_Int[entry.indexWithinType]
+	int newValue = SetBitFlag( oldValue, bitFlagToSet )
+
+	Assert( newValue != UNINITIALIZED )
+	if ( oldValue == newValue || newValue == UNINITIALIZED )
+		return
+
+	__SharedUpdateStat_Int( player, entry, newValue, oldValue )
+}
+#endif
+
+
+#if SERVER
+void function __SetStat_Int( entity player, StatEntry entry, int newValue, bool DEV_isManualDevSet = false )
+{
+	Assert( entry.type == eStatType.INT )
+
+	if ( !__SharedValidateUpdateStat_Int( player, entry, DEV_isManualDevSet ) )
+		return
+
+	#if DEVELOPER
+		if ( fileLevel.DEV_statsMultiplier != 1.0 && !DEV_isManualDevSet )
+			newValue = int( float( newValue ) * fileLevel.DEV_statsMultiplier )
+	#endif
+
+	int oldValue = player.p.statValues_Int[entry.indexWithinType]
+	Assert( newValue != UNINITIALIZED )
+	if ( oldValue == newValue || newValue == UNINITIALIZED )
+		return
+
+	Assert( entry.behavior == eStatBehavior.VARIABLE || (entry.behavior == eStatBehavior.ACCUMULATED && newValue >= oldValue) || DEV_isManualDevSet,
+		"persistenceFullKey_Current: " + entry.persistenceFullKey_Current + ", entry.behavior = " + entry.behavior )
+
+	__SharedUpdateStat_Int( player, entry, newValue, oldValue )
+}
+#endif
+
+
+#if SERVER
+void function InitializeBitfieldStat( entity player, StatEntry entry )
+{
+	Assert( entry.behavior == eStatBehavior.BITFIELD )
+	player.p.statValues_Int[entry.indexWithinType] = 0
+	player.SetPersistentVar( entry.persistenceFullKey_Current, 0 )
+}
+#endif
+
+
+#if SERVER
+void function UpdateCalculatedStatCachedValue( entity player, StatEntry entry, int ornull overrideValue = null )
+{
+	if ( IsLowCostBot( player ) )
+		return
+
+	Assert( entry.behavior == eStatBehavior.CALCULATED && entry.shouldCache )
+
+	if ( fileLevel.doOnDemandStats )
+		LoadStatValuesFromPersistenceIntoPlayerStruct( player, entry, false )
+
+	int value = UNINITIALIZED
+	if ( overrideValue != null )
+	{
+		value = expect int( overrideValue )
+	}
+	else
+	{
+		value = entry.calcFunc_Int( player, GetCalcSourceEntriesFromEntry( entry ), eStatGetWhen.CURRENT )
+	}
+
+	Assert( value != UNINITIALIZED )
+	if ( player.p.statValues_Int[entry.indexWithinType] != value && value != UNINITIALIZED )
+	{
+		player.p.statValues_Int[entry.indexWithinType] = value
+
+		if ( IsLobby() )
+			player.SetPersistentVar( entry.persistenceFullKey_Current, value ) // avoid persistence writes and networking in matches
+		else if ( fileLevel.doOnDemandStats )
+			MarkStatAsDirtyForPlayer( player, entry )
+
+		if ( STATS_DEBUG_PRINT_SPAM )
+			printt( "@@@@ STATS UpdateCalculatedStatCachedValue @@@@", player, entry.persistenceFullKey_Current, value )
+	}
+}
+#endif
+
+
+#if SERVER
+void function OnDependentStatDependencyChanged( entity player, StatEntry dependent )
+{
+	if ( dependent.indexWithinType in player.p.statEntryChangeCallbacks_Int )
+	{
+		int oldValue = 0
+		int newValue = GetStat_Int( player, dependent ) // todo(dw): do we really need oldValue?
+		foreach( StatChangedCallbackType_Int cb in player.p.statEntryChangeCallbacks_Int[dependent.indexWithinType] )
+			cb( player, oldValue, newValue )
+	}
+
+	CallOnDependentStatDependencyChangedOnDependents( player, dependent )
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+StatEntry function ResolveStatEntry( StatTemplate template, ... )
+{
+	Assert( template.type != eStatType.INVALID, "StatTemplate was not initialized." )
+
+	int keyArgCount = expect int(vargc)
+	Assert( keyArgCount == template.enumKeyCount, "Stat '" + GetStatTemplateDebugName( template ) + "' requires " + template.enumKeyCount + " enum keys but ResolveStatEntry was called with " + keyArgCount + "." )
+
+	if ( vargc == 0 )
+		return template.rootEntry
+
+	StatTemplateEnumKeyResolver resolver = template.resolver
+	for ( int resolveDepth = 0; resolveDepth < keyArgCount - 1; resolveDepth++ )
+	{
+		Assert( !resolver.isFinal )
+		string key = expect string(vargv[resolveDepth])
+
+                                             
+                                               
+                                                                   
+        
+
+		resolver = resolver.children[key]
+	}
+	Assert( resolver.isFinal )
+	string key = expect string(vargv[keyArgCount - 1])
+
+                                            
+                                              
+                                                                  
+       
+
+	#if SERVER
+	#if DEVELOPER
+		// We always expect any statRef specified to exist.  This is a check.
+		if ( !(key in resolver.entries) )
+		{
+			Assert( false, "The statRef '" + key + "' does not exist. Check its spelling or properly create a new statRef." )
+			return template.rootEntry
+		}
+	#endif
+	#endif
+
+	return resolver.entries[key]
+}
+
+                                           
+                                                                                 
+ 
+                                                   
+                                                                  
+                                                                                      
+                                                                                
+                                                                               
+                                                                                   
+                                                                        
+                                                                                 
+                                                            
+    
+                                                                                      
+                                     
+  
+                                                    
+                                                               
+   
+                                                                   
+                                                                              
+   
+  
+           
+ 
+             
+#endif // SERVER || CLIENT || UI
+
+
+#if SERVER || CLIENT || UI
+StatEnumStruct function RegisterStatEnumStruct( StatEnumStruct ornull parentSESOrNull, string fieldName, string enumName, array<string> choices )
+{
+	StatEnumStruct ses
+	ses.parentEnumStruct = parentSESOrNull
+	ses.fieldName = fieldName
+	ses.enumName = enumName
+	ses.choices = choices
+
+	#if DEVELOPER
+		if ( parentSESOrNull == null )
+		{
+			fileLevel.rootFieldsList.childEnumStructs.append( ses )
+		}
+		else
+		{
+			StatEnumStruct parentSES = expect StatEnumStruct(parentSESOrNull)
+			StatEnumStruct_Children sesChildren
+			if ( parentSES in fileLevel.sesChildrenMap )
+				sesChildren = fileLevel.sesChildrenMap[parentSES]
+			else
+				fileLevel.sesChildrenMap[parentSES] <- sesChildren
+			sesChildren.childEnumStructs.append( ses )
+		}
+	#endif
+
+	return ses
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+StatTemplate function InternalRegisterStatCommon( StatEnumStruct ornull parentSESOrNull, string fieldName, int type, int behavior, bool writeImmediately, bool shouldCache, int gameMode )
+{
+	StatTemplate template
+
+	template.fieldName = fieldName
+	template.type = type
+	template.behavior = behavior
+	template.writeImmediately = writeImmediately
+	template.shouldCache = shouldCache
+	template.gameMode = gameMode
+	Assert( !shouldCache || template.behavior == eStatBehavior.CALCULATED )
+
+	if ( parentSESOrNull == null )
+	{
+		Assert( gameMode != MODE_SPECIFIC )
+
+		template.rootEntry.type = template.type
+		template.rootEntry.behavior = template.behavior
+		template.rootEntry.writeImmediately = template.writeImmediately
+		template.rootEntry.shouldCache = template.shouldCache
+		template.rootEntry.gameMode = template.gameMode
+
+		template.rootEntry.persistenceFullKey_Current = STATS_PERSISTENCE_PREFIX_CURRENT + "." + fieldName
+		if ( template.rootEntry.behavior != eStatBehavior.CALCULATED || template.rootEntry.shouldCache )
+		{
+#if DEVELOPER
+			//if ( GetConVarBool( "persistence_development_mode", false ) )
+			if ( !DEV_ShouldIgnorePersistence() )
+#endif
+			{
+				//template.rootEntry.persistenceFullKey_Current_Handle = PersistenceGetVarHandle( template.rootEntry.persistenceFullKey_Current ) // handle optimization not available
+			}
+		}
+
+		template.rootEntry.index = fileLevel.allStats.len()
+		fileLevel.allStats.append( template.rootEntry )
+
+		fileLevel.refStatEntryMap[template.rootEntry.persistenceFullKey_Current] <- template.rootEntry
+
+		template.rootEntry.indexWithinType = fileLevel.stats_Int.len()
+		fileLevel.stats_Int.append( template.rootEntry )
+
+		#if DEVELOPER
+			fileLevel.rootFieldsList.childStatTemplates.append( template )
+		#endif
+
+		template.allEntries.append( template.rootEntry )
+	}
+	else
+	{
+		StatEnumStruct parentSES = expect StatEnumStruct(parentSESOrNull)
+
+		#if DEVELOPER
+			StatEnumStruct_Children sesChildren
+			if ( parentSES in fileLevel.sesChildrenMap )
+				sesChildren = fileLevel.sesChildrenMap[parentSES]
+			else
+				fileLevel.sesChildrenMap[parentSES] <- sesChildren
+			sesChildren.childStatTemplates.append( template )
+		#endif
+
+		array<StatEnumStruct> sesAncestorsReversed = []
+		StatEnumStruct ornull ancestorOrNull       = parentSESOrNull
+		while ( ancestorOrNull != null )
+		{
+			StatEnumStruct ancestor = expect StatEnumStruct(ancestorOrNull)
+			sesAncestorsReversed.append( ancestor )
+			ancestorOrNull = ancestor.parentEnumStruct
+		}
+
+		template.enumKeyCount = sesAncestorsReversed.len()
+		template.resolver = BuildStatTemplateEnumKeyResolversRecursive( template, 0, sesAncestorsReversed, template, "", [] )
+	}
+
+	return template
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+StatTemplateEnumKeyResolver function BuildStatTemplateEnumKeyResolversRecursive( StatTemplate template, int depth, array<StatEnumStruct> sesAncestorsReversed, StatTemplate stat, string partialKey, array<string> enumKeys )
+{
+	StatTemplateEnumKeyResolver resolver
+
+	StatEnumStruct ancestor = sesAncestorsReversed[sesAncestorsReversed.len() - 1 - depth]
+
+	if ( depth == sesAncestorsReversed.len() - 1 )
+	{
+		resolver.isFinal = true
+		foreach ( string choice in ancestor.choices )
+		{
+			array<string> grownEnumKeys = []
+			grownEnumKeys.extend( enumKeys )
+			grownEnumKeys.append( choice )
+
+			StatEntry entry
+			entry.type = template.type
+			entry.behavior = template.behavior
+			entry.writeImmediately = template.writeImmediately
+			entry.shouldCache = template.shouldCache
+			entry.gameMode = template.gameMode
+
+			string entryPersistencePartialKey = partialKey + ancestor.fieldName + "[" + choice + "]" + "." + stat.fieldName
+			entry.persistenceFullKey_Current = STATS_PERSISTENCE_PREFIX_CURRENT + "." + entryPersistencePartialKey
+
+			if ( template.gameMode == MODE_SPECIFIC )
+			{
+				foreach ( int gameModeEnum, string modeRef in GAME_MODE_TO_STAT_REF_MAP )
+				{
+					if ( entryPersistencePartialKey.find( modeRef ) != -1 )
+						entry.gameMode = gameModeEnum
+				}
+			}
+
+			if ( entry.behavior != eStatBehavior.CALCULATED || entry.shouldCache )
+			{
+#if DEVELOPER
+				//if ( GetConVarBool( "persistence_development_mode", false ) )
+				if ( !DEV_ShouldIgnorePersistence() )
+#endif
+				{
+					//entry.persistenceFullKey_Current_Handle = PersistenceGetVarHandle( entry.persistenceFullKey_Current ) // handle optimization not available
+				}
+			}
+
+			entry.enumKeys = grownEnumKeys
+
+			entry.index = fileLevel.allStats.len()
+			fileLevel.allStats.append( entry )
+
+			fileLevel.refStatEntryMap[entry.persistenceFullKey_Current] <- entry
+
+			entry.indexWithinType = fileLevel.stats_Int.len()
+			fileLevel.stats_Int.append( entry )
+
+
+			resolver.entries[choice] <- entry
+
+			template.allEntries.append( entry )
+		}
+	}
+	else
+	{
+		resolver.isFinal = false
+		foreach ( string choice in ancestor.choices )
+		{
+			string grownPartialKey      = partialKey + ancestor.fieldName + "[" + choice + "]."
+
+			array<string> grownEnumKeys = []
+			grownEnumKeys.extend( enumKeys )
+			grownEnumKeys.append( choice )
+			StatTemplateEnumKeyResolver subResolver = BuildStatTemplateEnumKeyResolversRecursive( stat, depth + 1, sesAncestorsReversed, stat, grownPartialKey, grownEnumKeys )
+			resolver.children[choice] <- subResolver
+		}
+	}
+
+	return resolver
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+StatTemplate function RegisterAccumulatedStat_Int( StatEnumStruct ornull enumStructOrNull, string fieldName, int gameMode, bool writeImmediately )
+{
+	return InternalRegisterStatCommon( enumStructOrNull, fieldName, eStatType.INT, eStatBehavior.ACCUMULATED, writeImmediately, false, gameMode )
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+StatTemplate function RegisterVariableStat_Int( StatEnumStruct ornull enumStructOrNull, string fieldName, int gameMode, bool writeImmediately )
+{
+	return InternalRegisterStatCommon( enumStructOrNull, fieldName, eStatType.INT, eStatBehavior.VARIABLE, writeImmediately, false, gameMode )
+}
+#endif
+
+#if SERVER || CLIENT || UI
+void function InternalRegisterCalcFunc( StatTemplate stat, StatCalcFuncInfo functionref( StatEntry, array<StatTemplate> ) setupFunc, array<StatTemplate> sourceTemplates )
+{
+	foreach( StatEntry entry in stat.allEntries )
+	{
+		StatCalcFuncInfo calcInfo = setupFunc( entry, sourceTemplates )
+		entry.calcFunc_Int = calcInfo.calcFunc_Int
+		entry.calcSourceEntries = calcInfo.sourceEntries
+
+		if ( calcInfo.sourceEntries != null )
+		{
+			array<StatEntry> sourceEntries = expect array<StatEntry>( calcInfo.sourceEntries )
+			foreach( StatEntry sourceEntry in sourceEntries )
+			{
+				if ( sourceEntry.dependents == null )
+					sourceEntry.dependents = []
+				array<StatEntry> dependents = expect array<StatEntry>( sourceEntry.dependents )
+				dependents.append( entry )
+			}
+		}
+	}
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+StatTemplate function InternalRegisterCalculatedStatCommon( StatEnumStruct ornull enumStructOrNull, string fieldName, bool writeImmediately, bool shouldCache,
+		StatCalcFuncInfo functionref( StatEntry, array<StatTemplate> ) setupFunc, array<StatTemplate> sourceTemplates, int gameMode )
+{
+	StatTemplate stat = InternalRegisterStatCommon( enumStructOrNull, fieldName, eStatType.INT, eStatBehavior.CALCULATED, writeImmediately, shouldCache, gameMode )
+
+	InternalRegisterCalcFunc( stat, setupFunc, sourceTemplates )
+
+	return stat
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+StatTemplate function RegisterExpensiveCalculatedStat_Int( StatEnumStruct ornull enumStructOrNull, string fieldName, bool writeImmediately,
+		StatCalcFuncInfo functionref( StatEntry, array<StatTemplate> ) setupFunc, array<StatTemplate> sourceTemplates, int gameMode )
+{
+	return InternalRegisterCalculatedStatCommon( enumStructOrNull, fieldName, writeImmediately, false, setupFunc, sourceTemplates, gameMode )
+}
+#endif
+
+
+#if SERVER || CLIENT || UI
+StatTemplate function RegisterCachedCalculatedStat_Int( StatEnumStruct ornull enumStructOrNull, string fieldName, bool writeImmediately,
+		StatCalcFuncInfo functionref( StatEntry, array<StatTemplate> ) setupFunc, array<StatTemplate> sourceTemplates, int gameMode )
+{
+	return InternalRegisterCalculatedStatCommon( enumStructOrNull, fieldName, writeImmediately, true, setupFunc, sourceTemplates, gameMode )
+}
+#endif
+
+#if SERVER || CLIENT || UI
+StatTemplate function RegisterBitfieldStat_Int( StatEnumStruct ornull enumStructOrNull, string fieldName, bool writeImmediately,
+		StatCalcFuncInfo functionref( StatEntry, array<StatTemplate> ) setupFunc, array<StatTemplate> sourceTemplates, int gameMode )
+{
+	StatTemplate stat = InternalRegisterStatCommon( enumStructOrNull, fieldName, eStatType.INT, eStatBehavior.BITFIELD, writeImmediately, false, gameMode )
+
+	InternalRegisterCalcFunc( stat, setupFunc, sourceTemplates )
+
+	return stat
+}
+#endif
+
+
+#if SERVER
+
+void function Stats_Save( entity player )
+{
+	if ( IsLowCostBot( player ) )
+		return
+
+	Assert( player.IsPlayer() )
+
+	#if DEVELOPER
+		//if ( GetConVarBool( "persistence_development_mode", false ) )
+		if ( DEV_ShouldIgnorePersistence() )
+			return
+	#endif
+
+	if ( fileLevel.doOnDemandStats )
+	{
+		if ( player in fileLevel.playerDirtyStats )
+		{
+			foreach ( StatEntry entry in fileLevel.playerDirtyStats[ player ] )
+			{
+				int index = entry.indexWithinType
+				SaveStatInt( player, index, entry )
+			}
+		}
+	}
+	else
+	{
+		foreach ( int index, StatEntry entry in fileLevel.stats_Int )
+		{
+			SaveStatInt( player, index, entry )
+		}
+	}
+}
+
+#endif
+
+#if SERVER
+void function MarkStatAsDirtyForPlayer( entity player, StatEntry entry )
+{
+	#if DEVELOPER
+		if ( DEV_ShouldIgnorePersistence() )
+			return
+	#endif
+
+	// SHOULD have happened when persistence was ready; defensive fix for live issue
+	if ( ( player in fileLevel.playerDirtyStats ) == false )
+	{
+		// initialize (otherwise .append doesn't work)
+		fileLevel.playerDirtyStats[ player ] <- []
+	}
+
+	if ( fileLevel.playerDirtyStats[ player ].contains( entry ) == false )
+	{
+		fileLevel.playerDirtyStats[ player ].append( entry )
+	}
+}
+#endif
+
+#if SERVER
+void function LoadStatValuesFromPersistenceIntoPlayerStruct( entity player, StatEntry entry, bool isInitializing )
+{
+	return
+	int index = entry.indexWithinType
+	if ( player.p.statValues_Int[index] == UNINITIALIZED || isInitializing )
+	{
+		if ( entry.behavior != eStatBehavior.CALCULATED || entry.shouldCache )
+		{
+			player.p.statValues_Int[index] = int(player.GetPersistentVar( entry.persistenceFullKey_Current ) )
+			player.p.statValuesAtStart_Int[index] = player.p.statValues_Int[index]
+
+			Assert( player.p.statValuesAtStart_Int[index] != UNINITIALIZED, "Found an unitialized value for non-calculated stat: " + entry.persistenceFullKey_Current )
+		}
+	}
+}
+#endif
+
+
+
+#if SERVER
+void function SaveStatInt( entity player, int index, StatEntry entry )
+{
+	if ( entry.behavior != eStatBehavior.CALCULATED || entry.shouldCache )
+	{
+		Assert(index < player.p.statValues_Int.len(), "Stats_Save " + entry.persistenceFullKey_Current)
+		int statToSave = player.p.statValues_Int[index]
+		Assert( statToSave != UNINITIALIZED, "Tried to save an unitialized value for stat: " + entry.persistenceFullKey_Current )
+		if ( statToSave != UNINITIALIZED )
+			player.SetPersistentVar( entry.persistenceFullKey_Current, statToSave )
+	}
+}
+#endif
+
+
+#if SERVER
+#if DEVELOPER
+void function GenerateGameStatsPDef()
+{
+	array<string> allWeaponStatsCategories = []
+
+	foreach( ItemFlavor weapon in GetAllWeaponItemFlavors() )
+	{
+		string category = WeaponItemFlavor_GetStatsCategory( weapon )
+		if ( !allWeaponStatsCategories.contains( category ) )
+			allWeaponStatsCategories.append( category )
+	}
+	DEV_PDefGen_AddEnum( "eWeaponStatCategory", allWeaponStatsCategories, "All the weapon stats categories." )
+	DEV_PDefGen_AddEnum( "eModesFlavors", STATS_ALTERNATE_MODE_REFS, "All the mode flavors that are registered in the game." )
+
+	bool didRegister
+	didRegister = GenerateGameStatsPDef_RegisterRootStatsStruct( "sStatsData", "sStatEnumStruct", "current data" )
+	Assert( didRegister )
+
+	DEV_PDefGen_BeginFieldGroup( "stats" )
+	DEV_PDefGen_AddField_Struct( "sStatsData", STATS_PERSISTENCE_PREFIX_CURRENT )
+	DEV_PDefGen_EndFieldGroup()
+}
+#endif
+#endif
+
+
+#if SERVER
+#if DEVELOPER
+bool function GenerateGameStatsPDef_RegisterRootStatsStruct( string structName, string sesNamePrefix, string comment )
+{
+	array<StatEnumStruct> childSESList = []
+	foreach ( StatEnumStruct childSES in fileLevel.rootFieldsList.childEnumStructs )
+	{
+		if ( GenerateGameStatsPDef_RegisterSESRecursive( sesNamePrefix, childSES, null ) )
+			childSESList.append( childSES )
+	}
+
+	array<StatTemplate> childStatList = []
+	foreach ( StatTemplate stat in fileLevel.rootFieldsList.childStatTemplates )
+	{
+		childStatList.append( stat )
+	}
+
+	if ( childSESList.len() == 0 && childStatList.len() == 0 )
+		return false
+
+	DEV_PDefGen_BeginStruct( structName, comment )
+	foreach ( StatEnumStruct ses in childSESList )
+	{
+		DEV_PDefGen_AddField_StructArray_EnumKey( ses.structName, ses.fieldName, ses.enumName )
+	}
+	foreach ( StatTemplate stat in childStatList )
+	{
+		GenerateGameStatsPDef_AddStatField( stat )
+	}
+	DEV_PDefGen_EndStruct()
+
+	return true
+}
+#endif
+#endif
+
+
+#if SERVER
+#if DEVELOPER
+bool function GenerateGameStatsPDef_RegisterSESRecursive( string structNamePrefix, StatEnumStruct ses, StatEnumStruct ornull parentSESOrNull )
+{
+	if ( parentSESOrNull == null )
+	{
+		ses.structName = structNamePrefix + "_" + ses.fieldName
+	}
+	else
+	{
+		StatEnumStruct parentSES = expect StatEnumStruct(parentSESOrNull)
+		ses.structName = parentSES.structName + "_" + ses.fieldName
+	}
+
+	StatEnumStruct_Children children
+	if ( ses in fileLevel.sesChildrenMap )
+		children = fileLevel.sesChildrenMap[ses]
+
+	array<StatEnumStruct> childSESList = []
+	foreach ( StatEnumStruct childSES in children.childEnumStructs )
+	{
+		if ( GenerateGameStatsPDef_RegisterSESRecursive( structNamePrefix, childSES, ses ) )
+			childSESList.append( childSES )
+	}
+
+	array<StatTemplate> childStatList = []
+	foreach ( StatTemplate stat in children.childStatTemplates )
+	{
+			childStatList.append( stat )
+	}
+
+	if ( childSESList.len() == 0 && childStatList.len() == 0 )
+		return false
+
+	DEV_PDefGen_BeginStruct( ses.structName )
+	foreach ( StatEnumStruct childSES in childSESList )
+	{
+		DEV_PDefGen_AddField_StructArray_EnumKey( childSES.structName, childSES.fieldName, childSES.enumName )
+	}
+	foreach ( StatTemplate stat in childStatList )
+	{
+		GenerateGameStatsPDef_AddStatField( stat )
+	}
+	DEV_PDefGen_EndStruct()
+
+	return true
+}
+#endif
+#endif
+
+
+#if SERVER
+#if DEVELOPER
+void function GenerateGameStatsPDef_AddStatField( StatTemplate stat )
+{
+	if ( stat.behavior == eStatBehavior.CALCULATED && !stat.shouldCache )
+		return
+
+	Assert( stat.type != eStatType.INVALID, "StatTemplate was not initialized." )
+	DEV_PDefGen_AddField_Int( stat.fieldName )
+}
+#endif
+#endif
+
+#if SERVER || CLIENT || UI
+                  
+                                        
+ 
+             
+                                                  
+  
+                                                            
+                                               
+  
+                       
+ 
+      
+#endif
+

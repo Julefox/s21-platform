@@ -1,0 +1,17 @@
+"mp_rr_district"
+{
+	assets
+	{
+		minimap overviews\mp_rr_district
+		fw_zone_imc overviews\mp_rr_district_zones_imc
+		fw_zone_mil overviews\mp_rr_district_zones_mil
+	}
+
+	pos_x -43008
+	pos_y 43008
+	scale 21
+	displayDist 2048
+	threatMaxDist 2500
+	threatNearDist 500
+	threatFarDist 2000
+}

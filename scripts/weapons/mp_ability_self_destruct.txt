@@ -1,0 +1,187 @@
+"WeaponData"
+{
+	"printname" "#ABL_SELF_DESTRUCT"
+	"shortprintname" "#ABL_SELF_DESTRUCT_SHORT"
+	"description" "#ABL_SELF_DESTRUCT_DESC"
+	"longdesc" "#ABL_SELF_DESTRUCT_LONGDESC"
+	"fire_mode" "offhand"
+	"offhand_active_slot" "mainHand"
+	"offhand_activates_on_zoom" "0"
+	"offhand_interupts_weapon_anims" "1"
+	"offhand_cancelled_by_melee" "0"
+	"is_toss_weapon" "1"
+	"offhand_default_inventory_slot" "0"
+	"offhand_toss_activates_on_attack" "0"
+	"offhand_toss_hold_is_resumable" "0"
+	"hud_icon" "rui/hud/ultimate_icons/ultimate_revenant"
+	"OnWeaponTossReleaseAnimEvent" "OnWeaponPrimaryAttack_ability_self_destruct"
+	"OnWeaponTossPrep" "Grenade_OnWeaponTossPrep"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_weapon_ability_self_destruct"
+	"OnProjectileCollision" "OnProjectileCollision_ability_self_destruct"
+	"OnWeaponRegenEnd" "OnWeaponRegenEndGeneric"
+	"OnWeaponActivate" "OnWeaponActivate_ability_self_destruct"
+	"viewmodel" "mdl/weapons/empty_handed/ptpov_bloodhound_huntmode.rmdl"
+	"projectilemodel" "mdl/weapons_r5/misc_revenant_grenade/projectile_revenant_grenade.rmdl"
+	"ammo_display" "count"
+	"ammo_clip_size" "60"
+	"ammo_default_total" "0"
+	"ammo_min_to_fire" "60"
+	"ammo_per_shot" "60"
+	"ammo_stockpile_max" "60"
+	"ammo_drains_to_empty_on_fire" "0"
+	"ammo_no_remove_from_clip" "0"
+	"regen_ammo_refill_rate" "1.000000"
+	"regen_ammo_refill_start_delay" "0.000000"
+	"stick_pilot" "0"
+	"stick_titan" "0"
+	"stick_npc" "0"
+	"stick_drone" "0"
+	"projectile_ricochet_max_count" "10"
+	"critical_hit" "0"
+	"sound_throw_1p" "Revenant_Silence_Mvmt_Fire_1P"
+	"sound_deploy_1p" "Revenant_Silence_Mvmt_Draw_1P"
+	"sound_throw_3p" "Revenant_Silence_Mvmt_Fire_3p"
+	"sound_deploy_3p" "Revenant_Silence_Mvmt_Draw_3p"
+	"idle_sound_player_1p" "Revenant_Silence_DrawIdle_1p"
+	"burn_damage_running" "16"
+	"burn_time_running" "2.000000"
+	"burn_stacks_max_running" "1"
+	"burn_stack_debounce_running" "2.000000"
+	"burn_tick_rate_running" "1.200000"
+	"burn_duration_running" "8.000000"
+	"burn_segment_radius_running" "50.000000"
+	"burn_segment_height_running" "48.000000"
+	"burn_damage_detonate" "32"
+	"burn_time_detonate" "2.000000"
+	"burn_stacks_max_detonate" "1"
+	"burn_stack_debounce_detonate" "2.000000"
+	"burn_tick_rate_detonate" "1.200000"
+	"burn_duration_detonate" "10.000000"
+	"burn_segment_radius_detonate" "50.000000"
+	"burn_segment_height_detonate" "48.000000"
+	"sound_burn_damage_tick_1p" "flesh_fire_damage_1p"
+	"cooldown_type" "ammo_instant"
+	"max_cook_time" "99999.992188"
+	"grenade_fuse_time" "0"
+	"start_fuse_on_launch" "0"
+	"grenade_ignition_time" "5.000000"
+	"fire_rate" "4.000000"
+	"fire_anim_rate" "0.500000"
+	"vortex_refire_behavior" "grenade"
+	"allow_empty_fire" "0"
+	"reload_enabled" "0"
+	"allow_empty_click" "1"
+	"empty_reload_only" "0"
+	"trigger_snipercam" "0"
+	"allow_headshots" "0"
+	"aimassist_disable_hipfire" "1"
+	"aimassist_disable_ads" "1"
+	"toss_pullout_time" "0.300000"
+	"toss_time" "0.600000"
+	"toss_overhead_time" "0.600000"
+	"projectile_launch_speed" "500"
+	"damage_type" "burn"
+	"fire_rumble" "rumble_shotgun"
+	"impact_effect_table" "exp_ability_silence"
+	"projectile_trail_effect_0_1p" "P_Bdagger_trail"
+	"projectile_trail_effect_0_3p" "P_Bdagger_trail"
+	"projectile_trail_attachment" "FX_CENTER"
+	"projectile_adjust_to_gun_barrel" "1"
+	"projectile_adjust_to_hand" "0"
+	"grenade_disc_throw" "1"
+	"weapon_type_flags" "WPT_ULTIMATE"
+	"OnWeaponRegenBegin" "Ultimate_OnWeaponRegenBegin"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "Survival_UI_Ultimate_Ready"
+	"drops_on_death" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"ultimates_charge_over_time_disabled"
+		{
+			"regen_ammo_refill_rate" "0"
+
+		}
+
+		"copycat_mod"
+		{
+			"weapon_type_flags" "WPT_SURVIVAL"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+	}
+
+	"RUI_CrosshairData"
+	{
+
+		"DefaultArgs"
+		{
+			"adjustedSpread" "weapon_spread"
+			"adsFrac" "player_zoomFrac"
+			"isSprinting" "player_is_sprinting"
+			"isReloading" "weapon_is_reloading"
+			"teamColor" "crosshair_team_color"
+			"isAmped" "weapon_is_amped"
+			"crosshairMovementX" "crosshair_movement_x"
+			"crosshairMovementY" "crosshair_movement_y"
+
+		}
+
+		"Crosshair_1"
+		{
+			"ui" "ui/crosshair_esmoke"
+			"base_spread" "0.000000"
+
+			"Args"
+			{
+				"isFiring" "weapon_is_firing"
+
+			}
+		}
+
+		"Crosshair_2"
+		{
+			"ui" "ui/crosshair_ordnance"
+
+			"Args"
+			{
+				"regenRate" "eWeaponVar.regen_ammo_refill_rate"
+				"ammoFrac" "progress_weapon_clip_ammo_frac"
+				"dryfireTime" "weapon_latest_dryfire_time"
+
+			}
+		}
+	}
+}

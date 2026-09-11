@@ -1,0 +1,294 @@
+untyped
+
+global function CommonNPCOnSpawned
+
+void function CommonNPCOnSpawned( entity npc )
+{
+	npc.ai.spawnTime = Time()
+	npc.ai.spawnOrigin = npc.GetOrigin()
+
+	if ( npc.HasKey( "script_goal_radius" ) )
+	{
+		var radius = npc.kv.script_goal_radius
+		if ( radius != null && radius != "" )
+		{
+			npc.AssaultSetGoalRadius( int( radius ) )
+			npc.AssaultPoint( npc.GetOrigin() )
+		}
+	}
+
+	if ( npc.HasKey( "script_goal_height" ) )
+	{
+		var height = npc.kv.script_goal_height
+		if ( height != null && height != "" )
+		{
+			npc.AssaultSetGoalHeight( int( height ) )
+		}
+	}
+
+	if ( npc.HasKey( "script_flag_killed" ) )
+	{
+		thread SetupFlagKilledForNPC( npc )
+	}
+
+	string aisetting = GetDefaultAISetting( npc )
+
+	SetAISettingsWrapper( npc, aisetting )
+
+	Assert( !npc.executedSpawnOptions, npc + " tried to spawn twice?" )
+	npc.executedSpawnOptions = true
+
+	if ( npc.Dev_GetAISettingByKeyField( "SpawnLimping" ) )
+		npc.SetActivityModifier( ACT_MODIFIER_STAGGER, true )
+
+	InitHighlightSettings( npc )
+
+	// Must be set both ways: the flag is networked and defaults are not re-applied per spawn.
+	npc.SetValidHealthBarTarget( npc.Dev_GetAISettingByKeyField( "DrawTargetHealthBar" ) ? true : false )
+
+	if ( npc.GetTeam() <= 0 )
+	{
+		SetTeam( npc, npc.GetTeam() )
+	}
+
+	if ( IsMinion( npc ) )
+	{
+		SetupMinionForRPGs( npc )
+		CommonMinionInit( npc )
+	}
+	else if ( !npc.IsTitan() )
+	{
+		npc.SetEnemyChangeCallback( OnEnemyChanged_MinionUpdateAimSettingsForEnemy )
+	}
+
+	if ( npc.GetTitle() == "" )
+	{
+		var title = npc.GetSettingTitle()
+		if ( title != null && title != "" )
+			npc.SetTitle( title )
+	}
+
+	// start alert
+	if ( npc.mySpawnOptions_alert != null )
+		npc.kv.alwaysalert = npc.mySpawnOptions_alert
+	else if ( npc.HasKey( "start_alert" ) )
+		npc.kv.alwaysalert = npc.kv.start_alert
+
+	npc.kv.physdamagescale = 1.0
+
+	if ( npc.HasKey( "script_buddha" ) && npc.kv.script_buddha == "1" )
+		npc.ai.buddhaMode = true
+
+	if ( npc.IsTitan() )
+	{
+	}
+	else if ( IsTurret( npc ) )
+	{
+		//turret-specific
+	}
+	else
+	{
+		//UpdateAIMinimapStatusToOtherPlayers( npc )
+
+		if ( npc.ai.mySpawnOptions_weapon != null )
+		{
+			array<entity> weapons = npc.GetMainWeapons()
+			TakeWeaponsForArray( npc, weapons )
+
+			NPCDefaultWeapon spawnoptionsweapon = expect NPCDefaultWeapon( npc.ai.mySpawnOptions_weapon )
+			npc.GiveWeapon( spawnoptionsweapon.wep, WEAPON_INVENTORY_SLOT_ANY, spawnoptionsweapon.mods )
+		}
+
+		entity weapon = npc.GetActiveWeapon( eActiveInventorySlot.mainHand )
+		if ( weapon != null && weapon.GetWeaponType() == WT_SIDEARM )
+			npc.DisableNPCFlag( NPC_CROUCH_COMBAT )
+	}
+
+	switch ( npc.GetClassName() )
+	{
+		case "npc_bullseye":
+			npc.NotSolid()
+			npc.SetInvulnerable()
+			break
+
+		case "npc_drone":
+			InitMinimapSettings( npc )
+
+			npc.s.rebooting <- null
+			npc.ai.preventOwnerDamage = true
+			npc.s.lastSmokeDeployTime <- Time()
+
+			thread RunDroneTypeThink( npc )
+
+			switch ( GetDroneType( npc ) )
+			{
+				case "drone_type_engineer_combat":
+					npc.kv.rendercolor = "0 0 0"
+					break
+
+				case "drone_type_engineer_shield":
+					npc.kv.rendercolor = "255 255 255"
+					break
+			}
+			break
+
+		case "npc_dropship":
+			npc.SetSkin( 1 ) //Use skin where the lights are on for dropship.
+			npc.EnableRenderAlways()
+			npc.SetAimAssistAllowed( false )
+			//npc.kv.CollisionGroup = TRACE_COLLISION_GROUP_BLOCK_WEAPONS
+			AddAnimEvent( npc, "dropship_warpout", WarpoutEffect )
+
+			InitLeanDropship( npc )
+			break
+
+		case "npc_frag_drone":
+			MakeSuicideSpectre( npc )
+			break
+
+		case "npc_gunship":
+			//InitMinimapSettings( npc )
+			//EmitSoundOnEntity( npc, SOUND_GUNSHIP_HOVER )
+			//
+			//npc.ai.preventOwnerDamage = true
+			//npc.s.rebooting <- null
+			//npc.s.plantedMinesManagedEntArrayID <- CreateScriptManagedEntArray()
+			//
+			//npc.kv.crashOnDeath = false
+			////npc.kv.secondaryWeaponName = "mp_weapon_gunship_missile"
+			//
+			//EnableLeeching( npc )
+			//npc.SetUsableByGroup( "enemies pilot" )
+			//
+			//thread GunshipThink( npc )
+			break
+
+		case "npc_prowler":
+			npc.DisableNPCFlag( NPC_ALLOW_FLEE ) //HACK until we get a way to make last guy not run away and hide
+			//SetSquad( npc, spawnOptions.squadName ) //not sure why this is here - jake had it in his original spawn func, so I'm keeping it
+			//SetNPCSquadMode( spawnOptions.squadName, SQUAD_MODE_MULTIPRONGED_ATTACK )
+			break
+
+		case "npc_soldier":
+
+			InitMinimapSettings( npc )
+
+			SetHumanRagdollImpactTable( npc )
+
+			thread OnSoldierSeeEnemy( npc )
+			thread TryFriendlyPassingNearby( npc )
+
+			int team = npc.GetTeam()
+
+			//grunt specific
+			npc.SetDoFaceAnimations( true ) //HACK: assumption that militia are the only grunt models with faces ( will need a better thing for R2 )
+
+			bool alreadyGaveASecondary = false
+			entity weapon = npc.GetActiveWeapon( eActiveInventorySlot.mainHand )
+			string weaponSubClass
+			if ( weapon )
+				weaponSubClass = string( weapon.GetWeaponInfoFileKeyField( "weaponSubClass" ) )
+
+			if ( npc.Dev_GetAISettingByKeyField( "PersonalShield" ) != null )
+			{
+				npc.DisableNPCFlag( NPC_ALLOW_FLEE | NPC_ALLOW_HAND_SIGNALS | NPC_USE_SHOOTING_COVER | NPC_CROUCH_COMBAT )
+				//thread ActivatePersonalShield( npc )
+			}
+
+			if ( npc.ai.droneSpawnAISettings != "" )
+			{
+				thread DroneGruntThink( npc, npc.ai.droneSpawnAISettings )
+			}
+
+			break
+
+		case "npc_spectre":
+			InitMinimapSettings( npc )
+			thread OnSpectreSeeEnemy( npc )
+
+			//Only enable spectre hacking if the playlist var is enabled
+			if ( ( npc.GetTeam() == TEAM_IMC || npc.GetTeam() == TEAM_MILITIA ) && GetCurrentPlaylistVarInt( "enable_spectre_hacking", 0 ) == 1 )
+			{
+				EnableLeeching( npc )
+				npc.SetUsableByGroup( "enemies pilot" )
+			}
+
+			break
+
+		case "npc_stalker":
+			InitMinimapSettings( npc )
+			break
+
+                  
+                           
+                             
+
+                                                            
+
+                         
+
+                                                             
+
+                                   
+
+                                    
+
+                                                                                          
+                                                                                          
+
+                                  
+
+                           
+        
+
+                   
+                             
+
+                                                                         
+                             
+                                   
+                                        
+                                    
+        
+                            
+
+		case "npc_turret_mega":
+			InitMinimapSettings( npc )
+			npc.EnableNPCFlag( NPC_AIM_DIRECT_AT_ENEMY )
+			npc.SetAimAssistAllowed( false )
+			//#if R1_VGUI_MINIMAP
+			//	npc.Minimap_SetDefaultMaterial( GetMinimapMaterial( "turret_neutral" ) )
+			//	npc.Minimap_SetFriendlyMaterial( GetMinimapMaterial( "turret_friendly" ) )
+			//	npc.Minimap_SetEnemyMaterial( GetMinimapMaterial( "turret_enemy" ) )
+			//	npc.Minimap_SetBossPlayerMaterial( GetMinimapMaterial( "turret_friendly" ) )
+			//#endif
+			break
+
+		case "npc_turret_sentry":
+			InitMinimapSettings( npc )
+			npc.SetAimAssistAllowed( false )
+			break
+
+		case "npc_goliath":
+			//npc.GiveOffhandWeapon( "mp_weapon_goliath_block", OFFHAND_LEFT )
+			break
+	}
+
+	thread AssaultLinkedMoveTarget( npc )
+	npc.e.canBurn = true
+	npc.e.canBeDamagedFromGas = true
+}
+
+                  
+                                             
+ 
+              
+                                                
+                 
+                                                                                            
+                 
+
+                
+                                     
+ 
+                        

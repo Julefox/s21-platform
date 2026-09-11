@@ -1,0 +1,1894 @@
+// Stubs for weapon settings that name a script callback this build does
+// not implement. Without them the engine refuses to precache the weapon.
+// A few callbacks take different arguments on the two engines, so those
+// are split the same way the hand-written weapon scripts split them.
+// Each stub announces itself the first time it runs.
+
+global function Ball_OnWeaponTossReleaseAnimEvent
+global function BusterRifle_OnWeaponActivate
+global function BusterRifle_OnWeaponChargeBegin
+global function BusterRifle_OnWeaponChargeEnd
+global function BusterRifle_OnWeaponDeactivate
+global function BusterRifle_OnWeaponPrimaryAttack
+global function BusterRifle_OnWeaponReload
+global function MeleeBat_OnWeaponActivate
+global function MeleeBat_OnWeaponChargeBegin
+global function MeleeBat_OnWeaponChargeEnd
+global function MeleeBat_OnWeaponChargeLevelIncreased
+global function MeleeBat_OnWeaponDeactivate
+global function OnAbilityChargeEnd_LaserCannon
+global function OnAbilityCharge_LaserCannon
+global function OnAbilityEnd_Defender_Sustained
+global function OnAbilityEnd_LaserCannon
+global function OnAbilityStart_Defender_Sustained
+global function OnAbilityStart_LaserCannon
+global function OnWeaponActivate_BeamstickStave
+global function OnWeaponActivate_GenericVFX
+global function OnWeaponActivate_SonarDart
+global function OnWeaponActivate_ability_BunkerBuster
+global function OnWeaponActivate_ability_cheat_death
+global function OnWeaponActivate_ability_drone_rider
+global function OnWeaponActivate_ability_fire_wave
+global function OnWeaponActivate_ability_self_destruct
+global function OnWeaponActivate_ability_speed_zone
+global function OnWeaponActivate_ability_stone_defense
+global function OnWeaponActivate_ability_thermal_denial
+global function OnWeaponActivate_alternator_smg
+global function OnWeaponActivate_arc_wave
+global function OnWeaponActivate_concussive_breach
+global function OnWeaponActivate_flash_shield
+global function OnWeaponActivate_following_medic
+global function OnWeaponActivate_following_medic_orders
+global function OnWeaponActivate_handheld_breach
+global function OnWeaponActivate_melee_agnostic_breachbeam
+global function OnWeaponActivate_melee_agnostic_breachbeamsaber
+global function OnWeaponActivate_melee_agnostic_breachbeamwhip
+global function OnWeaponActivate_melee_agnostic_clockwild
+global function OnWeaponActivate_melee_agnostic_karambit
+global function OnWeaponActivate_melee_agnostic_prorookie
+global function OnWeaponActivate_melee_agnostic_rivnation
+global function OnWeaponActivate_melee_agnostic_veloform
+global function OnWeaponActivate_melee_agnostic_whip
+global function OnWeaponActivate_melee_hook_sword
+global function OnWeaponActivate_melee_newcastle_heirloom
+global function OnWeaponActivate_ranged_breach
+global function OnWeaponActivate_weapon_agnostic_breachbeam_primary
+global function OnWeaponActivate_weapon_agnostic_breachbeamsaber_primary
+global function OnWeaponActivate_weapon_agnostic_breachbeamwhip_primary
+global function OnWeaponActivate_weapon_agnostic_clockwild_primary
+global function OnWeaponActivate_weapon_agnostic_karambit_primary
+global function OnWeaponActivate_weapon_agnostic_prorookie_primary
+global function OnWeaponActivate_weapon_agnostic_rivnation_primary
+global function OnWeaponActivate_weapon_agnostic_veloform_primary
+global function OnWeaponActivate_weapon_agnostic_whip_primary
+global function OnWeaponActivate_weapon_charge_gauntlet
+global function OnWeaponActivate_weapon_charge_gauntlet_alt_mode
+global function OnWeaponActivate_weapon_epg
+global function OnWeaponActivate_weapon_hook_sword_primary
+global function OnWeaponActivate_weapon_newcastle_heirloom_primary
+global function OnWeaponActivate_weapon_shotgun_pistol
+global function OnWeaponActivate_weapon_smr
+global function OnWeaponActivate_weapon_vortex_shield
+global function OnWeaponAttemptOffhandSwitch_GunTurret_v2
+global function OnWeaponAttemptOffhandSwitch_ability_BunkerBuster
+global function OnWeaponAttemptOffhandSwitch_ability_cheat_death
+global function OnWeaponAttemptOffhandSwitch_ability_drone_rider
+global function OnWeaponAttemptOffhandSwitch_ability_earthshaker
+global function OnWeaponAttemptOffhandSwitch_ability_fire_wave
+global function OnWeaponAttemptOffhandSwitch_ability_phase_rewind
+global function OnWeaponAttemptOffhandSwitch_ability_pilot_mode
+global function OnWeaponAttemptOffhandSwitch_ability_thermal_denial
+global function OnWeaponAttemptOffhandSwitch_ability_zapper
+global function OnWeaponAttemptOffhandSwitch_arc_wave
+global function OnWeaponAttemptOffhandSwitch_following_medic
+global function OnWeaponAttemptOffhandSwitch_stone_defense
+global function OnWeaponChargeBegin_ability_thermal_denial
+global function OnWeaponChargeBegin_weapon_charge_gauntlet
+global function OnWeaponChargeBegin_weapon_charge_gauntlet_alt_mode
+global function OnWeaponChargeBegin_weapon_flash_shield
+global function OnWeaponChargeBegin_weapon_handheld_breach
+global function OnWeaponChargeBegin_weapon_vortex_shield
+global function OnWeaponChargeEnd_ability_thermal_denial
+global function OnWeaponChargeEnd_weapon_flash_shield
+global function OnWeaponChargeEnd_weapon_handheld_breach
+global function OnWeaponChargeEnd_weapon_vortex_shield
+global function OnWeaponDeactivate_BeamstickStave
+global function OnWeaponDeactivate_GenericVFX
+global function OnWeaponDeactivate_SonarDart
+global function OnWeaponDeactivate_ability_BunkerBuster
+global function OnWeaponDeactivate_ability_cheat_death
+global function OnWeaponDeactivate_ability_drone_rider
+global function OnWeaponDeactivate_ability_earthshaker
+global function OnWeaponDeactivate_ability_fire_wave
+global function OnWeaponDeactivate_ability_halo
+global function OnWeaponDeactivate_ability_horizon_tac_space_elevator
+global function OnWeaponDeactivate_ability_thermal_denial
+global function OnWeaponDeactivate_alternator_smg
+global function OnWeaponDeactivate_concussive_breach
+global function OnWeaponDeactivate_flash_shield
+global function OnWeaponDeactivate_following_medic
+global function OnWeaponDeactivate_following_medic_orders
+global function OnWeaponDeactivate_handheld_breach
+global function OnWeaponDeactivate_melee_agnostic_breachbeam
+global function OnWeaponDeactivate_melee_agnostic_breachbeamsaber
+global function OnWeaponDeactivate_melee_agnostic_breachbeamwhip
+global function OnWeaponDeactivate_melee_agnostic_clockwild
+global function OnWeaponDeactivate_melee_agnostic_karambit
+global function OnWeaponDeactivate_melee_agnostic_prorookie
+global function OnWeaponDeactivate_melee_agnostic_rivnation
+global function OnWeaponDeactivate_melee_agnostic_veloform
+global function OnWeaponDeactivate_melee_agnostic_whip
+global function OnWeaponDeactivate_melee_hook_sword
+global function OnWeaponDeactivate_melee_newcastle_heirloom
+global function OnWeaponDeactivate_ranged_breach
+global function OnWeaponDeactivate_weapon_ability_self_destruct
+global function OnWeaponDeactivate_weapon_agnostic_breachbeam_primary
+global function OnWeaponDeactivate_weapon_agnostic_breachbeamsaber_primary
+global function OnWeaponDeactivate_weapon_agnostic_breachbeamwhip_primary
+global function OnWeaponDeactivate_weapon_agnostic_clockwild_primary
+global function OnWeaponDeactivate_weapon_agnostic_karambit_primary
+global function OnWeaponDeactivate_weapon_agnostic_prorookie_primary
+global function OnWeaponDeactivate_weapon_agnostic_rivnation_primary
+global function OnWeaponDeactivate_weapon_agnostic_veloform_primary
+global function OnWeaponDeactivate_weapon_agnostic_whip_primary
+global function OnWeaponDeactivate_weapon_charge_gauntlet
+global function OnWeaponDeactivate_weapon_charge_gauntlet_alt_mode
+global function OnWeaponDeactivate_weapon_epg
+global function OnWeaponDeactivate_weapon_hook_sword_primary
+global function OnWeaponDeactivate_weapon_newcastle_heirloom_primary
+global function OnWeaponDeactivate_weapon_shield_deconstructor
+global function OnWeaponDeactivate_weapon_shotgun_pistol
+global function OnWeaponDeactivate_weapon_vortex_shield
+global function OnWeaponOwnerChanged_ability_following_medic
+global function OnWeaponOwnerChanged_alternator_smg
+global function OnWeaponOwnerChanged_melee_hook_sword
+global function OnWeaponOwnerChanged_weapon_dragon_lmg
+global function OnWeaponOwnerChanged_weapon_flash_shield
+global function OnWeaponOwnerChanged_weapon_handheld_breach
+global function OnWeaponOwnerChanged_weapon_hook_sword_primary
+global function OnWeaponOwnerChanged_weapon_lmg
+global function OnWeaponOwnerChanged_weapon_newcastle_heirloom_primary
+global function OnWeaponOwnerChanged_weapon_vortex_shield
+global function OnWeaponPrimaryAttackAnimEvent_ability_follow_medic
+global function OnWeaponPrimaryAttackAnimEvent_ability_phase_rewind
+global function OnWeaponPrimaryAttackAnimEvent_ability_pilot_mode
+global function OnWeaponPrimaryAttackAnimEvent_ability_speed_zone
+global function OnWeaponPrimaryAttack_BeamstickStave
+global function OnWeaponPrimaryAttack_ability_BunkerBuster
+global function OnWeaponPrimaryAttack_ability_cheat_death
+global function OnWeaponPrimaryAttack_ability_drone_rider
+global function OnWeaponPrimaryAttack_ability_earthshaker
+global function OnWeaponPrimaryAttack_ability_fire_wave
+global function OnWeaponPrimaryAttack_ability_medic_orders
+global function OnWeaponPrimaryAttack_ability_phase_rewind
+global function OnWeaponPrimaryAttack_ability_pilot_mode
+global function OnWeaponPrimaryAttack_ability_self_destruct
+global function OnWeaponPrimaryAttack_ability_thermal_denial
+global function OnWeaponPrimaryAttack_ability_zapper
+global function OnWeaponPrimaryAttack_arc_wave
+global function OnWeaponPrimaryAttack_boss_turret_rockets
+global function OnWeaponPrimaryAttack_concussive_breach
+global function OnWeaponPrimaryAttack_flash_shield
+global function OnWeaponPrimaryAttack_handheld_breach
+global function OnWeaponPrimaryAttack_party_box
+global function OnWeaponPrimaryAttack_weapon_charge_gauntlet
+global function OnWeaponPrimaryAttack_weapon_charge_gauntlet_alt_mode
+global function OnWeaponPrimaryAttack_weapon_defender_sustained
+global function OnWeaponPrimaryAttack_weapon_epg
+global function OnWeaponPrimaryAttack_weapon_vortex_shield
+global function OnWeaponReadyToFire_ability_BunkerBuster
+global function OnWeaponReadyToFire_ability_horizon_tac_space_elevator
+global function OnWeaponReadyToFire_ability_spectre_drop
+global function OnWeaponReadyToFire_melee_grapple
+global function OnWeaponReadyToFire_ranged_breach
+global function OnWeaponReload_Vinson
+global function OnWeaponReload_weapon_autopistol_fusion
+global function OnWeaponReload_weapon_r97
+global function OnWeaponReload_weapon_sentinel
+global function OnWeaponReload_weapon_shield_deconstructor
+global function OnWeaponStartZoomIn_R101
+global function OnWeaponStartZoomIn_doubletake
+global function OnWeaponStartZoomIn_weapon_dragon_lmg
+global function OnWeaponStartZoomIn_weapon_lmg
+global function OnWeaponStartZoomOut_R101
+global function OnWeaponStartZoomOut_doubletake
+global function OnWeaponStartZoomOut_weapon_dragon_lmg
+global function OnWeaponStartZoomOut_weapon_lmg
+global function OnWeaponTossCancel_ability_halo
+global function OnWeaponTossPrep_AmmoSteal
+global function OnWeaponTossPrep_ability_group_cloak
+global function OnWeaponTossPrep_ability_halo
+global function OnWeaponTossPrep_weapon_shield_deconstructor
+global function OnWeaponTossReleaseAnimEvent_AmmoSteal
+global function OnWeaponTossReleaseAnimEvent_GunTurret_v2
+global function OnWeaponTossReleaseAnimEvent_ability_frag_drone
+global function OnWeaponTossReleaseAnimEvent_ability_group_cloak
+global function OnWeaponTossReleaseAnimEvent_ability_halo
+global function OnWeaponTossReleaseAnimEvent_ability_slide_gate
+global function OnWeaponTossReleaseAnimEvent_ability_spectre_drop
+global function OnWeaponTossReleaseAnimEvent_black_egg
+global function OnWeaponTossReleaseAnimEvent_weapon_GenericVFX
+global function OnWeaponTossReleaseAnimEvent_weapon_SonarDart
+global function OnWeaponTossReleaseAnimEvent_weapon_flashbang
+global function OnWeaponTossReleaseAnimEvent_weapon_grenade_barrier
+global function OnWeaponTossReleaseAnimEvent_weapon_ranged_breach
+global function OnWeaponTossReleaseAnimEvent_weapon_shield_deconstructor
+global function OnWeaponTossRelease_ability_horizon_tac_space_elevator
+global function OnWeaponToss_FragDrone
+global function OnWeaponToss_ability_halo
+global function OnWeaponToss_weapon_ranged_breach
+global function PowerSword_OnStartZoomIn
+global function PowerSword_OnStartZoomOut
+global function PowerSword_OnWeaponActivate
+global function PowerSword_OnWeaponDeactivate
+global function PowerSword_OnWeaponOwnerChanged
+global function PowerSword_OnWeaponRegenEnd
+global function MeleeBat_OnWeaponCustomActivityEnd
+global function MeleeBat_OnWeaponCustomActivityStart
+global function OnProjectileCollision_Vinson
+global function OnProjectileCollision_WeaponOrbitalSupportExplosion
+global function OnProjectileCollision_ability_BunkerBuster
+global function OnProjectileCollision_ability_StoneDefense
+global function OnProjectileCollision_ability_self_destruct
+global function OnProjectileCollision_ability_spectre_drop
+global function OnProjectileCollision_ability_zapper
+global function OnProjectileCollision_weapon_GenericVFX
+global function OnProjectileCollision_weapon_SonarDart
+global function OnProjectileCollision_weapon_ball_noncombat
+global function OnProjectileCollision_weapon_epg
+global function OnProjectileCollision_weapon_flashbang
+global function OnProjectileCollision_weapon_goliath_throw
+global function OnProjectileCollision_weapon_grenade_barrier
+global function OnProjectileCollision_weapon_plasma_cannon
+global function OnProjectileCollision_weapon_ranged_breach
+global function OnWeaponCustomActivityStart_weapon_vortex_shield
+global function PowerSword_OnProjectileCollision
+global function PowerSword_OnWeaponCustomActivityEnd
+global function PowerSword_OnWeaponCustomActivityStart
+
+#if CLIENT
+global function BusterRifle_OnClientAnimEvent
+global function MeleeBat_OnClientAnimEvent
+global function OnClientAnimEvent_DeploySlideGate
+global function OnClientAnimEvent_SoanrDart
+global function OnClientAnimEvent_weapon_agnostic_prorookie_primary
+global function OnClientAnimEvent_weapon_ranged_breach
+global function OnClientAnimEvent_weapon_smr
+global function OnClientAnimEvent_weapon_vortex_shield
+global function OnCreateChargeEffect_flash_shield
+global function OnCreateClientOnlyModel_BeamstickStave
+global function OnWeaponEnergizedEnd_weapon_bow_spicey
+global function OnWeaponEnergizedStart_weapon_bow_spicey
+global function OnWeaponStartEnergizing_weapon_bow_spicey
+global function PowerSword_OnClientAnimEvent
+#endif
+
+#if SERVER
+global function OnProjectileExplode_weapon_epg
+global function OnProjectileExplode_weapon_flashbang
+global function OnProjectileExplode_weapon_grenade_barrier
+global function OnWeaponNpcPreAttack_BossBeam
+global function OnWeaponNpcPreAttack_SuperSpectre
+global function OnWeaponNpcPreAttack_boss_turret_rockets
+global function OnWeaponNpcPrimaryAttack_SuperSpectre
+global function OnWeaponNpcPrimaryAttack_boss_turret_rockets
+global function OnWeaponNpcPrimaryAttack_weapon_plasma_cannon
+#endif
+
+struct
+{
+	table<string, bool> announced
+} file
+
+void function MissingCallbackStub_Note( string name )
+{
+	if ( name in file.announced )
+		return
+
+	file.announced[name] <- true
+	printt( "[WEAPON-STUB] " + name + " is not implemented in this build" )
+}
+
+var function Ball_OnWeaponTossReleaseAnimEvent( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "Ball_OnWeaponTossReleaseAnimEvent" )
+	return 0
+}
+
+void function BusterRifle_OnWeaponActivate( entity weapon )
+{
+	MissingCallbackStub_Note( "BusterRifle_OnWeaponActivate" )
+}
+
+bool function BusterRifle_OnWeaponChargeBegin( entity weapon )
+{
+	MissingCallbackStub_Note( "BusterRifle_OnWeaponChargeBegin" )
+	return true
+}
+
+void function BusterRifle_OnWeaponChargeEnd( entity weapon )
+{
+	MissingCallbackStub_Note( "BusterRifle_OnWeaponChargeEnd" )
+}
+
+void function BusterRifle_OnWeaponDeactivate( entity weapon )
+{
+	MissingCallbackStub_Note( "BusterRifle_OnWeaponDeactivate" )
+}
+
+var function BusterRifle_OnWeaponPrimaryAttack( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "BusterRifle_OnWeaponPrimaryAttack" )
+	return 0
+}
+
+void function BusterRifle_OnWeaponReload( entity weapon, int milestoneIndex )
+{
+	MissingCallbackStub_Note( "BusterRifle_OnWeaponReload" )
+}
+
+void function MeleeBat_OnWeaponActivate( entity weapon )
+{
+	MissingCallbackStub_Note( "MeleeBat_OnWeaponActivate" )
+}
+
+bool function MeleeBat_OnWeaponChargeBegin( entity weapon )
+{
+	MissingCallbackStub_Note( "MeleeBat_OnWeaponChargeBegin" )
+	return true
+}
+
+void function MeleeBat_OnWeaponChargeEnd( entity weapon )
+{
+	MissingCallbackStub_Note( "MeleeBat_OnWeaponChargeEnd" )
+}
+
+bool function MeleeBat_OnWeaponChargeLevelIncreased( entity weapon )
+{
+	MissingCallbackStub_Note( "MeleeBat_OnWeaponChargeLevelIncreased" )
+	return true
+}
+
+void function MeleeBat_OnWeaponDeactivate( entity weapon )
+{
+	MissingCallbackStub_Note( "MeleeBat_OnWeaponDeactivate" )
+}
+
+void function OnAbilityChargeEnd_LaserCannon( entity weapon )
+{
+	MissingCallbackStub_Note( "OnAbilityChargeEnd_LaserCannon" )
+}
+
+bool function OnAbilityCharge_LaserCannon( entity weapon )
+{
+	MissingCallbackStub_Note( "OnAbilityCharge_LaserCannon" )
+	return true
+}
+
+void function OnAbilityEnd_Defender_Sustained( entity weapon )
+{
+	MissingCallbackStub_Note( "OnAbilityEnd_Defender_Sustained" )
+}
+
+void function OnAbilityEnd_LaserCannon( entity weapon )
+{
+	MissingCallbackStub_Note( "OnAbilityEnd_LaserCannon" )
+}
+
+int function OnAbilityStart_Defender_Sustained( entity weapon )
+{
+	MissingCallbackStub_Note( "OnAbilityStart_Defender_Sustained" )
+	return 0
+}
+
+int function OnAbilityStart_LaserCannon( entity weapon )
+{
+	MissingCallbackStub_Note( "OnAbilityStart_LaserCannon" )
+	return 0
+}
+
+void function OnWeaponActivate_BeamstickStave( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_BeamstickStave" )
+}
+
+void function OnWeaponActivate_GenericVFX( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_GenericVFX" )
+}
+
+void function OnWeaponActivate_SonarDart( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_SonarDart" )
+}
+
+void function OnWeaponActivate_ability_BunkerBuster( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_ability_BunkerBuster" )
+}
+
+void function OnWeaponActivate_ability_cheat_death( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_ability_cheat_death" )
+}
+
+void function OnWeaponActivate_ability_drone_rider( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_ability_drone_rider" )
+}
+
+void function OnWeaponActivate_ability_fire_wave( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_ability_fire_wave" )
+}
+
+void function OnWeaponActivate_ability_self_destruct( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_ability_self_destruct" )
+}
+
+void function OnWeaponActivate_ability_speed_zone( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_ability_speed_zone" )
+}
+
+var function OnWeaponActivate_ability_stone_defense( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_ability_stone_defense" )
+	return 0
+}
+
+void function OnWeaponActivate_ability_thermal_denial( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_ability_thermal_denial" )
+}
+
+void function OnWeaponActivate_alternator_smg( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_alternator_smg" )
+}
+
+void function OnWeaponActivate_arc_wave( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_arc_wave" )
+}
+
+void function OnWeaponActivate_concussive_breach( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_concussive_breach" )
+}
+
+void function OnWeaponActivate_flash_shield( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_flash_shield" )
+}
+
+void function OnWeaponActivate_following_medic( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_following_medic" )
+}
+
+void function OnWeaponActivate_following_medic_orders( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_following_medic_orders" )
+}
+
+void function OnWeaponActivate_handheld_breach( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_handheld_breach" )
+}
+
+void function OnWeaponActivate_melee_agnostic_breachbeam( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_melee_agnostic_breachbeam" )
+}
+
+void function OnWeaponActivate_melee_agnostic_breachbeamsaber( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_melee_agnostic_breachbeamsaber" )
+}
+
+void function OnWeaponActivate_melee_agnostic_breachbeamwhip( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_melee_agnostic_breachbeamwhip" )
+}
+
+void function OnWeaponActivate_melee_agnostic_clockwild( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_melee_agnostic_clockwild" )
+}
+
+void function OnWeaponActivate_melee_agnostic_karambit( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_melee_agnostic_karambit" )
+}
+
+void function OnWeaponActivate_melee_agnostic_prorookie( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_melee_agnostic_prorookie" )
+}
+
+void function OnWeaponActivate_melee_agnostic_rivnation( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_melee_agnostic_rivnation" )
+}
+
+void function OnWeaponActivate_melee_agnostic_veloform( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_melee_agnostic_veloform" )
+}
+
+void function OnWeaponActivate_melee_agnostic_whip( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_melee_agnostic_whip" )
+}
+
+void function OnWeaponActivate_melee_hook_sword( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_melee_hook_sword" )
+}
+
+void function OnWeaponActivate_melee_newcastle_heirloom( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_melee_newcastle_heirloom" )
+}
+
+void function OnWeaponActivate_ranged_breach( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_ranged_breach" )
+}
+
+void function OnWeaponActivate_weapon_agnostic_breachbeam_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_agnostic_breachbeam_primary" )
+}
+
+void function OnWeaponActivate_weapon_agnostic_breachbeamsaber_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_agnostic_breachbeamsaber_primary" )
+}
+
+void function OnWeaponActivate_weapon_agnostic_breachbeamwhip_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_agnostic_breachbeamwhip_primary" )
+}
+
+void function OnWeaponActivate_weapon_agnostic_clockwild_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_agnostic_clockwild_primary" )
+}
+
+void function OnWeaponActivate_weapon_agnostic_karambit_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_agnostic_karambit_primary" )
+}
+
+void function OnWeaponActivate_weapon_agnostic_prorookie_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_agnostic_prorookie_primary" )
+}
+
+void function OnWeaponActivate_weapon_agnostic_rivnation_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_agnostic_rivnation_primary" )
+}
+
+void function OnWeaponActivate_weapon_agnostic_veloform_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_agnostic_veloform_primary" )
+}
+
+void function OnWeaponActivate_weapon_agnostic_whip_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_agnostic_whip_primary" )
+}
+
+void function OnWeaponActivate_weapon_charge_gauntlet( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_charge_gauntlet" )
+}
+
+void function OnWeaponActivate_weapon_charge_gauntlet_alt_mode( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_charge_gauntlet_alt_mode" )
+}
+
+void function OnWeaponActivate_weapon_epg( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_epg" )
+}
+
+void function OnWeaponActivate_weapon_hook_sword_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_hook_sword_primary" )
+}
+
+void function OnWeaponActivate_weapon_newcastle_heirloom_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_newcastle_heirloom_primary" )
+}
+
+void function OnWeaponActivate_weapon_shotgun_pistol( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_shotgun_pistol" )
+}
+
+void function OnWeaponActivate_weapon_smr( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_smr" )
+}
+
+void function OnWeaponActivate_weapon_vortex_shield( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponActivate_weapon_vortex_shield" )
+}
+
+bool function OnWeaponAttemptOffhandSwitch_GunTurret_v2( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_GunTurret_v2" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_ability_BunkerBuster( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_ability_BunkerBuster" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_ability_cheat_death( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_ability_cheat_death" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_ability_drone_rider( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_ability_drone_rider" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_ability_earthshaker( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_ability_earthshaker" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_ability_fire_wave( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_ability_fire_wave" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_ability_phase_rewind( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_ability_phase_rewind" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_ability_pilot_mode( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_ability_pilot_mode" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_ability_thermal_denial( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_ability_thermal_denial" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_ability_zapper( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_ability_zapper" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_arc_wave( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_arc_wave" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_following_medic( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_following_medic" )
+	return true
+}
+
+bool function OnWeaponAttemptOffhandSwitch_stone_defense( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponAttemptOffhandSwitch_stone_defense" )
+	return true
+}
+
+bool function OnWeaponChargeBegin_ability_thermal_denial( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponChargeBegin_ability_thermal_denial" )
+	return true
+}
+
+bool function OnWeaponChargeBegin_weapon_charge_gauntlet( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponChargeBegin_weapon_charge_gauntlet" )
+	return true
+}
+
+bool function OnWeaponChargeBegin_weapon_charge_gauntlet_alt_mode( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponChargeBegin_weapon_charge_gauntlet_alt_mode" )
+	return true
+}
+
+bool function OnWeaponChargeBegin_weapon_flash_shield( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponChargeBegin_weapon_flash_shield" )
+	return true
+}
+
+bool function OnWeaponChargeBegin_weapon_handheld_breach( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponChargeBegin_weapon_handheld_breach" )
+	return true
+}
+
+bool function OnWeaponChargeBegin_weapon_vortex_shield( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponChargeBegin_weapon_vortex_shield" )
+	return true
+}
+
+void function OnWeaponChargeEnd_ability_thermal_denial( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponChargeEnd_ability_thermal_denial" )
+}
+
+void function OnWeaponChargeEnd_weapon_flash_shield( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponChargeEnd_weapon_flash_shield" )
+}
+
+void function OnWeaponChargeEnd_weapon_handheld_breach( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponChargeEnd_weapon_handheld_breach" )
+}
+
+void function OnWeaponChargeEnd_weapon_vortex_shield( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponChargeEnd_weapon_vortex_shield" )
+}
+
+void function OnWeaponDeactivate_BeamstickStave( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_BeamstickStave" )
+}
+
+void function OnWeaponDeactivate_GenericVFX( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_GenericVFX" )
+}
+
+void function OnWeaponDeactivate_SonarDart( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_SonarDart" )
+}
+
+void function OnWeaponDeactivate_ability_BunkerBuster( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_ability_BunkerBuster" )
+}
+
+void function OnWeaponDeactivate_ability_cheat_death( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_ability_cheat_death" )
+}
+
+void function OnWeaponDeactivate_ability_drone_rider( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_ability_drone_rider" )
+}
+
+void function OnWeaponDeactivate_ability_earthshaker( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_ability_earthshaker" )
+}
+
+void function OnWeaponDeactivate_ability_fire_wave( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_ability_fire_wave" )
+}
+
+void function OnWeaponDeactivate_ability_halo( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_ability_halo" )
+}
+
+void function OnWeaponDeactivate_ability_horizon_tac_space_elevator( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_ability_horizon_tac_space_elevator" )
+}
+
+void function OnWeaponDeactivate_ability_thermal_denial( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_ability_thermal_denial" )
+}
+
+void function OnWeaponDeactivate_alternator_smg( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_alternator_smg" )
+}
+
+void function OnWeaponDeactivate_concussive_breach( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_concussive_breach" )
+}
+
+void function OnWeaponDeactivate_flash_shield( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_flash_shield" )
+}
+
+void function OnWeaponDeactivate_following_medic( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_following_medic" )
+}
+
+void function OnWeaponDeactivate_following_medic_orders( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_following_medic_orders" )
+}
+
+void function OnWeaponDeactivate_handheld_breach( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_handheld_breach" )
+}
+
+void function OnWeaponDeactivate_melee_agnostic_breachbeam( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_melee_agnostic_breachbeam" )
+}
+
+void function OnWeaponDeactivate_melee_agnostic_breachbeamsaber( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_melee_agnostic_breachbeamsaber" )
+}
+
+void function OnWeaponDeactivate_melee_agnostic_breachbeamwhip( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_melee_agnostic_breachbeamwhip" )
+}
+
+void function OnWeaponDeactivate_melee_agnostic_clockwild( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_melee_agnostic_clockwild" )
+}
+
+void function OnWeaponDeactivate_melee_agnostic_karambit( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_melee_agnostic_karambit" )
+}
+
+void function OnWeaponDeactivate_melee_agnostic_prorookie( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_melee_agnostic_prorookie" )
+}
+
+void function OnWeaponDeactivate_melee_agnostic_rivnation( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_melee_agnostic_rivnation" )
+}
+
+void function OnWeaponDeactivate_melee_agnostic_veloform( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_melee_agnostic_veloform" )
+}
+
+void function OnWeaponDeactivate_melee_agnostic_whip( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_melee_agnostic_whip" )
+}
+
+void function OnWeaponDeactivate_melee_hook_sword( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_melee_hook_sword" )
+}
+
+void function OnWeaponDeactivate_melee_newcastle_heirloom( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_melee_newcastle_heirloom" )
+}
+
+void function OnWeaponDeactivate_ranged_breach( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_ranged_breach" )
+}
+
+void function OnWeaponDeactivate_weapon_ability_self_destruct( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_ability_self_destruct" )
+}
+
+void function OnWeaponDeactivate_weapon_agnostic_breachbeam_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_agnostic_breachbeam_primary" )
+}
+
+void function OnWeaponDeactivate_weapon_agnostic_breachbeamsaber_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_agnostic_breachbeamsaber_primary" )
+}
+
+void function OnWeaponDeactivate_weapon_agnostic_breachbeamwhip_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_agnostic_breachbeamwhip_primary" )
+}
+
+void function OnWeaponDeactivate_weapon_agnostic_clockwild_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_agnostic_clockwild_primary" )
+}
+
+void function OnWeaponDeactivate_weapon_agnostic_karambit_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_agnostic_karambit_primary" )
+}
+
+void function OnWeaponDeactivate_weapon_agnostic_prorookie_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_agnostic_prorookie_primary" )
+}
+
+void function OnWeaponDeactivate_weapon_agnostic_rivnation_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_agnostic_rivnation_primary" )
+}
+
+void function OnWeaponDeactivate_weapon_agnostic_veloform_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_agnostic_veloform_primary" )
+}
+
+void function OnWeaponDeactivate_weapon_agnostic_whip_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_agnostic_whip_primary" )
+}
+
+void function OnWeaponDeactivate_weapon_charge_gauntlet( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_charge_gauntlet" )
+}
+
+void function OnWeaponDeactivate_weapon_charge_gauntlet_alt_mode( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_charge_gauntlet_alt_mode" )
+}
+
+void function OnWeaponDeactivate_weapon_epg( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_epg" )
+}
+
+void function OnWeaponDeactivate_weapon_hook_sword_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_hook_sword_primary" )
+}
+
+void function OnWeaponDeactivate_weapon_newcastle_heirloom_primary( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_newcastle_heirloom_primary" )
+}
+
+void function OnWeaponDeactivate_weapon_shield_deconstructor( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_shield_deconstructor" )
+}
+
+void function OnWeaponDeactivate_weapon_shotgun_pistol( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_shotgun_pistol" )
+}
+
+void function OnWeaponDeactivate_weapon_vortex_shield( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponDeactivate_weapon_vortex_shield" )
+}
+
+void function OnWeaponOwnerChanged_ability_following_medic( entity weapon, WeaponOwnerChangedParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponOwnerChanged_ability_following_medic" )
+}
+
+void function OnWeaponOwnerChanged_alternator_smg( entity weapon, WeaponOwnerChangedParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponOwnerChanged_alternator_smg" )
+}
+
+void function OnWeaponOwnerChanged_melee_hook_sword( entity weapon, WeaponOwnerChangedParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponOwnerChanged_melee_hook_sword" )
+}
+
+void function OnWeaponOwnerChanged_weapon_dragon_lmg( entity weapon, WeaponOwnerChangedParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponOwnerChanged_weapon_dragon_lmg" )
+}
+
+void function OnWeaponOwnerChanged_weapon_flash_shield( entity weapon, WeaponOwnerChangedParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponOwnerChanged_weapon_flash_shield" )
+}
+
+void function OnWeaponOwnerChanged_weapon_handheld_breach( entity weapon, WeaponOwnerChangedParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponOwnerChanged_weapon_handheld_breach" )
+}
+
+void function OnWeaponOwnerChanged_weapon_hook_sword_primary( entity weapon, WeaponOwnerChangedParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponOwnerChanged_weapon_hook_sword_primary" )
+}
+
+void function OnWeaponOwnerChanged_weapon_lmg( entity weapon, WeaponOwnerChangedParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponOwnerChanged_weapon_lmg" )
+}
+
+void function OnWeaponOwnerChanged_weapon_newcastle_heirloom_primary( entity weapon, WeaponOwnerChangedParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponOwnerChanged_weapon_newcastle_heirloom_primary" )
+}
+
+void function OnWeaponOwnerChanged_weapon_vortex_shield( entity weapon, WeaponOwnerChangedParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponOwnerChanged_weapon_vortex_shield" )
+}
+
+var function OnWeaponPrimaryAttackAnimEvent_ability_follow_medic( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttackAnimEvent_ability_follow_medic" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttackAnimEvent_ability_phase_rewind( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttackAnimEvent_ability_phase_rewind" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttackAnimEvent_ability_pilot_mode( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttackAnimEvent_ability_pilot_mode" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttackAnimEvent_ability_speed_zone( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttackAnimEvent_ability_speed_zone" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_BeamstickStave( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_BeamstickStave" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_ability_BunkerBuster( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_ability_BunkerBuster" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_ability_cheat_death( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_ability_cheat_death" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_ability_drone_rider( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_ability_drone_rider" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_ability_earthshaker( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_ability_earthshaker" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_ability_fire_wave( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_ability_fire_wave" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_ability_medic_orders( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_ability_medic_orders" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_ability_phase_rewind( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_ability_phase_rewind" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_ability_pilot_mode( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_ability_pilot_mode" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_ability_self_destruct( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_ability_self_destruct" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_ability_thermal_denial( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_ability_thermal_denial" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_ability_zapper( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_ability_zapper" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_arc_wave( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_arc_wave" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_boss_turret_rockets( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_boss_turret_rockets" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_concussive_breach( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_concussive_breach" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_flash_shield( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_flash_shield" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_handheld_breach( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_handheld_breach" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_party_box( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_party_box" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_weapon_charge_gauntlet( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_weapon_charge_gauntlet" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_weapon_charge_gauntlet_alt_mode( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_weapon_charge_gauntlet_alt_mode" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_weapon_defender_sustained( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_weapon_defender_sustained" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_weapon_epg( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_weapon_epg" )
+	return 0
+}
+
+var function OnWeaponPrimaryAttack_weapon_vortex_shield( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponPrimaryAttack_weapon_vortex_shield" )
+	return 0
+}
+
+void function OnWeaponReadyToFire_ability_BunkerBuster( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponReadyToFire_ability_BunkerBuster" )
+}
+
+void function OnWeaponReadyToFire_ability_horizon_tac_space_elevator( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponReadyToFire_ability_horizon_tac_space_elevator" )
+}
+
+void function OnWeaponReadyToFire_ability_spectre_drop( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponReadyToFire_ability_spectre_drop" )
+}
+
+void function OnWeaponReadyToFire_melee_grapple( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponReadyToFire_melee_grapple" )
+}
+
+void function OnWeaponReadyToFire_ranged_breach( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponReadyToFire_ranged_breach" )
+}
+
+void function OnWeaponReload_Vinson( entity weapon, int milestoneIndex )
+{
+	MissingCallbackStub_Note( "OnWeaponReload_Vinson" )
+}
+
+void function OnWeaponReload_weapon_autopistol_fusion( entity weapon, int milestoneIndex )
+{
+#if CLIENT
+	// Reloading drops the charge, otherwise the gun keeps a full meter across
+	// the reload and the next trigger pull skips the wind-up.
+	if ( !(InPrediction() && IsFirstTimePredicted()) )
+		return
+
+	weapon.SetWeaponChargeFractionForced( 0.0 )
+#endif
+}
+
+void function OnWeaponReload_weapon_r97( entity weapon, int milestoneIndex )
+{
+	MissingCallbackStub_Note( "OnWeaponReload_weapon_r97" )
+}
+
+void function OnWeaponReload_weapon_sentinel( entity weapon, int milestoneIndex )
+{
+	MissingCallbackStub_Note( "OnWeaponReload_weapon_sentinel" )
+}
+
+void function OnWeaponReload_weapon_shield_deconstructor( entity weapon, int milestoneIndex )
+{
+	MissingCallbackStub_Note( "OnWeaponReload_weapon_shield_deconstructor" )
+}
+
+void function OnWeaponStartZoomIn_R101( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponStartZoomIn_R101" )
+}
+
+void function OnWeaponStartZoomIn_doubletake( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponStartZoomIn_doubletake" )
+}
+
+void function OnWeaponStartZoomIn_weapon_dragon_lmg( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponStartZoomIn_weapon_dragon_lmg" )
+}
+
+void function OnWeaponStartZoomIn_weapon_lmg( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponStartZoomIn_weapon_lmg" )
+}
+
+void function OnWeaponStartZoomOut_R101( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponStartZoomOut_R101" )
+}
+
+void function OnWeaponStartZoomOut_doubletake( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponStartZoomOut_doubletake" )
+}
+
+void function OnWeaponStartZoomOut_weapon_dragon_lmg( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponStartZoomOut_weapon_dragon_lmg" )
+}
+
+void function OnWeaponStartZoomOut_weapon_lmg( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponStartZoomOut_weapon_lmg" )
+}
+
+var function OnWeaponTossCancel_ability_halo( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossCancel_ability_halo" )
+	return 0
+}
+
+void function OnWeaponTossPrep_AmmoSteal( entity weapon, WeaponTossPrepParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossPrep_AmmoSteal" )
+}
+
+void function OnWeaponTossPrep_ability_group_cloak( entity weapon, WeaponTossPrepParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossPrep_ability_group_cloak" )
+}
+
+void function OnWeaponTossPrep_ability_halo( entity weapon, WeaponTossPrepParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossPrep_ability_halo" )
+}
+
+void function OnWeaponTossPrep_weapon_shield_deconstructor( entity weapon, WeaponTossPrepParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossPrep_weapon_shield_deconstructor" )
+}
+
+var function OnWeaponTossReleaseAnimEvent_AmmoSteal( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_AmmoSteal" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_GunTurret_v2( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_GunTurret_v2" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_ability_frag_drone( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_ability_frag_drone" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_ability_group_cloak( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_ability_group_cloak" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_ability_halo( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_ability_halo" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_ability_slide_gate( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_ability_slide_gate" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_ability_spectre_drop( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_ability_spectre_drop" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_black_egg( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_black_egg" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_weapon_GenericVFX( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_weapon_GenericVFX" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_weapon_SonarDart( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_weapon_SonarDart" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_weapon_flashbang( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_weapon_flashbang" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_weapon_grenade_barrier( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_weapon_grenade_barrier" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_weapon_ranged_breach( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_weapon_ranged_breach" )
+	return 0
+}
+
+var function OnWeaponTossReleaseAnimEvent_weapon_shield_deconstructor( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossReleaseAnimEvent_weapon_shield_deconstructor" )
+	return 0
+}
+
+var function OnWeaponTossRelease_ability_horizon_tac_space_elevator( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponTossRelease_ability_horizon_tac_space_elevator" )
+	return 0
+}
+
+var function OnWeaponToss_FragDrone( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponToss_FragDrone" )
+	return 0
+}
+
+var function OnWeaponToss_ability_halo( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponToss_ability_halo" )
+	return 0
+}
+
+var function OnWeaponToss_weapon_ranged_breach( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponToss_weapon_ranged_breach" )
+	return 0
+}
+
+void function PowerSword_OnStartZoomIn( entity weapon )
+{
+	MissingCallbackStub_Note( "PowerSword_OnStartZoomIn" )
+}
+
+void function PowerSword_OnStartZoomOut( entity weapon )
+{
+	MissingCallbackStub_Note( "PowerSword_OnStartZoomOut" )
+}
+
+void function PowerSword_OnWeaponActivate( entity weapon )
+{
+	MissingCallbackStub_Note( "PowerSword_OnWeaponActivate" )
+}
+
+void function PowerSword_OnWeaponDeactivate( entity weapon )
+{
+	MissingCallbackStub_Note( "PowerSword_OnWeaponDeactivate" )
+}
+
+void function PowerSword_OnWeaponOwnerChanged( entity weapon, WeaponOwnerChangedParams params )
+{
+	MissingCallbackStub_Note( "PowerSword_OnWeaponOwnerChanged" )
+}
+
+void function PowerSword_OnWeaponRegenEnd( entity weapon )
+{
+	MissingCallbackStub_Note( "PowerSword_OnWeaponRegenEnd" )
+}
+
+#if CLIENT
+void function MeleeBat_OnWeaponCustomActivityEnd( entity weapon, int activity )
+{
+	MissingCallbackStub_Note( "MeleeBat_OnWeaponCustomActivityEnd" )
+}
+#else
+void function MeleeBat_OnWeaponCustomActivityEnd( entity weapon )
+{
+	MissingCallbackStub_Note( "MeleeBat_OnWeaponCustomActivityEnd" )
+}
+#endif
+
+#if CLIENT
+void function MeleeBat_OnWeaponCustomActivityStart( entity weapon, int sequence )
+{
+	MissingCallbackStub_Note( "MeleeBat_OnWeaponCustomActivityStart" )
+}
+#else
+void function MeleeBat_OnWeaponCustomActivityStart( entity weapon )
+{
+	MissingCallbackStub_Note( "MeleeBat_OnWeaponCustomActivityStart" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_Vinson( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_Vinson" )
+}
+#else
+void function OnProjectileCollision_Vinson( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_Vinson" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_WeaponOrbitalSupportExplosion( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_WeaponOrbitalSupportExplosion" )
+}
+#else
+void function OnProjectileCollision_WeaponOrbitalSupportExplosion( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_WeaponOrbitalSupportExplosion" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_ability_BunkerBuster( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_ability_BunkerBuster" )
+}
+#else
+void function OnProjectileCollision_ability_BunkerBuster( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_ability_BunkerBuster" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_ability_StoneDefense( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_ability_StoneDefense" )
+}
+#else
+void function OnProjectileCollision_ability_StoneDefense( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_ability_StoneDefense" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_ability_self_destruct( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_ability_self_destruct" )
+}
+#else
+void function OnProjectileCollision_ability_self_destruct( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_ability_self_destruct" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_ability_spectre_drop( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_ability_spectre_drop" )
+}
+#else
+void function OnProjectileCollision_ability_spectre_drop( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_ability_spectre_drop" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_ability_zapper( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_ability_zapper" )
+}
+#else
+void function OnProjectileCollision_ability_zapper( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_ability_zapper" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_weapon_GenericVFX( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_GenericVFX" )
+}
+#else
+void function OnProjectileCollision_weapon_GenericVFX( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_GenericVFX" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_weapon_SonarDart( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_SonarDart" )
+}
+#else
+void function OnProjectileCollision_weapon_SonarDart( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_SonarDart" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_weapon_ball_noncombat( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_ball_noncombat" )
+}
+#else
+void function OnProjectileCollision_weapon_ball_noncombat( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_ball_noncombat" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_weapon_epg( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_epg" )
+}
+#else
+void function OnProjectileCollision_weapon_epg( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_epg" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_weapon_flashbang( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_flashbang" )
+}
+#else
+void function OnProjectileCollision_weapon_flashbang( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_flashbang" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_weapon_goliath_throw( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_goliath_throw" )
+}
+#else
+void function OnProjectileCollision_weapon_goliath_throw( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_goliath_throw" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_weapon_grenade_barrier( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_grenade_barrier" )
+}
+#else
+void function OnProjectileCollision_weapon_grenade_barrier( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_grenade_barrier" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_weapon_plasma_cannon( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_plasma_cannon" )
+}
+#else
+void function OnProjectileCollision_weapon_plasma_cannon( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_plasma_cannon" )
+}
+#endif
+
+#if CLIENT
+void function OnProjectileCollision_weapon_ranged_breach( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_ranged_breach" )
+}
+#else
+void function OnProjectileCollision_weapon_ranged_breach( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "OnProjectileCollision_weapon_ranged_breach" )
+}
+#endif
+
+#if CLIENT
+void function OnWeaponCustomActivityStart_weapon_vortex_shield( entity weapon, int sequence )
+{
+	MissingCallbackStub_Note( "OnWeaponCustomActivityStart_weapon_vortex_shield" )
+}
+#else
+void function OnWeaponCustomActivityStart_weapon_vortex_shield( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponCustomActivityStart_weapon_vortex_shield" )
+}
+#endif
+
+#if CLIENT
+void function PowerSword_OnProjectileCollision( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical, bool isPassthrough )
+{
+	MissingCallbackStub_Note( "PowerSword_OnProjectileCollision" )
+}
+#else
+void function PowerSword_OnProjectileCollision( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox, bool isCritical )
+{
+	MissingCallbackStub_Note( "PowerSword_OnProjectileCollision" )
+}
+#endif
+
+#if CLIENT
+void function PowerSword_OnWeaponCustomActivityEnd( entity weapon, int activity )
+{
+	MissingCallbackStub_Note( "PowerSword_OnWeaponCustomActivityEnd" )
+}
+#else
+void function PowerSword_OnWeaponCustomActivityEnd( entity weapon )
+{
+	MissingCallbackStub_Note( "PowerSword_OnWeaponCustomActivityEnd" )
+}
+#endif
+
+#if CLIENT
+void function PowerSword_OnWeaponCustomActivityStart( entity weapon, int sequence )
+{
+	MissingCallbackStub_Note( "PowerSword_OnWeaponCustomActivityStart" )
+}
+#else
+void function PowerSword_OnWeaponCustomActivityStart( entity weapon )
+{
+	MissingCallbackStub_Note( "PowerSword_OnWeaponCustomActivityStart" )
+}
+#endif
+
+#if CLIENT
+void function BusterRifle_OnClientAnimEvent( entity weapon, string animEventName )
+{
+	MissingCallbackStub_Note( "BusterRifle_OnClientAnimEvent" )
+}
+#endif
+
+#if CLIENT
+void function MeleeBat_OnClientAnimEvent( entity weapon, string animEventName )
+{
+	MissingCallbackStub_Note( "MeleeBat_OnClientAnimEvent" )
+}
+#endif
+
+#if CLIENT
+void function OnClientAnimEvent_DeploySlideGate( entity weapon, string animEventName )
+{
+	MissingCallbackStub_Note( "OnClientAnimEvent_DeploySlideGate" )
+}
+#endif
+
+#if CLIENT
+void function OnClientAnimEvent_SoanrDart( entity weapon, string animEventName )
+{
+	MissingCallbackStub_Note( "OnClientAnimEvent_SoanrDart" )
+}
+#endif
+
+#if CLIENT
+void function OnClientAnimEvent_weapon_agnostic_prorookie_primary( entity weapon, string animEventName )
+{
+	MissingCallbackStub_Note( "OnClientAnimEvent_weapon_agnostic_prorookie_primary" )
+}
+#endif
+
+#if CLIENT
+void function OnClientAnimEvent_weapon_ranged_breach( entity weapon, string animEventName )
+{
+	MissingCallbackStub_Note( "OnClientAnimEvent_weapon_ranged_breach" )
+}
+#endif
+
+#if CLIENT
+void function OnClientAnimEvent_weapon_smr( entity weapon, string animEventName )
+{
+	MissingCallbackStub_Note( "OnClientAnimEvent_weapon_smr" )
+}
+#endif
+
+#if CLIENT
+void function OnClientAnimEvent_weapon_vortex_shield( entity weapon, string animEventName )
+{
+	MissingCallbackStub_Note( "OnClientAnimEvent_weapon_vortex_shield" )
+}
+#endif
+
+#if CLIENT
+void function OnCreateChargeEffect_flash_shield( entity weapon, int effectHandle )
+{
+	MissingCallbackStub_Note( "OnCreateChargeEffect_flash_shield" )
+}
+#endif
+
+#if CLIENT
+void function OnCreateClientOnlyModel_BeamstickStave( entity weapon, entity highlightedModel, bool validHighlight )
+{
+	MissingCallbackStub_Note( "OnCreateClientOnlyModel_BeamstickStave" )
+}
+#endif
+
+#if CLIENT
+void function OnWeaponEnergizedEnd_weapon_bow_spicey( entity weapon, entity player )
+{
+	MissingCallbackStub_Note( "OnWeaponEnergizedEnd_weapon_bow_spicey" )
+}
+#endif
+
+#if CLIENT
+void function OnWeaponEnergizedStart_weapon_bow_spicey( entity weapon, entity player, bool costConsumable )
+{
+	MissingCallbackStub_Note( "OnWeaponEnergizedStart_weapon_bow_spicey" )
+}
+#endif
+
+#if CLIENT
+void function OnWeaponStartEnergizing_weapon_bow_spicey( entity weapon, entity player )
+{
+	MissingCallbackStub_Note( "OnWeaponStartEnergizing_weapon_bow_spicey" )
+}
+#endif
+
+#if CLIENT
+void function PowerSword_OnClientAnimEvent( entity weapon, string animEventName )
+{
+	MissingCallbackStub_Note( "PowerSword_OnClientAnimEvent" )
+}
+#endif
+
+#if SERVER
+void function OnProjectileExplode_weapon_epg( entity projectile )
+{
+	MissingCallbackStub_Note( "OnProjectileExplode_weapon_epg" )
+}
+#endif
+
+#if SERVER
+void function OnProjectileExplode_weapon_flashbang( entity projectile )
+{
+	MissingCallbackStub_Note( "OnProjectileExplode_weapon_flashbang" )
+}
+#endif
+
+#if SERVER
+void function OnProjectileExplode_weapon_grenade_barrier( entity projectile )
+{
+	MissingCallbackStub_Note( "OnProjectileExplode_weapon_grenade_barrier" )
+}
+#endif
+
+#if SERVER
+void function OnWeaponNpcPreAttack_BossBeam( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponNpcPreAttack_BossBeam" )
+}
+#endif
+
+#if SERVER
+void function OnWeaponNpcPreAttack_SuperSpectre( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponNpcPreAttack_SuperSpectre" )
+}
+#endif
+
+#if SERVER
+void function OnWeaponNpcPreAttack_boss_turret_rockets( entity weapon )
+{
+	MissingCallbackStub_Note( "OnWeaponNpcPreAttack_boss_turret_rockets" )
+}
+#endif
+
+#if SERVER
+var function OnWeaponNpcPrimaryAttack_SuperSpectre( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponNpcPrimaryAttack_SuperSpectre" )
+	return 0
+}
+#endif
+
+#if SERVER
+var function OnWeaponNpcPrimaryAttack_boss_turret_rockets( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponNpcPrimaryAttack_boss_turret_rockets" )
+	return 0
+}
+#endif
+
+#if SERVER
+var function OnWeaponNpcPrimaryAttack_weapon_plasma_cannon( entity weapon, WeaponPrimaryAttackParams params )
+{
+	MissingCallbackStub_Note( "OnWeaponNpcPrimaryAttack_weapon_plasma_cannon" )
+	return 0
+}
+#endif

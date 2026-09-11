@@ -1,0 +1,443 @@
+//
+
+global function Scoreboard_RegisterNetworking
+
+#if CLIENT
+global function ClScoreboard_Init
+global function Scoreboard_SetAllowCustomModeTeamsTab
+#endif
+
+#if CLIENT
+global function IsScoreboardShown
+global function UpdateScoreboardVisibility
+global function ShowScoreboard
+global function HideScoreboard
+global function ToggleScoreboard
+
+global function AddScoreboardShowCallback
+global function AddScoreboardHideCallback
+global function TPPromptIsActive
+
+global function ClientCodeCallback_ToggleScoreboard
+global function ClientToUI_ToggleScoreboard
+global function ClientToUI_ShowScoreboardWithTPPrompt
+global function ClientToUI_HideScoreboard
+#endif
+
+#if SERVER
+global function EnableScoreboardForPlayer
+global function DisableScoreboardForPlayer
+global function SvScoreboard_Init
+#endif
+
+#if CLIENT
+global function Scoreboard_GetConnectionQuality
+global function Scoreboard_GetConnectionPingMs
+global function Scoreboard_GetConnectionLossPct
+#endif
+
+const string SCOREBOARD_PING_NETINT = "connectionPingMs"
+const string SCOREBOARD_LOSS_NETINT = "connectionLossPct"
+const float SCOREBOARD_CONNECTION_UPDATE_RATE = 1.0
+
+
+///////////////////////
+///////////////////////
+//// Private Types ////
+///////////////////////
+///////////////////////
+struct
+{
+	#if CLIENT
+		array<void functionref()> scoreboardShowCallbacks
+		array<void functionref()> scoreboardHideCallbacks
+
+		bool wantsToShowScoreboard = false
+		bool scoreboardEnabled = true
+		// When true, FS_CAP_CUSTOM_SCOREBOARD still blocks ShowScoreboardMP but
+		// allows the FreeDM/Teams TAB path (showScoreboardFunc = ShowScoreboardOrMap_Teams).
+		bool allowCustomModeTeamsTab = false
+	#endif
+} file
+
+
+
+/////////////////////////
+/////////////////////////
+//// Initialiszation ////
+/////////////////////////
+/////////////////////////
+#if CLIENT
+void function ClScoreboard_Init()
+{
+	RegisterConCommandTriggeredCallback( "+showscores", OnScoreboardButtonPressed )
+	RegisterMenuButtonPressedCallback( BUTTON_BACK, OnScoreboardButtonPressed )
+
+	RegisterSignal( "OnHideScoreboard" )
+
+	AddCallback_GameStateEnter( eGameState.WinnerDetermined, UpdateScoreboardVisibility )
+
+	clGlobal.isScoreboardShown = false
+}
+
+void function Scoreboard_SetAllowCustomModeTeamsTab( bool allow )
+{
+	file.allowCustomModeTeamsTab = allow
+}
+#endif
+
+
+void function Scoreboard_RegisterNetworking()
+{
+	RegisterNetworkedVariable( "isScoreboardEnabled", SNDC_PLAYER_EXCLUSIVE, SNVT_BOOL, true )
+
+	// PLAYER_GLOBAL, not PLAYER_EXCLUSIVE: a scoreboard shows everyone's
+	// connection, and an exclusive var is only visible to its owner. The
+	// quality index itself is replicated by code and needs no var here.
+	// Only float types take a min/max pair; the publisher clamps instead.
+	// Ping is BIG_INT because SNVT_INT is 10-bit signed (-512..511) and real
+	// latency runs past that; loss is a percentage and always fits.
+	RegisterNetworkedVariable( SCOREBOARD_PING_NETINT, SNDC_PLAYER_GLOBAL, SNVT_BIG_INT, 0 )
+	RegisterNetworkedVariable( SCOREBOARD_LOSS_NETINT, SNDC_PLAYER_GLOBAL, SNVT_INT, 0 )
+
+	#if CLIENT
+		RegisterNetVarBoolChangeCallback( "isScoreboardEnabled", EnableScoreboardStatusChanged )
+	#endif
+}
+
+
+
+//////////////////////////
+//////////////////////////
+//// Global functions ////
+//////////////////////////
+/////////////
+#if CLIENT/////////////
+bool function IsScoreboardShown()
+{
+	return clGlobal.isScoreboardShown
+}
+#endif
+
+
+#if CLIENT
+void function ShowScoreboard()
+{
+	file.wantsToShowScoreboard = true
+	UpdateScoreboardVisibility()
+}
+#endif
+
+
+#if CLIENT
+void function HideScoreboard()
+{
+	file.wantsToShowScoreboard = false
+	UpdateScoreboardVisibility()
+}
+#endif
+
+
+#if CLIENT
+void function ToggleScoreboard()
+{
+	file.wantsToShowScoreboard = !IsScoreboardShown()
+	UpdateScoreboardVisibility()
+}
+#endif
+
+
+#if CLIENT
+void function EnableScoreboardStatusChanged( entity player, bool newVal )
+{
+	bool shouldDisable = !newVal
+
+	if ( shouldDisable )
+	{
+		HideScoreboard()
+		file.scoreboardEnabled = false
+	}
+	else
+	{
+		file.scoreboardEnabled = true
+	}
+}
+#endif
+
+
+#if CLIENT
+bool function IsScoreboardEnabled()
+{
+	return file.scoreboardEnabled
+}
+#endif
+
+
+#if SERVER
+void function EnableScoreboardForPlayer( entity player )
+{
+	player.p.disableScoreboardStackCount--
+	if ( player.p.disableScoreboardStackCount <= 0 )
+		player.SetPlayerNetBool( "isScoreboardEnabled", true )
+
+	Assert( player.p.disableScoreboardStackCount >= 0, "Warning! Called EnableScoreboard() but the scoreboard/big map isn't disabled!" )
+}
+#endif
+
+
+#if SERVER
+void function DisableScoreboardForPlayer( entity player )
+{
+	player.SetPlayerNetBool( "isScoreboardEnabled", false )
+	player.p.disableScoreboardStackCount++
+}
+#endif
+
+#if SERVER
+void function SvScoreboard_Init()
+{
+	thread ScoreboardConnectionStatsThink()
+}
+
+
+// Latency and loss are only readable on the server, so publish them for every
+// player as globally visible net vars. The quality index needs no help here --
+// it is replicated on the player itself and readable client-side.
+void function ScoreboardConnectionStatsThink()
+{
+	for ( ;; )
+	{
+		wait SCOREBOARD_CONNECTION_UPDATE_RATE
+
+		foreach ( entity player in GetPlayerArray() )
+		{
+			if ( !IsValid( player ) )
+				continue
+
+			// Clamped by hand: the net vars declare these ranges, and a value
+			// outside them is a networking error rather than a display glitch.
+			int ping = int( player.GetConnectionLatencyMS() )
+			if ( ping < 0 )   ping = 0
+			if ( ping > 999 ) ping = 999
+
+			int loss = int( player.GetConnectionPacketLoss() )
+			if ( loss < 0 )   loss = 0
+			if ( loss > 100 ) loss = 100
+
+			player.SetPlayerNetInt( SCOREBOARD_PING_NETINT, ping )
+			player.SetPlayerNetInt( SCOREBOARD_LOSS_NETINT, loss )
+		}
+	}
+}
+#endif
+
+#if CLIENT
+// 0 = best, 5 = worst or not yet connected.
+int function Scoreboard_GetConnectionQuality( entity player )
+{
+	if ( !IsValid( player ) )
+		return 5
+
+	return player.GetConnectionQualityIndex()
+}
+
+
+int function Scoreboard_GetConnectionPingMs( entity player )
+{
+	if ( !IsValid( player ) )
+		return 0
+
+	return player.GetPlayerNetInt( SCOREBOARD_PING_NETINT )
+}
+
+
+int function Scoreboard_GetConnectionLossPct( entity player )
+{
+	if ( !IsValid( player ) )
+		return 0
+
+	return player.GetPlayerNetInt( SCOREBOARD_LOSS_NETINT )
+}
+#endif
+
+
+#if CLIENT
+void function ClientCodeCallback_ToggleScoreboard()
+{
+	ToggleScoreboard()
+}
+#endif
+
+
+#if CLIENT
+void function OnScoreboardButtonPressed( entity localPlayer )
+{
+	ToggleScoreboard()
+}
+#endif
+
+
+#if CLIENT
+
+bool function ShouldShowCharSelectForScoreboard()
+{
+	if ( Flowstate_IsGame1v1Type() )
+		return false
+
+	if ( GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_FIRING_RANGE ) && FiringRange_IsCharacterSwitchingEnabled() )
+		return true
+
+	#if DEVELOPER
+	bool cheatsEnabled = GetConVarBool( "sv_cheats" )
+	if ( !cheatsEnabled )
+		return false
+	if ( InputIsButtonDown( KEY_LSHIFT ) || InputIsButtonDown( BUTTON_STICK_LEFT ) )
+		return true
+	#endif // DEV
+
+	return false
+}
+
+void function ClientToUI_ToggleScoreboard()
+{
+	if ( GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_TRAINING ) )
+	{
+		printf( "%s() - Aborting, because we're in Training.", FUNC_NAME() )
+		return
+	}
+
+	if ( ShouldShowCharSelectForScoreboard() )
+	{
+		// Forbid Legend Change if in a melee execution, bleeding out, reviving/being revived.
+		entity player = GetLocalViewPlayer()
+
+		if( !CharacterSelect_Menu_ShouldOpen( player ) )
+			return
+
+		printf( "%s() - Showing character select because we're in Firing Range.", FUNC_NAME() )
+		RunUIScript( "TryCloseSurvivalInventory", null )
+		EmitSoundOnEntity( GetLocalViewPlayer(), "UI_Menu_accept" )
+		OpenCharacterSelectMenu( true )
+		return
+	}
+
+	if ( !IsScoreboardEnabled() )
+	{
+		EmitUISound( "menu_deny" )
+		return
+	}
+
+	ToggleScoreboard()
+}
+void function ClientToUI_ShowScoreboardWithTPPrompt()
+{
+	file.wantsToShowScoreboard = true
+	s_nextShowWantsTPPrompt = true
+	UpdateScoreboardVisibility()
+}
+#endif
+
+
+#if CLIENT
+void function ClientToUI_HideScoreboard()
+{
+	HideScoreboard()
+}
+#endif
+
+
+#if CLIENT
+bool s_latestShowWasForTPPrompt = false
+bool s_nextShowWantsTPPrompt = false
+bool function TPPromptIsActive()
+{
+	return (clGlobal.isScoreboardShown && s_latestShowWasForTPPrompt)
+}
+
+bool function ShouldShowScoreboard()
+{
+	entity player = GetLocalClientPlayer()
+
+	// CUSTOM_SCOREBOARD blocks stock ShowScoreboardMP. Modes that register
+	// FreeDM/Teams show/hide can opt in so TAB still works (FSLeaderboard stays unbound).
+	if ( FS_HasCap( FS_CAP_CUSTOM_SCOREBOARD ) && !file.allowCustomModeTeamsTab )
+		return false
+
+	if ( GetGameState() == eGameState.WinnerDetermined || GetGameState() > eGameState.Epilogue )
+		return false
+	else if ( IsViewingSquadSummary() || IsViewingDeathRecap() )
+		return false
+	else if ( GetGameState() == eGameState.Prematch && GetCurrentPlaylistVarBool( "enable_map_in_prematch", false ) )
+		return file.wantsToShowScoreboard
+	else if ( GetGameState() < eGameState.Playing && !GetCurrentPlaylistVarBool( "survival_staging_area_enabled", false ) )
+		return false
+                
+	else if ( Crafting_IsPlayerAtWorkbench( GetLocalClientPlayer() ) )
+		return false
+      
+	else if ( !FiringRange_IsCharacterSwitchingEnabled() )
+		return false
+	                        
+	else if ( GameMode_IsActive( eGameModes.CONTROL ) && IsValid( player ) )
+	{
+		if( !IsAlive( player ) )
+			return false
+	}
+       
+
+	return file.wantsToShowScoreboard
+}
+
+void function UpdateScoreboardVisibility()
+{
+	bool wantsTPPrompt = s_nextShowWantsTPPrompt
+	s_nextShowWantsTPPrompt = false
+
+	bool shouldShow = ShouldShowScoreboard()
+	file.wantsToShowScoreboard = shouldShow // Don't treat "wants to show" as a queue. It's more like an argument to this function.
+
+	if ( shouldShow == IsScoreboardShown() )
+		return // If we're already in the correct state, do nothing.
+
+	clGlobal.isScoreboardShown = shouldShow
+
+	if ( shouldShow )
+	{
+		s_latestShowWasForTPPrompt = wantsTPPrompt
+		RunUIScript( "TryCloseSurvivalInventory", null )
+		UpgradeSelectionMenu_TryClose()
+		RunUIScript( "SetShowingMap", true )
+
+		foreach ( func in file.scoreboardShowCallbacks )
+			func()
+
+		thread clGlobal.showScoreboardFunc()
+	}
+	else
+	{
+		thread clGlobal.hideScoreboardFunc()
+		Signal( clGlobal.signalDummy, "OnHideScoreboard" )
+
+		RunUIScript( "SetShowingMap", false )
+
+		foreach ( func in file.scoreboardHideCallbacks )
+			func()
+	}
+}
+#endif
+
+
+#if CLIENT
+void function AddScoreboardShowCallback( void functionref() func )
+{
+	file.scoreboardShowCallbacks.append( func )
+}
+#endif
+
+
+#if CLIENT
+void function AddScoreboardHideCallback( void functionref() func )
+{
+	file.scoreboardHideCallbacks.append( func )
+}
+#endif

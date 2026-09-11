@@ -1,0 +1,1182 @@
+// Freeplay aim trainer server (DevMenu Flowstate Aim Trainer)
+// Multiplayer: per-player sessions/ownership, shared global dummy budget.
+
+global function AimTrainer_ServerInit
+global function AimTrainer_OnTrainingDummyKilled
+global function AimTrainer_EnterMode
+global function AimTrainer_QuitMode
+global function AimTrainer_EnableDynStatsHUD
+global function AimTrainer_BeginTimedChallenge
+global function AimTrainer_WaitForIntro
+global function AimTrainer_SV_OnStatsReset
+global function AimTrainer_SV_RestartLastChallenge
+global function AimTrainer_RegisterDummy
+global function AimTrainer_UnregisterDummy
+global function AimTrainer_DestroyPlayerDummies
+global function AimTrainer_StopPlayerSession
+global function AimTrainer_GetDummyCount
+global function AimTrainer_GetBudgetRemaining
+global function AimTrainer_GetDummyOwner
+global function AimTrainer_IsDummyOwnedBy
+
+global function DEV_AimTrainer_ToggleAutoReloadOnHit
+global function DEV_AimTrainer_ToggleAutoReloadOnShot
+global function DEV_AimTrainer_ToggleAutoReloadOnKill
+global function DEV_AimTrainer_StartChallenge
+global function DEV_AimTrainer_StopChallenge
+global function DEV_AimTrainer_ToggleDynStats
+global function DEV_AimTrainer_ToggleReconHealthBars
+global function DEV_AimTrainer_ResetStats
+global function DEV_AimTrainer_Quit
+global function DEV_AimTrainer_PreviewResults
+global function DEV_AimTrainer_PreviewFRCRecap
+global function DEV_AimTrainer_SetChallengeDuration
+global function DEV_AimTrainer_SyncDevMenuState
+global function AimTrainer_SV_FinishChallenge
+global function AimTrainer_GetChallengeDurationSec
+global function AimTrainer_SyncDevMenuState
+global function AimTrainer_DevMenuCmd
+
+// Conduit tac VFX reused as freeroam challenge-end despawn juice.
+const asset AIMTRAINER_FX_CONDUIT_BEAM = $"P_con_tac_energyRope"
+const asset AIMTRAINER_FX_CONDUIT_HIT  = $"P_con_tac_hitFX"
+// Max rope lifetime if the dummy is still alive; OnDestroy kills FX immediately.
+const float AIMTRAINER_BEAM_HOLD = 0.55
+// Dissolve after the rope is already drawing on the dummy.
+const float AIMTRAINER_DISSOLVE_DELAY = 0.12
+const float AIMTRAINER_DESTROY_AFTER_DISSOLVE = 0.45
+
+struct
+{
+	bool inited = false
+	// All live aim-trainer dummies on the map (all owners).
+	array<entity> dummies
+} file
+
+void function AimTrainer_ServerInit()
+{
+	if ( file.inited )
+		return
+	file.inited = true
+
+	PrecacheParticleSystem( AIMTRAINER_FX_CONDUIT_BEAM )
+	PrecacheParticleSystem( AIMTRAINER_FX_CONDUIT_HIT )
+	// Freeroam Floating / Skydiving / Smoothbot
+	PrecacheParticleSystem( $"P_enemy_jump_jet_ON_trails" )
+	PrecacheModel( $"mdl/dev/empty_model.rmdl" )
+
+	RegisterSignal( AIMTRAINER_SIGNAL_CHALLENGE_STOP )
+	AddDamageCallback( FIRING_RANGE_DUMMIE_SCRIPT_NAME, AimTrainer_OnDummieDamaged )
+	AddCallback_OnWeaponAttack( AimTrainer_OnWeaponAttack )
+	// S21 pattern: AddCallback_OnClientDisconnected (mapedit / FR / fs_1v1).
+	AddCallback_OnClientDisconnected( AimTrainer_OnClientDisconnected )
+	// AimTrainer_SV_OnStatsReset is registered in _remote_functions_mp (client+server boot).
+	FreeroamWeaponsMenu_ServerInit()
+
+	// Multiplayer-safe DevMenu: callback player is the issuer (never gp[0]).
+	AddClientCommandCallback( "dev_aimtrainer", AimTrainer_DevMenuCmd )
+
+	printt( format( "[AimTrainer] ServerInit budget=%d", AIMTRAINER_DUMMY_BUDGET ) )
+}
+
+// ClientCommand "dev_aimtrainer <action> [args...]" -- player is the sender.
+// UI must use this instead of "script DEV_...(gp[0])" which always hits player 0.
+void function AimTrainer_DevMenuCmd( entity player, array<string> args )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( args.len() < 1 )
+	{
+		printt( format( "[AimTrainer] dev_aimtrainer: missing action from %s", player.GetPlayerName() ) )
+		return
+	}
+
+	string action = args[0].tolower()
+
+	// Read-only, so never gated: the DevMenu mirrors server truth, and a dropped
+	// sync leaves the labels asserting a state the server does not have.
+	if ( action == "sync" )
+	{
+		AimTrainer_SyncDevMenuState( player )
+		return
+	}
+
+	// A refused toggle still answers, otherwise the UI's optimistic flip stands forever.
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+	{
+		printt( format( "[AimTrainer] denied (sv_cheats 0) '%s' from %s", action, player.GetPlayerName() ) )
+		AimTrainer_SyncDevMenuState( player )
+		return
+	}
+	if ( action == "reload_hit" )
+	{
+		DEV_AimTrainer_ToggleAutoReloadOnHit( player )
+		return
+	}
+	if ( action == "reload_shot" )
+	{
+		DEV_AimTrainer_ToggleAutoReloadOnShot( player )
+		return
+	}
+	if ( action == "reload_kill" )
+	{
+		DEV_AimTrainer_ToggleAutoReloadOnKill( player )
+		return
+	}
+	if ( action == "dynstats" )
+	{
+		DEV_AimTrainer_ToggleDynStats( player )
+		return
+	}
+	if ( action == "healthbars" )
+	{
+		DEV_AimTrainer_ToggleReconHealthBars( player )
+		return
+	}
+	if ( action == "start" )
+	{
+		DEV_AimTrainer_StartChallenge( player )
+		return
+	}
+	if ( action == "stop" )
+	{
+		DEV_AimTrainer_StopChallenge( player )
+		return
+	}
+	if ( action == "quit" )
+	{
+		DEV_AimTrainer_Quit( player )
+		return
+	}
+	if ( action == "duration" )
+	{
+		if ( args.len() < 2 )
+		{
+			printt( format( "[AimTrainer] dev_aimtrainer duration: missing sec from %s", player.GetPlayerName() ) )
+			return
+		}
+		DEV_AimTrainer_SetChallengeDuration( player, int( args[1] ) )
+		return
+	}
+	if ( action == "flowstate" )
+	{
+		DEV_SpawnFlowstateDummyAtCrosshair( player )
+		return
+	}
+	if ( action == "flowstate_hard" )
+	{
+		DEV_SpawnFlowstateHardDummyAtCrosshair( player )
+		return
+	}
+	if ( action == "flowstate_auto" )
+	{
+		DEV_AimFreeroam_Autospawn( player )
+		return
+	}
+	if ( action == "flowstate_hard_auto" )
+	{
+		DEV_AimFreeroam_AutospawnHard( player )
+		return
+	}
+	if ( action == "ts" || action == "target_switch" )
+	{
+		DEV_AimFreeroam_TargetSwitch( player )
+		return
+	}
+	if ( action == "popcorn" )
+	{
+		DEV_AimFreeroam_Popcorn( player )
+		return
+	}
+	if ( action == "floating" )
+	{
+		printt( format( "[AimTrainer] Floating Target disabled for %s", player.GetPlayerName() ) )
+		return
+	}
+	if ( action == "skydiving" )
+	{
+		DEV_AimFreeroam_Skydiving( player )
+		return
+	}
+	if ( action == "smoothbot" )
+	{
+		printt( format( "[AimTrainer] Smoothbot disabled for %s", player.GetPlayerName() ) )
+		return
+	}
+	if ( action == "stop_session" )
+	{
+		DEV_AimFreeroam_StopAll( player )
+		return
+	}
+	if ( action == "dummy" )
+	{
+		DEV_SpawnTrainingDummieAtCrosshair( player )
+		return
+	}
+	// Sand Bag = immortal training dummy (menu label); "immortal" kept as alias.
+	if ( action == "sandbag" || action == "immortal" )
+	{
+		DEV_SpawnImmortalDummieAtCrosshair( player )
+		return
+	}
+	// Per-player skydive (legacy SkydiveTest hit every player).
+	if ( action == "skydive" )
+	{
+		player.ClearParent()
+		player.SetOrigin( <0, 0, 35000> )
+		thread PlayerSkydiveFromCurrentPosition( player )
+		printt( format( "[AimTrainer] skydive issuer=%s", player.GetPlayerName() ) )
+		return
+	}
+
+	printt( format( "[AimTrainer] dev_aimtrainer: unknown action '%s' from %s", action, player.GetPlayerName() ) )
+}
+
+void function AimTrainer_PruneDeadDummies()
+{
+	for ( int i = file.dummies.len() - 1; i >= 0; i-- )
+	{
+		entity npc = file.dummies[i]
+		if ( !IsValid( npc ) )
+		{
+			file.dummies.remove( i )
+			continue
+		}
+		// Orphan after owner left without cleanup -- free budget.
+		if ( !IsValid( AimTrainer_GetDummyOwner( npc ) ) )
+		{
+			file.dummies.remove( i )
+			npc.Destroy()
+		}
+	}
+}
+
+// Disconnect: kill challenge threads + hard-destroy owned dummies (no remotes/FX).
+void function AimTrainer_OnClientDisconnected( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	bool hadSession = player.p.aimTrainerModeActive || player.p.aimTrainerChallengeActive || player.p.aimTrainerFreeroamMode != AIMTRAINER_FREEROAM_NONE
+
+	player.p.aimTrainerChallengeActive = false
+	player.p.aimTrainerModeActive = false
+	player.p.aimTrainerDynStatsWanted = false
+	player.p.aimTrainerFreeroamMode = AIMTRAINER_FREEROAM_NONE
+
+	// End timed watcher + freeroam loops tied to this player.
+	Signal( player, AIMTRAINER_SIGNAL_CHALLENGE_STOP )
+	player.Signal( "AimFreeroam_Stop" )
+
+	// Hard destroy -- player is leaving; no ClientChallengeEnd, no beam FX.
+	AimTrainer_PruneDeadDummies()
+	array<entity> mine = []
+	foreach ( entity npc in file.dummies )
+	{
+		if ( IsValid( npc ) && AimTrainer_IsDummyOwnedBy( npc, player ) )
+			mine.append( npc )
+	}
+	foreach ( entity npc in mine )
+	{
+		AimTrainer_UnregisterDummy( npc )
+		if ( IsValid( npc ) )
+			npc.Destroy()
+	}
+
+	FreeroamWeaponsMenu_OnPlayerDisconnected( player )
+
+	printt( format( "[AimTrainer] Disconnect cleanup %s hadSession=%s destroyed=%d budget=%d/%d",
+		player.GetPlayerName(), string( hadSession ), mine.len(),
+		AimTrainer_GetDummyCount(), AIMTRAINER_DUMMY_BUDGET ) )
+}
+
+int function AimTrainer_GetDummyCount()
+{
+	AimTrainer_PruneDeadDummies()
+	return file.dummies.len()
+}
+
+int function AimTrainer_GetBudgetRemaining()
+{
+	return AIMTRAINER_DUMMY_BUDGET - AimTrainer_GetDummyCount()
+}
+
+entity function AimTrainer_GetDummyOwner( entity npc )
+{
+	if ( !IsValid( npc ) )
+		return null
+	entity owner = npc.ai.aimTrainerOwner
+	if ( !IsValid( owner ) )
+		return null
+	return owner
+}
+
+bool function AimTrainer_IsDummyOwnedBy( entity npc, entity player )
+{
+	return AimTrainer_GetDummyOwner( npc ) == player
+}
+
+void function AimTrainer_UnregisterDummy( entity npc )
+{
+	if ( npc == null )
+		return
+	file.dummies.removebyvalue( npc )
+}
+
+// Register a freshly spawned dummy under owner. Returns false if budget full (caller should Destroy).
+bool function AimTrainer_RegisterDummy( entity owner, entity npc )
+{
+	if ( !IsValid( npc ) )
+		return false
+
+	AimTrainer_PruneDeadDummies()
+
+	if ( file.dummies.len() >= AIMTRAINER_DUMMY_BUDGET )
+	{
+		if ( IsValid( owner ) && owner.IsPlayer() )
+			LocalEventMsg( owner, "#FS_OVER_BUDGET" )
+		printt( format( "[AimTrainer] Budget full (%d/%d) -- reject spawn for %s",
+			file.dummies.len(), AIMTRAINER_DUMMY_BUDGET,
+			IsValid( owner ) ? owner.GetPlayerName() : "?" ) )
+		return false
+	}
+
+	if ( IsValid( owner ) && owner.IsPlayer() )
+	{
+		npc.ai.aimTrainerOwner = owner
+		// Any dummy spawn pulls the owner into aim-trainer mode.
+		AimTrainer_EnterMode( owner )
+	}
+	else
+	{
+		npc.ai.aimTrainerOwner = null
+	}
+
+	if ( !file.dummies.contains( npc ) )
+		file.dummies.append( npc )
+
+	// Anonymous thread only -- named thread FuncName fails compile in this SQ dialect
+	// unless the file uses globalize_all_functions.
+	thread function() : ( npc )
+	{
+		if ( !IsValid( npc ) )
+		{
+			AimTrainer_UnregisterDummy( npc )
+			return
+		}
+
+		OnThreadEnd(
+			function() : ( npc )
+			{
+				AimTrainer_UnregisterDummy( npc )
+			}
+		)
+
+		npc.EndSignal( "OnDestroy" )
+		WaitForever()
+	}()
+
+	return true
+}
+
+void function AimTrainer_StopConduitBeamFX( entity beamFXEnt, entity hitFXEnt, entity startCP )
+{
+	if ( IsValid( beamFXEnt ) )
+	{
+		EffectStop( beamFXEnt )
+		beamFXEnt.Destroy()
+	}
+	if ( IsValid( hitFXEnt ) )
+		EffectStop( hitFXEnt )
+	if ( IsValid( startCP ) )
+		startCP.Destroy()
+}
+
+// Chest-to-chest Conduit rope: end on dummy CHESTFOCUS, start CP on player CHESTFOCUS.
+// Lifetime ends with the dummy (OnDestroy/OnDeath) so nothing floats after despawn.
+void function AimTrainer_SpawnConduitBeamToTarget( entity player, entity target )
+{
+	if ( !IsValid( player ) || !IsValid( target ) )
+		return
+
+	entity startCP = CreateEntity( "info_placement_helper" )
+	if ( !IsValid( startCP ) )
+		return
+
+	SetTargetName( startCP, UniqueString( "aimtrainer_cpBeamStart" ) )
+
+	// Start locked to player chest (same attach name as the dummy end).
+	int playerChest = player.LookupAttachment( "CHESTFOCUS" )
+	if ( playerChest > 0 )
+	{
+		startCP.SetOrigin( player.GetAttachmentOrigin( playerChest ) )
+		startCP.SetAngles( player.GetAttachmentAngles( playerChest ) )
+		DispatchSpawn( startCP )
+		startCP.SetParent( player, "CHESTFOCUS", false )
+	}
+	else
+	{
+		startCP.SetOrigin( player.GetWorldSpaceCenter() )
+		startCP.SetAngles( player.GetAngles() )
+		DispatchSpawn( startCP )
+		startCP.SetParent( player, "", true )
+	}
+
+	// End: rope + hit POINT_FOLLOW dummy chest (S21 PlayBeamFX_Thread layout).
+	int targetChest = target.LookupAttachment( "CHESTFOCUS" )
+	int beamFXID = GetParticleSystemIndex( AIMTRAINER_FX_CONDUIT_BEAM )
+	entity beamFXEnt
+	if ( targetChest > 0 )
+		beamFXEnt = StartParticleEffectOnEntity_ReturnEntity( target, beamFXID, FX_PATTACH_POINT_FOLLOW, targetChest )
+	else
+		beamFXEnt = StartParticleEffectOnEntity_ReturnEntity( target, beamFXID, FX_PATTACH_ABSORIGIN_FOLLOW, ATTACHMENTID_INVALID )
+
+	if ( IsValid( beamFXEnt ) )
+		EffectSetControlPointEntity( beamFXEnt, 1, startCP )
+
+	int hitFXID = GetParticleSystemIndex( AIMTRAINER_FX_CONDUIT_HIT )
+	entity hitFXEnt
+	if ( targetChest > 0 )
+		hitFXEnt = StartParticleEffectOnEntity_ReturnEntity( target, hitFXID, FX_PATTACH_POINT_FOLLOW, targetChest )
+	else
+		hitFXEnt = StartParticleEffectOnEntity_ReturnEntity( target, hitFXID, FX_PATTACH_ABSORIGIN_FOLLOW, ATTACHMENTID_INVALID )
+
+	// Die with the dummy -- fixed wait alone left startCP floating after Destroy.
+	thread function() : ( beamFXEnt, hitFXEnt, startCP, target )
+	{
+		OnThreadEnd(
+			function() : ( beamFXEnt, hitFXEnt, startCP )
+			{
+				AimTrainer_StopConduitBeamFX( beamFXEnt, hitFXEnt, startCP )
+			}
+		)
+
+		if ( IsValid( target ) )
+		{
+			EndSignal( target, "OnDestroy" )
+			EndSignal( target, "OnDeath" )
+		}
+
+		wait AIMTRAINER_BEAM_HOLD
+	}()
+}
+
+// Beam (chest-to-chest) + delayed dissolve, then hard Destroy if still alive.
+void function AimTrainer_DespawnDummyWithFX( entity player, entity npc )
+{
+	if ( !IsValid( npc ) )
+		return
+
+	if ( IsValid( player ) )
+		AimTrainer_SpawnConduitBeamToTarget( player, npc )
+
+	thread function() : ( npc )
+	{
+		// Rope/hit already POINT_FOLLOW on the dummy; dissolve after they have a chance to draw.
+		wait AIMTRAINER_DISSOLVE_DELAY
+		if ( IsValid( npc ) )
+			npc.Dissolve( ENTITY_DISSOLVE_CORE, <0, 0, 0>, 500 )
+
+		wait AIMTRAINER_DESTROY_AFTER_DISSOLVE
+		if ( IsValid( npc ) )
+			npc.Destroy()
+	}()
+}
+
+void function AimTrainer_DestroyPlayerDummies( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+
+	AimTrainer_PruneDeadDummies()
+	array<entity> mine = []
+	foreach ( entity npc in file.dummies )
+	{
+		if ( IsValid( npc ) && AimTrainer_IsDummyOwnedBy( npc, player ) )
+			mine.append( npc )
+	}
+
+	// Unregister first so budget frees immediately; FX/destroy is async.
+	foreach ( entity npc in mine )
+		AimTrainer_UnregisterDummy( npc )
+
+	foreach ( entity npc in mine )
+	{
+		if ( IsValid( npc ) )
+			AimTrainer_DespawnDummyWithFX( player, npc )
+	}
+
+	printt( format( "[AimTrainer] DespawnFX %d dummies for %s (budget now %d/%d)",
+		mine.len(), player.GetPlayerName(), AimTrainer_GetDummyCount(), AIMTRAINER_DUMMY_BUDGET ) )
+}
+
+// End only THIS player's challenge + freeroam threads + owned dummies.
+void function AimTrainer_StopPlayerSession( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	bool hadChallenge = player.p.aimTrainerChallengeActive
+	player.p.aimTrainerChallengeActive = false
+	player.p.aimTrainerDynStatsWanted = false
+	// FX despawn BEFORE freeroam stop so entities still exist for the pulse.
+	AimTrainer_DestroyPlayerDummies( player )
+	player.p.aimTrainerFreeroamMode = AIMTRAINER_FREEROAM_NONE
+	Signal( player, AIMTRAINER_SIGNAL_CHALLENGE_STOP )
+	player.Signal( "AimFreeroam_Stop" )
+	// Always clear freeze (intro may still be holding controls).
+	player.UnfreezeControlsOnServer()
+
+	if ( hadChallenge )
+		Remote_CallFunction_NonReplay( player, "AimTrainer_CL_ChallengeEnd" )
+
+	AimTrainer_SyncDevMenuState( player )
+	printt( format( "[AimTrainer] StopPlayerSession %s", player.GetPlayerName() ) )
+}
+
+void function AimTrainer_OnDummieDamaged( entity damagedEnt, var damageInfo )
+{
+	entity attacker = DamageInfo_GetAttacker( damageInfo )
+	if ( !IsValid( attacker ) || !attacker.IsPlayer() )
+		return
+	if ( !attacker.p.aimTrainerAutoReloadOnHit )
+		return
+	if ( DamageInfo_GetDamage( damageInfo ) <= 0 )
+		return
+
+	attacker.RefillAllAmmo()
+}
+
+// AutoReload on Shot -- refill after each primary attack (not abilities / consumables).
+void function AimTrainer_OnWeaponAttack( entity player, entity weapon, string weaponName, int ammoUsed, vector attackOrigin, vector attackDir )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	if ( !player.p.aimTrainerAutoReloadOnShot )
+		return
+	if ( !IsValid( weapon ) || ammoUsed <= 0 )
+		return
+
+	if ( weapon.IsWeaponOffhand()
+		 || IsBitFlagSet( weapon.GetWeaponTypeFlags(), WPT_TACTICAL )
+		 || IsBitFlagSet( weapon.GetWeaponTypeFlags(), WPT_ULTIMATE )
+		 || IsBitFlagSet( weapon.GetWeaponTypeFlags(), WPT_GRENADE )
+		 || IsBitFlagSet( weapon.GetWeaponTypeFlags(), WPT_CONSUMABLE )
+		 || IsBitFlagSet( weapon.GetWeaponTypeFlags(), WPT_SURVIVAL ) )
+	{
+		if ( weaponName != "mp_ability_sniper_ult" && weaponName != "mp_weapon_mobile_hmg" )
+			return
+	}
+
+	player.RefillAllAmmo()
+}
+
+void function AimTrainer_OnTrainingDummyKilled( entity attacker )
+{
+	if ( !IsValid( attacker ) || !attacker.IsPlayer() )
+		return
+
+	if ( attacker.p.aimTrainerAutoReloadOnKill )
+		attacker.RefillAllAmmo()
+
+	Remote_CallFunction_NonReplay( attacker, "AimTrainer_CL_OnDummieKilled" )
+}
+
+void function AimTrainer_EnableDynStatsHUD( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	player.p.aimTrainerDynStatsWanted = true
+	Remote_CallFunction_NonReplay( player, "AimTrainer_CL_ShowDynStats", true )
+}
+
+// If no primary weapons, give purple-set Volt + loadout skin/charm (weapons-menu kit path).
+void function AimTrainer_EnsureDefaultWeapon( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	if ( !IsAlive( player ) )
+		return
+
+	string primary0 = SURVIVAL_GetWeaponBySlot( player, WEAPON_INVENTORY_SLOT_PRIMARY_0 )
+	string primary1 = SURVIVAL_GetWeaponBySlot( player, WEAPON_INVENTORY_SLOT_PRIMARY_1 )
+	if ( primary0 != "" || primary1 != "" )
+		return
+
+	// Empty hands / only melee -- purple locked set + loadout cosmetics.
+	entity weapon = FreeroamWeaponsMenu_GiveKit( player, AIMTRAINER_DEFAULT_WEAPON, WEAPON_INVENTORY_SLOT_PRIMARY_0, FREEROAM_WM_TIER_PURPLE )
+	if ( !IsValid( weapon ) )
+	{
+		printt( format( "[AimTrainer] Default purple kit %s FAILED for %s", AIMTRAINER_DEFAULT_WEAPON, player.GetPlayerName() ) )
+		return
+	}
+
+	printt( format( "[AimTrainer] Default purple %s given to %s", AIMTRAINER_DEFAULT_WEAPON, player.GetPlayerName() ) )
+}
+
+// Holstered = melee / empty hands active. Challenge start draws Primary 0 (else 1).
+void function AimTrainer_EnsurePrimaryDrawn( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() || !IsAlive( player ) )
+		return
+
+	// Bare inventory still needs a gun before we can unholster.
+	AimTrainer_EnsureDefaultWeapon( player )
+
+	entity active = player.GetActiveWeapon( eActiveInventorySlot.mainHand )
+	entity p0 = player.GetNormalWeapon( WEAPON_INVENTORY_SLOT_PRIMARY_0 )
+	entity p1 = player.GetNormalWeapon( WEAPON_INVENTORY_SLOT_PRIMARY_1 )
+	entity melee = player.GetNormalWeapon( WEAPON_INVENTORY_SLOT_PRIMARY_2 )
+
+	bool holstered = !IsValid( active ) || active == melee
+	if ( IsValid( active ) && !holstered )
+	{
+		string cls = active.GetWeaponClassName().tolower()
+		if ( cls.find( "melee" ) != -1 || cls.find( "emptyhanded" ) != -1 )
+			holstered = true
+	}
+
+	// Already on a primary gun -- leave it.
+	if ( !holstered && ( active == p0 || active == p1 ) )
+		return
+
+	if ( IsValid( p0 ) )
+	{
+		player.SetActiveWeaponBySlot( eActiveInventorySlot.mainHand, WEAPON_INVENTORY_SLOT_PRIMARY_0 )
+		player.DeployWeapon()
+		printt( format( "[AimTrainer] Drew Primary 0 for %s (was holstered)", player.GetPlayerName() ) )
+	}
+	else if ( IsValid( p1 ) )
+	{
+		player.SetActiveWeaponBySlot( eActiveInventorySlot.mainHand, WEAPON_INVENTORY_SLOT_PRIMARY_1 )
+		player.DeployWeapon()
+		printt( format( "[AimTrainer] Drew Primary 1 for %s (was holstered)", player.GetPlayerName() ) )
+	}
+}
+
+// Enter "aim trainer mode" -- freeplay kit (infinite ammo / autoreload hit+kill / minimap).
+// Dyn stats HUD is challenge-only (show on BeginTimedChallenge, hide on end).
+void function AimTrainer_EnterMode( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	bool firstEnter = !player.p.aimTrainerModeActive
+	player.p.aimTrainerModeActive = true
+
+	if ( firstEnter )
+	{
+		LocalEventMsg( player, "#FS_AIMTRAINER_MODE_ON" )
+		Remote_CallFunction_NonReplay( player, "AimTrainer_CL_OnModeEnter" )
+
+		// FR combat-range dummies share "npc_dummie" with AimTrainer. Pause FR dummies for this realm or the pool fills.
+		if ( GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_FIRING_RANGE ) )
+		{
+			int realm = GetCombatRangeRealm( player )
+			Try_DynDummie_Spawns_Stop( player )
+			if ( realm >= 0 )
+			{
+				FR_ResidentDummies_DestroyInRealm( realm, true )
+				// Sweep leftover non-AimTrainer dummies in this realm (orphans / failed cleans).
+				array< entity > leftovers = GetEntArrayByScriptName( FIRING_RANGE_DUMMIE_SCRIPT_NAME )
+				int destroyed = 0
+				foreach ( entity d in leftovers )
+				{
+					if ( !IsValid( d ) )
+						continue
+					if ( IsValid( AimTrainer_GetDummyOwner( d ) ) )
+						continue
+					if ( d.GetRealms().len() < 1 || d.GetRealms()[0] != realm )
+						continue
+					d.Destroy()
+					destroyed++
+				}
+				printt( format( "[AimTrainer] FR dummies paused for realm %d (swept %d leftover npc_dummie)", realm, destroyed ) )
+			}
+		}
+	}
+
+	// Unarmed freeplay -- purple Volt + loadout cosmetics.
+	AimTrainer_EnsureDefaultWeapon( player )
+
+	// Infinite ammo (same path as dev menu infinite_ammo)
+	if ( !player.p.infiniteAmmo )
+	{
+		SetInfiniteAmmoForPlayer( player, true, [], true, true )
+		LocalEventMsg( player, "#FS_INFINITE_AMMO_ON" )
+	}
+	else if ( firstEnter )
+	{
+		LocalEventMsg( player, "#FS_INFINITE_AMMO_ON" )
+	}
+
+	// AutoReload on hit
+	if ( !player.p.aimTrainerAutoReloadOnHit )
+	{
+		player.p.aimTrainerAutoReloadOnHit = true
+		LocalEventMsg( player, "#FS_AUTORELOAD_HIT_ON" )
+	}
+	else if ( firstEnter )
+	{
+		LocalEventMsg( player, "#FS_AUTORELOAD_HIT_ON" )
+	}
+
+	// AutoReload on kill
+	if ( !player.p.aimTrainerAutoReloadOnKill )
+	{
+		player.p.aimTrainerAutoReloadOnKill = true
+		LocalEventMsg( player, "#FS_AUTORELOAD_KILL_ON" )
+	}
+	else if ( firstEnter )
+	{
+		LocalEventMsg( player, "#FS_AUTORELOAD_KILL_ON" )
+	}
+
+	AimTrainer_SyncDevMenuState( player )
+	printt( format( "[AimTrainer] EnterMode %s first=%s", player.GetPlayerName(), string( firstEnter ) ) )
+}
+
+// Push server toggle truth to UI DevMenu labels (hit/shot/kill/dyn/bars/duration).
+// Bitfield avoids multi-bool remote packing issues: hit=1, shot=2, kill=4, dyn=8, bars=16.
+void function AimTrainer_SyncDevMenuState( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	int flags = 0
+	if ( player.p.aimTrainerAutoReloadOnHit )
+		flags = flags | 1
+	if ( player.p.aimTrainerAutoReloadOnShot )
+		flags = flags | 2
+	if ( player.p.aimTrainerAutoReloadOnKill )
+		flags = flags | 4
+	if ( player.p.aimTrainerDynStatsWanted )
+		flags = flags | 8
+	if ( player.p.aimTrainerReconHealthBars )
+		flags = flags | 16
+
+	Remote_CallFunction_NonReplay( player, "AimTrainer_CL_SyncDevMenuState", flags, AimTrainer_GetChallengeDurationSec( player ) )
+}
+
+void function DEV_AimTrainer_SyncDevMenuState( entity player )
+{
+	AimTrainer_SyncDevMenuState( player )
+}
+
+// Full exit: stop session/dummies, drop mode kit, restore minimap + hide dyn stats on client.
+void function AimTrainer_QuitMode( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	bool wasActive = player.p.aimTrainerModeActive || player.p.aimTrainerChallengeActive
+
+	// Stop challenge + freeroam threads + owned dummies (ChallengeEnd only if challenge was live).
+	bool hadChallenge = player.p.aimTrainerChallengeActive
+	player.p.aimTrainerChallengeActive = false
+	// FX despawn BEFORE freeroam stop so entities still exist for the pulse.
+	AimTrainer_DestroyPlayerDummies( player )
+	player.p.aimTrainerFreeroamMode = AIMTRAINER_FREEROAM_NONE
+	Signal( player, AIMTRAINER_SIGNAL_CHALLENGE_STOP )
+	player.Signal( "AimFreeroam_Stop" )
+	player.UnfreezeControlsOnServer()
+	if ( hadChallenge )
+		Remote_CallFunction_NonReplay( player, "AimTrainer_CL_ChallengeEnd" )
+
+	player.p.aimTrainerModeActive = false
+	player.p.aimTrainerDynStatsWanted = false
+
+	if ( player.p.infiniteAmmo )
+	{
+		SetInfiniteAmmoForPlayer( player, false, [], true, true )
+		LocalEventMsg( player, "#FS_INFINITE_AMMO_OFF" )
+	}
+
+	Remote_CallFunction_NonReplay( player, "AimTrainer_CL_OnModeExit" )
+
+	if ( wasActive )
+		LocalEventMsg( player, "#FS_AIMTRAINER_MODE_OFF" )
+
+	// Restore FR combat-range dummies if the player's FR setting is still ON.
+	if ( wasActive && GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_FIRING_RANGE ) )
+	{
+		bool dynWanted = false
+		if ( FRS_NetVar_Get_Bool( player, eFRSettingType.DYNAMICDUMMIESON ) )
+			dynWanted = true
+		else if ( FRS_PVar_Get_Bool( player, eFRSettingType.DYNAMICDUMMIESON ) )
+			dynWanted = true
+		else
+			dynWanted = frBoolSettings_Defaults[ eFRSettingType.DYNAMICDUMMIESON ]
+
+		if ( dynWanted )
+		{
+			UCB_DynSpawns_SetActive( player, true )
+			printt( format( "[AimTrainer] FR dynamic dummies restored for %s", player.GetPlayerName() ) )
+		}
+	}
+
+	AimTrainer_SyncDevMenuState( player )
+	printt( format( "[AimTrainer] QuitMode %s wasActive=%s", player.GetPlayerName(), string( wasActive ) ) )
+}
+
+int function AimTrainer_GetChallengeDurationSec( entity player )
+{
+	if ( IsValid( player ) && player.IsPlayer() && player.p.aimTrainerChallengeDurationSec > 0 )
+		return player.p.aimTrainerChallengeDurationSec
+	return int( AIMTRAINER_CHALLENGE_DURATION )
+}
+
+void function AimTrainer_StartChallengeWatcher( entity player )
+{
+	int durationSec = AimTrainer_GetChallengeDurationSec( player )
+	thread function() : ( player, durationSec )
+	{
+		EndSignal( player, "OnDestroy" )
+		EndSignal( player, AIMTRAINER_SIGNAL_CHALLENGE_STOP )
+
+		// Unlimited: hold until Finish/Quit (timer stays 999 on client).
+		if ( durationSec == AIMTRAINER_CHALLENGE_DURATION_UNLIMITED )
+		{
+			printt( format( "[AimTrainer] Challenge unlimited hold for %s", player.GetPlayerName() ) )
+			WaitForever()
+			return
+		}
+
+		// Clock starts after the intro -- AimTrainer_IntroThread starts us.
+		wait float( durationSec )
+
+		if ( !IsValid( player ) || !player.IsPlayer() )
+			return
+		if ( !player.p.aimTrainerChallengeActive )
+			return
+
+		int freeroamMode = player.p.aimTrainerFreeroamMode
+
+		// Timeout: do not Signal CHALLENGE_STOP (would cancel this thread mid-cleanup).
+		player.p.aimTrainerChallengeActive = false
+		player.p.aimTrainerDynStatsWanted = false
+		// FX despawn BEFORE freeroam stop so entities still exist for the pulse.
+		AimTrainer_DestroyPlayerDummies( player )
+		player.Signal( "AimFreeroam_Stop" )
+		// Client ChallengeEnd hides dyn stats after snapshot/recap.
+		Remote_CallFunction_NonReplay( player, "AimTrainer_CL_ChallengeEnd" )
+		printt( format( "[AimTrainer] Challenge timeout %s (%ds)", player.GetPlayerName(), durationSec ) )
+		// Last statement: QuitMode Signals CHALLENGE_STOP, which this thread EndSignals on.
+		AimTrainer_OnChallengeFinished( player, freeroamMode )
+	}()
+}
+
+// Drill loops call this first so dummies appear only after the description.
+// Caller must already be a thread.
+void function AimTrainer_WaitForIntro( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	float remaining = player.p.aimTrainerIntroEndTime - Time()
+	if ( remaining > 0.0 )
+		wait remaining
+}
+
+// Freeze + description window before the clock. Runs as its own thread so
+// BeginTimedChallenge stays callable from a ClientCommand stack.
+void function AimTrainer_IntroThread( entity player )
+{
+	EndSignal( player, "OnDestroy" )
+	EndSignal( player, AIMTRAINER_SIGNAL_CHALLENGE_STOP )
+
+	int myGen = player.p.aimTrainerIntroGen
+
+	OnThreadEnd(
+		function() : ( player, myGen )
+		{
+			// A newer intro owns the freeze now -- do not steal its unfreeze.
+			if ( IsValid( player ) && player.IsPlayer() && player.p.aimTrainerIntroGen == myGen )
+				player.UnfreezeControlsOnServer()
+		}
+	)
+
+	player.FreezeControlsOnServer()
+	wait AIMTRAINER_PRE_START_TIME
+
+	if ( !player.p.aimTrainerChallengeActive )
+		return
+
+	AimTrainer_StartChallengeWatcher( player )
+}
+
+// Per-player timed session. Returns immediately -- intro and clock run on their own threads.
+// skipIntro=true for hold-R restart (no freeze/desc).
+void function AimTrainer_BeginTimedChallenge( entity player, bool announceStart = true, bool skipIntro = false )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	// Mode kit first (infinite ammo / autoreload kill)
+	AimTrainer_EnterMode( player )
+	// Melee holstered -> draw Primary 0 for the run.
+	AimTrainer_EnsurePrimaryDrawn( player )
+
+	if ( player.p.aimTrainerChallengeActive )
+	{
+		Signal( player, AIMTRAINER_SIGNAL_CHALLENGE_STOP )
+		player.p.aimTrainerChallengeActive = false
+		player.UnfreezeControlsOnServer()
+	}
+
+	player.p.aimTrainerChallengeActive = true
+	player.p.aimTrainerDynStatsWanted = true
+	player.p.aimTrainerRestartOfferUntil = 0.0
+	int durationSec = AimTrainer_GetChallengeDurationSec( player )
+	int freeroamMode = player.p.aimTrainerFreeroamMode
+	int skipIntroI = skipIntro ? 1 : 0
+	printt( format( "[AimTrainer] BeginTimedChallenge player=%s duration=%ds mode=%d skipIntro=%s",
+		player.GetPlayerName(), durationSec, freeroamMode, string( skipIntro ) ) )
+
+	// Client: intro description (unless skip), then dyn stats + countdown after PRE_START.
+	Remote_CallFunction_NonReplay( player, "AimTrainer_CL_ChallengeStart", durationSec, freeroamMode, skipIntroI )
+
+	bool doIntro = !skipIntro && AIMTRAINER_PRE_START_TIME > 0.0
+	player.p.aimTrainerIntroEndTime = doIntro ? Time() + AIMTRAINER_PRE_START_TIME : Time()
+	player.p.aimTrainerIntroGen++
+
+	if ( doIntro )
+		thread AimTrainer_IntroThread( player )
+	else
+		AimTrainer_StartChallengeWatcher( player )
+
+	AimTrainer_SyncDevMenuState( player )
+
+	if ( announceStart )
+		LocalEventMsg( player, "#FS_AIMTRAINER_CHALLENGE_STARTED" )
+}
+
+void function DEV_AimTrainer_ToggleAutoReloadOnHit( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	player.p.aimTrainerAutoReloadOnHit = !player.p.aimTrainerAutoReloadOnHit
+	printt( format( "[AimTrainer] AutoReload on Hit = %s for %s",
+		string( player.p.aimTrainerAutoReloadOnHit ), player.GetPlayerName() ) )
+	LocalEventMsg( player, player.p.aimTrainerAutoReloadOnHit ? "#FS_AUTORELOAD_HIT_ON" : "#FS_AUTORELOAD_HIT_OFF" )
+	AimTrainer_SyncDevMenuState( player )
+}
+
+void function DEV_AimTrainer_ToggleAutoReloadOnShot( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	player.p.aimTrainerAutoReloadOnShot = !player.p.aimTrainerAutoReloadOnShot
+	printt( format( "[AimTrainer] AutoReload on Shot = %s for %s",
+		string( player.p.aimTrainerAutoReloadOnShot ), player.GetPlayerName() ) )
+	LocalEventMsg( player, player.p.aimTrainerAutoReloadOnShot ? "#FS_AUTORELOAD_SHOT_ON" : "#FS_AUTORELOAD_SHOT_OFF" )
+	AimTrainer_SyncDevMenuState( player )
+}
+
+void function DEV_AimTrainer_ToggleAutoReloadOnKill( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	player.p.aimTrainerAutoReloadOnKill = !player.p.aimTrainerAutoReloadOnKill
+	printt( format( "[AimTrainer] AutoReload on Kill = %s for %s",
+		string( player.p.aimTrainerAutoReloadOnKill ), player.GetPlayerName() ) )
+	LocalEventMsg( player, player.p.aimTrainerAutoReloadOnKill ? "#FS_AUTORELOAD_KILL_ON" : "#FS_AUTORELOAD_KILL_OFF" )
+	AimTrainer_SyncDevMenuState( player )
+}
+
+void function DEV_AimTrainer_ToggleDynStats( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	player.p.aimTrainerDynStatsWanted = !player.p.aimTrainerDynStatsWanted
+	printt( format( "[AimTrainer] DynStats HUD = %s for %s",
+		string( player.p.aimTrainerDynStatsWanted ), player.GetPlayerName() ) )
+	Remote_CallFunction_NonReplay( player, "AimTrainer_CL_ShowDynStats", player.p.aimTrainerDynStatsWanted )
+	LocalEventMsg( player, player.p.aimTrainerDynStatsWanted ? "#FS_AIMTRAINER_DYNSTATS_ON" : "#FS_AIMTRAINER_DYNSTATS_OFF" )
+	AimTrainer_SyncDevMenuState( player )
+}
+
+void function DEV_AimTrainer_ToggleReconHealthBars( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	player.p.aimTrainerReconHealthBars = !player.p.aimTrainerReconHealthBars
+	printt( format( "[AimTrainer] Recon health bars = %s for %s",
+		string( player.p.aimTrainerReconHealthBars ), player.GetPlayerName() ) )
+	AimTrainer_SyncDevMenuState( player )
+}
+
+// Full same-challenge restart: new watcher + client ChallengeStart + kill/respawn freeroam dummies.
+// Does not quit mode; freeroam mode is remembered on player.p.aimTrainerFreeroamMode.
+void function AimTrainer_RestartChallengeFull( entity player, bool announce = false )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	if ( !player.p.aimTrainerChallengeActive )
+		return
+
+	Signal( player, AIMTRAINER_SIGNAL_CHALLENGE_STOP )
+	// FX despawn BEFORE freeroam stop -- Hold-R path used to hard-Destroy in watchers first.
+	AimTrainer_DestroyPlayerDummies( player )
+	// Freeroam loops EndSignal AimFreeroam_Stop; then re-thread the same scenario.
+	player.Signal( "AimFreeroam_Stop" )
+
+	player.p.aimTrainerChallengeActive = true
+	AimTrainer_EnsurePrimaryDrawn( player )
+	// Hold-R: no intro freeze -- restart clock + dummies immediately.
+	player.p.aimTrainerIntroEndTime = Time()
+	Remote_CallFunction_NonReplay( player, "AimTrainer_CL_ChallengeStart",
+		AimTrainer_GetChallengeDurationSec( player ), player.p.aimTrainerFreeroamMode, 1 )
+	AimTrainer_StartChallengeWatcher( player )
+
+	// Respawn freeroam drill dummies (TS / Popcorn / Floating / Skydiving / Smoothbot / Autospawn).
+	AimFreeroam_RestartScenario( player )
+
+	if ( announce )
+		LocalEventMsg( player, "#FS_AIMTRAINER_CHALLENGE_STARTED" )
+
+	printt( format( "[AimTrainer] Challenge FULL restart %s freeroamMode=%d duration=%ds",
+		player.GetPlayerName(), player.p.aimTrainerFreeroamMode, AimTrainer_GetChallengeDurationSec( player ) ) )
+}
+
+void function DEV_AimTrainer_SetChallengeDuration( entity player, int durationSec )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	// Only allow the DevMenu options (999 = unlimited, static timer).
+	if ( durationSec != 30 && durationSec != 60 && durationSec != 90 && durationSec != 120
+		&& durationSec != AIMTRAINER_CHALLENGE_DURATION_UNLIMITED )
+	{
+		printt( format( "[AimTrainer] SetChallengeDuration reject %d for %s", durationSec, player.GetPlayerName() ) )
+		return
+	}
+
+	player.p.aimTrainerChallengeDurationSec = durationSec
+	if ( durationSec == AIMTRAINER_CHALLENGE_DURATION_UNLIMITED )
+		printt( format( "[AimTrainer] Challenge duration = unlimited for %s", player.GetPlayerName() ) )
+	else
+		printt( format( "[AimTrainer] Challenge duration = %ds for %s", durationSec, player.GetPlayerName() ) )
+	AimTrainer_SyncDevMenuState( player )
+}
+
+// Hold-R mid-challenge (client remote): full lifecycle restart of the active challenge.
+void function AimTrainer_SV_OnStatsReset( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	if ( !player.p.aimTrainerChallengeActive )
+		return
+	AimTrainer_RestartChallengeFull( player, false )
+}
+
+void function DEV_AimTrainer_ResetStats( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( player.p.aimTrainerChallengeActive )
+	{
+		// Client already snapshotted on hold-R path; DevMenu Reset needs snapshot+full restart.
+		Remote_CallFunction_NonReplay( player, "AimTrainer_CL_ResetStats" )
+		AimTrainer_RestartChallengeFull( player, false )
+	}
+	else
+	{
+		Remote_CallFunction_NonReplay( player, "AimTrainer_CL_ResetStats" )
+	}
+	printt( format( "[AimTrainer] ResetStats %s", player.GetPlayerName() ) )
+}
+
+void function DEV_AimTrainer_StartChallenge( entity player )
+{
+	AimTrainer_BeginTimedChallenge( player, true )
+}
+
+void function DEV_AimTrainer_StopChallenge( entity player )
+{
+	AimTrainer_SV_FinishChallenge( player )
+}
+
+// ESC "FINISH CHALLENGE" / DevMenu Stop -- end timed run (recap) + freeroam/dummies.
+// Does not QuitMode (infinite ammo / mode flags stay).
+void function AimTrainer_SV_FinishChallenge( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	if ( !player.p.aimTrainerChallengeActive )
+	{
+		printt( format( "[AimTrainer] FinishChallenge (idle) %s", player.GetPlayerName() ) )
+		return
+	}
+
+	int freeroamMode = player.p.aimTrainerFreeroamMode
+	printt( format( "[AimTrainer] FinishChallenge %s", player.GetPlayerName() ) )
+	AimTrainer_StopPlayerSession( player )
+	AimTrainer_OnChallengeFinished( player, freeroamMode )
+}
+
+// A finished run leaves the player out of aim trainer mode entirely; the prompt on
+// their screen is the only way back into the same drill without the DevMenu.
+void function AimTrainer_OnChallengeFinished( entity player, int freeroamMode )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	AimTrainer_QuitMode( player )
+
+	player.p.aimTrainerLastFreeroamMode = freeroamMode
+	player.p.aimTrainerRestartOfferUntil = Time() + AIMTRAINER_RESTART_OFFER_WINDOW
+	Remote_CallFunction_NonReplay( player, "AimTrainer_CL_OfferRestartChallenge" )
+
+	printt( format( "[AimTrainer] ChallengeFinished %s mode=%d -- mode quit, restart offered %.1fs",
+		player.GetPlayerName(), freeroamMode, AIMTRAINER_RESTART_OFFER_WINDOW ) )
+}
+
+// Client answer to the post-challenge prompt. Client-callable, so the offer window is
+// the authority: outside it, or with a run already live, this is a no-op.
+void function AimTrainer_SV_RestartLastChallenge( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	if ( player.p.aimTrainerChallengeActive )
+		return
+	if ( Time() > player.p.aimTrainerRestartOfferUntil )
+	{
+		printt( format( "[AimTrainer] RestartLastChallenge outside offer window from %s", player.GetPlayerName() ) )
+		return
+	}
+
+	int freeroamMode = player.p.aimTrainerLastFreeroamMode
+	player.p.aimTrainerFreeroamMode = freeroamMode
+	AimTrainer_BeginTimedChallenge( player, true )
+
+	if ( freeroamMode != AIMTRAINER_FREEROAM_NONE )
+		AimFreeroam_RestartScenario( player )
+
+	printt( format( "[AimTrainer] RestartLastChallenge %s mode=%d", player.GetPlayerName(), freeroamMode ) )
+}
+
+void function DEV_AimTrainer_Quit( entity player )
+{
+	AimTrainer_QuitMode( player )
+}
+
+// Flash ui/announcement_results with live or demo stats (no challenge required).
+void function DEV_AimTrainer_PreviewResults( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	Remote_CallFunction_NonReplay( player, "AimTrainer_CL_DevPreviewResults" )
+	printt( format( "[AimTrainer] PreviewResults -> %s", player.GetPlayerName() ) )
+}
+
+// S21 FR Bang/smoke end panel: ui/fr_challenge_timer + nested post stats (~10s).
+void function DEV_AimTrainer_PreviewFRCRecap( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	Remote_CallFunction_NonReplay( player, "AimTrainer_CL_DevPreviewFRCRecap" )
+	printt( format( "[AimTrainer] PreviewFRCRecap -> %s", player.GetPlayerName() ) )
+}

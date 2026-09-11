@@ -1,0 +1,253 @@
+global function MpWeaponGrenadeGas_Init
+global function OnProjectileCollision_weapon_grenade_gas
+global function OnWeaponReadyToFire_weapon_grenade_gas
+global function OnWeaponTossReleaseAnimEvent_weapon_greande_gas
+global function OnWeaponDeactivate_weapon_grenade_gas
+
+const float UPGRADE_CAUSTIC_GAS_HP_REGEN_DELAY = 2.0
+
+#if SERVER
+global function WeaponGrenadeGas_StartHealing
+
+struct
+{
+	table< entity, int > 	playerToHealHandle
+	table< entity, float >	playerToNextAllowedHealTime
+}file
+#endif
+const float WEAPON_GAS_GRENADE_DELAY = 1.0
+const float WEAPON_GAS_GRENADE_DURATION = 15.0
+const vector WEAPON_GAS_GRENADE_OFFSET = <0,0,16>
+
+const string GAS_GRENADE_WARNING_SOUND 	= "weapon_vortex_gun_explosivewarningbeep"
+
+const asset GAS_GRENADE_FX_GLOW_FP = $"P_wpn_grenade_gas_glow_FP"
+const asset GAS_GRENADE_FX_GLOW_3P = $"P_wpn_grenade_gas_glow_3P"
+
+void function MpWeaponGrenadeGas_Init()
+{
+	#if SERVER
+		RegisterSignal( "ResetGasHealing" )
+		RegisterSignal( "ResetGasTracking" )
+		AddCallback_OnPassiveChanged( ePassives.PAS_GAS_HP_REGEN, HealInGas_OnPassiveChanged )
+	#endif
+
+	PrecacheParticleSystem( GAS_GRENADE_FX_GLOW_FP )
+	PrecacheParticleSystem( GAS_GRENADE_FX_GLOW_3P )
+}
+
+#if SERVER
+void function HealInGas_OnPassiveChanged( entity player, int passive, bool didHave, bool nowHas )
+{
+	if ( nowHas )
+	{
+		AddEntityCallback_OnDamaged( player, PassiveGasHealthRegen_OnPlayerDamaged )
+		file.playerToNextAllowedHealTime[ player ] <- Time()
+	}
+	if ( didHave )
+	{
+		RemoveEntityCallback_OnDamaged( player, PassiveGasHealthRegen_OnPlayerDamaged )
+		if( player in file.playerToNextAllowedHealTime )
+			delete file.playerToNextAllowedHealTime[ player ]
+	}
+}
+
+void function PassiveGasHealthRegen_OnPlayerDamaged( entity player, var damageInfo )
+{
+	if ( ( player.GetHealth() == 0 ) )
+		return
+
+	int damageSourceId = DamageInfo_GetDamageSourceIdentifier( damageInfo )
+
+	if( player in file.playerToNextAllowedHealTime && damageSourceId == eDamageSourceId.deathField)
+	{
+		if( player in file.playerToHealHandle )
+			EntityHealResource_Remove( player, file.playerToHealHandle[player] )
+
+		file.playerToNextAllowedHealTime[ player ] <- Time() + UPGRADE_CAUSTIC_GAS_HP_REGEN_DELAY
+	}
+
+	player.Signal( "ResetGasHealing" )
+}
+#endif
+
+
+void function OnWeaponReadyToFire_weapon_grenade_gas( entity weapon )
+{
+	weapon.PlayWeaponEffect( GAS_GRENADE_FX_GLOW_FP, GAS_GRENADE_FX_GLOW_3P, "FX_TRAIL" )
+}
+
+void function OnWeaponDeactivate_weapon_grenade_gas( entity weapon )
+{
+	weapon.StopWeaponEffect( GAS_GRENADE_FX_GLOW_FP, GAS_GRENADE_FX_GLOW_3P )
+	Grenade_OnWeaponDeactivate( weapon )
+}
+
+var function OnWeaponTossReleaseAnimEvent_weapon_greande_gas( entity weapon, WeaponPrimaryAttackParams attackParams )
+{
+	weapon.StopWeaponEffect( GAS_GRENADE_FX_GLOW_FP, GAS_GRENADE_FX_GLOW_3P )
+
+	var result = Grenade_OnWeaponToss( weapon, attackParams, 1.0 )
+	return result
+}
+
+
+#if SERVER
+void function OnProjectileCollision_weapon_grenade_gas( entity projectile, vector pos, vector normal, entity hitEnt, int hitBox, bool isCritical )
+#else
+void function OnProjectileCollision_weapon_grenade_gas( entity projectile, vector pos, vector normal, entity hitEnt, int hitBox, bool isCritical, bool isPassthrough )
+#endif
+{
+	entity player = projectile.GetOwner()
+	if ( hitEnt == player )
+		return
+
+	if ( projectile.GrenadeHasIgnited() )
+		return
+
+	DeployableCollisionParams cp
+	cp.pos = pos
+	cp.normal = normal
+	cp.hitEnt = hitEnt
+	cp.hitBox = hitBox
+	cp.isCritical = isCritical
+	cp.deployableFlags = eDeployableFlags.VEHICLES_NO_STICK
+
+	bool result = PlantStickyEntityOnWorldThatBouncesOffWalls( projectile, cp, 0.7, <0, 0, 0>, true )
+
+	#if SERVER
+	projectile.proj.projectileBounceCount++
+	if ( !result && projectile.proj.projectileBounceCount < 10 )
+	{
+		return
+	}
+
+	projectile.NotSolid()
+	thread DeployGas( projectile )
+	#endif
+
+	projectile.GrenadeIgnite()
+}
+
+#if SERVER
+
+void function DeployGas( entity projectile )
+{
+	Assert ( IsNewThread(), "Must be threaded off." )
+	projectile.EndSignal( "OnDestroy" )
+
+	OnThreadEnd(
+		function() : ( projectile )
+		{
+			if ( IsValid( projectile ) )
+				projectile.Destroy()
+		}
+	)
+
+	wait WEAPON_GAS_GRENADE_DELAY - 1.0
+
+	EmitSoundOnEntity( projectile, GAS_GRENADE_WARNING_SOUND )
+
+	wait 0.8
+
+	if ( !IsValid( projectile.GetThrower() ) )
+		return
+	if ( IsTeamEliminated( projectile.GetThrower().GetTeam() ) )
+		return
+
+	thread DeployGas_Internal( projectile )
+}
+
+                    
+float function GetUpgradedGasDurationMultiplier()
+{
+	return GetCurrentPlaylistVarFloat( "upgraded_caustic_gas_duration", 1.2 )
+}
+
+void function WeaponGrenadeGas_StartHealing( entity player )
+{
+	if( !( player in file.playerToHealHandle ) )
+	{
+		if(player in file.playerToNextAllowedHealTime && Time() > file.playerToNextAllowedHealTime[player] )
+			file.playerToHealHandle[player] <- EntityHealResource_Add( player, 2.0, 2.0, 0, "regen_default", player )
+	}
+	else if( EntityHealResource_GetRemainingHeals( player, file.playerToHealHandle[player] ) <= 0 )
+	{
+		if( player in file.playerToNextAllowedHealTime && Time() > file.playerToNextAllowedHealTime[player] )
+		{
+			EntityHealResource_Remove( player, file.playerToHealHandle[player] )
+			file.playerToHealHandle[player] <- EntityHealResource_Add( player, 2.0, 2.0, 0, "regen_default", player )
+		}
+	}
+
+	player.Signal( "ResetGasHealing" )
+	thread WeaponGrenadeGas_EndGasHealing( player )
+}
+
+void function WeaponGrenadeGas_EndGasHealing( entity player )
+{
+	player.EndSignal( "ResetGasHealing" )
+	Wait( 1.0 )
+
+	OnThreadEnd(
+		function() : ( player )
+		{
+			if( IsValid( player ) && player in file.playerToHealHandle)
+			{
+				EntityHealResource_Remove( player, file.playerToHealHandle[player] )
+				delete file.playerToHealHandle[player]
+			}
+		}
+	)
+}
+
+float function GetGasDuration( entity owner )
+{
+	float result = WEAPON_GAS_GRENADE_DURATION
+
+	//if( IsValid( owner ) && owner.HasPassive( ePassives.PAS_ULT_UPGRADE_ONE ) ) // upgrade_caustic_gas_duration
+	//{
+	//	result *= GetUpgradedGasDurationMultiplier()
+	//}
+       
+
+	return result
+}
+void function DeployGas_Internal( entity projectile )
+{
+	vector origin = projectile.GetOrigin()
+	entity owner = projectile.GetThrower()
+	if ( !IsValid( owner ) )
+		return
+	entity myParent = projectile.GetParent()
+
+	owner.EndSignal( "OnDestroy" )
+	projectile.GrenadeExplode( <0,0,1> )
+
+	wait 0.2
+
+	entity dummyCloudSource = CreateScriptMover( "", origin )
+	dummyCloudSource.SetOwner( owner )
+	if(owner)
+	{
+		dummyCloudSource.RemoveFromAllRealms()
+		dummyCloudSource.AddToOtherEntitysRealms( owner )
+	}
+
+	if ( IsValid( myParent ) )
+	{
+		entity parentPoint = CreateScriptMover( "", origin, Vector( 0, 0, 0 ) )
+		parentPoint.SetParent( myParent )
+		dummyCloudSource.SetParent( parentPoint )
+	}
+
+	TrackingVision_CreatePOI( eTrackingVisionNetworkedPOITypes.PLAYER_ABILITIES_GAS, dummyCloudSource, dummyCloudSource.GetOrigin(), dummyCloudSource.GetTeam(), dummyCloudSource )
+	float gasDuration = GetGasDuration( owner )
+	CreateGasCloudLarge( dummyCloudSource, gasDuration, WEAPON_GAS_GRENADE_OFFSET )
+	
+	waitthread DelayedDestroy( dummyCloudSource, gasDuration )
+}
+
+#endif
+
+const string GAS_GRENADE_MOVER_SCRIPTNAME = "caustic_gas_nade_mover"

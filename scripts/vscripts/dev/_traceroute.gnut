@@ -1,0 +1,157 @@
+global function NET_TraceRoute_Init
+global function NET_TraceRoute_BeginToAddress
+#if SERVER
+global function ClientCallback_PerformTraceRoute
+global function NET_TraceRoute_BeginToClient
+#endif
+#if CLIENT
+global function NET_TraceRoute_BeginToServer
+#endif
+global function NET_TraceRoute_Print
+global function NET_TraceRoute_End
+global function NET_TraceRoute_ToJSON
+
+// The time, in seconds, that a trace route cycle (not manually started on
+// the command line via NET_TraceRoute_BeginToXXXX function) will run for before
+// stopping
+const int TRACE_ROUTE_AUTO_RUN_TIME_SECONDS = 30
+
+// The round trip time (RTT) threshold, in milliseconds, which must be reached
+// before an automatic trace route cycle is started
+const int TRACE_ROUTE_AUTO_RUN_LATENCY_THRESHOLD_MS = 200
+
+// A crude debounce mechanism for auto running a trace route cycle. The player's
+// ping/latency/rtt must be over threshold defined in TRACE_ROUTE_AUTO_RUN_LATENCY_THRESHOLD_MS
+// for the number of seconds defined by this constant
+const int TRACE_ROUTE_AUTO_RUN_DEBOUNCE_TIME_SECONDS = 3
+
+const string SERVER_PERFORM_TRACE_ROUTE_RPC = "ClientCallback_PerformTraceRoute"
+
+struct
+{
+	int secondsOverThreshold = 0
+#if SERVER
+	// testedPlayers - an array containing the player entities of those clients which have already had a traceroute
+	// performed on them by the server
+	array<entity> testedPlayers
+#endif
+}file
+
+
+void function NET_TraceRoute_Init()
+{
+	if(GetConVarBool("net_traceroute"))
+	{
+		printt("TraceRoute Diagnostics are enabled")
+		Remote_RegisterServerFunction( SERVER_PERFORM_TRACE_ROUTE_RPC )
+		#if CLIENT
+			AddCallback_OnPlayerMatchStateChanged( OnPlayerMatchStateChanged )
+		#endif
+	}
+	else
+	{
+		printt("TraceRoute Diagnostics are disabled")
+	}
+}
+
+int function NET_TraceRoute_BeginToAddress(string address)
+{
+	return -1//NetTraceRouteBegin(address)
+}
+#if SERVER
+void function ClientCallback_PerformTraceRoute(entity client)
+{
+	// first check that the server has not run a trace route for this particular client
+	// before during this match. This will limit the the amount of damage a malicious actor
+	// could do if a vunerability was found that allows RPC's to be called multiple times
+	// with spoofed sources.
+	if( file.testedPlayers.contains(client) )
+	{
+		return
+	}
+
+	// if we are good, begin the auto trace route
+	file.testedPlayers.append(client)
+	thread NET_TraceRoute_AutoTraceRoute(client);
+}
+
+int function NET_TraceRoute_BeginToClient(entity client)
+{
+	return -1//NetTraceRouteBegin(client.GetIPString())
+}
+#endif
+
+#if CLIENT
+int function NET_TraceRoute_BeginToServer()
+{
+	return -1//NetTraceRouteBeginToServer()
+}
+#endif
+
+void function NET_TraceRoute_Print(int idx)
+{
+	printt( "Address				         Sent  Received  Loss%  Best  Worst  Last  Average" )
+}
+
+void function NET_TraceRoute_End(int idx)
+{
+	//NetTraceRouteEnd(idx)
+}
+
+string function NET_TraceRoute_ToJSON(int idx, entity player)
+{
+	return "a"
+}
+
+#if CLIENT
+void function OnPlayerMatchStateChanged( entity player, int newValue )
+{
+	if( player != GetLocalClientPlayer())
+	{
+		return
+	}
+
+	if( newValue == ePlayerMatchState.NORMAL )
+	{
+		thread NET_TraceRoute_Monitor(player)
+	}
+}
+
+void function NET_TraceRoute_Monitor(entity player)
+{
+
+	if( player != GetLocalClientPlayer() )
+	{
+		return
+	}
+
+	bool bShouldRun = true;
+	while(bShouldRun)
+	{
+		int ping = MyPing()
+		if( ping > TRACE_ROUTE_AUTO_RUN_LATENCY_THRESHOLD_MS )
+		{
+			if( file.secondsOverThreshold >= TRACE_ROUTE_AUTO_RUN_DEBOUNCE_TIME_SECONDS )
+			{
+				printt("High network latency has caused this client to automaticaly trigger a traceroute diagnostic")
+				NET_TraceRoute_AutoTraceRoute(player)
+				bShouldRun = false;
+			}
+			else
+			{
+				file.secondsOverThreshold++
+			}
+		}
+		else
+		{
+			file.secondsOverThreshold = 0
+		}
+		Wait(1)
+	}
+
+}
+#endif
+
+void function NET_TraceRoute_AutoTraceRoute(entity player)
+{
+}

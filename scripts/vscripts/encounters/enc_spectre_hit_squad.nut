@@ -1,0 +1,99 @@
+global function InitEncounterType_SpectreHitSquad
+
+
+const string MY_TYPE = "spectrehitsquad"
+void function InitEncounterType_SpectreHitSquad()
+{
+	#if SERVER
+		EncounterRegistrationInfo reg
+		reg.func_runtime = MyRunTime
+
+		EncounterSystem_RegisterType( MY_TYPE, reg )
+	#endif // SERVER
+}
+
+#if SERVER
+bool function AnyEntAliveInArray( array<entity> ents )
+{
+	foreach( ent in ents )
+	{
+		if ( IsAlive( ent ) )
+			return true
+	}
+	return false
+}
+
+entity function GetRandomAlivePlayer( array<entity> playersOrig )
+{
+	array<entity> players = clone playersOrig
+	players.randomize()
+	foreach( player in players )
+	{
+		if ( !IsAlive( player ) )
+			continue
+		return player
+	}
+
+	return null
+}
+
+
+void function MyRunTime_( SkitInstance si, array<entity> targetPlayers )
+{
+	if ( targetPlayers.len() == 0 )
+	{
+		printf( "%s No target players.", DBG_INFO() )
+		return
+	}
+
+	Point pt
+	{
+		entity randomPlayer = GetRandomAlivePlayer( targetPlayers )
+		if ( !IsValid( randomPlayer ) )
+		{
+			printf( "%s Couldn't get a valid live player.", DBG_INFO() )
+			return
+		}
+
+		vector spawnOrigin = (randomPlayer.GetOrigin() + (FlattenVec( randomPlayer.GetForwardVector() ) * 4000.0))
+		pt = GetClosestAirdropPoint( spawnOrigin )
+	}
+
+	// Spawn:
+	array<entity> npcs
+	{
+		entity dropPod = CreateDropPod()
+		InitFireteamDropPod( dropPod, eDropPodFlag.DISSOLVE_AFTER_DISEMBARKS )
+		waitthread LaunchAnimDropPod( dropPod, pt.origin, pt.angles )
+
+		for ( int idx = 0; idx < 3; ++idx )
+		{
+			entity npc = SkNPC_SpawnNPCWithRank( si, eNPC.DEATH_SPECTRE, pt.origin, pt.angles, 0 )
+			if ( !IsValid( npc ) )
+				continue
+			npcs.append( npc )
+		}
+
+		NPCsDeployFromDroppod( dropPod, npcs )
+	}
+
+	wait( 2.0 )
+	foreach( npc in npcs )
+	{
+		if ( IsAlive( npc ) )
+			thread SkNPC_HuntClosestPlayer( si, npc )
+	}
+
+	for ( ;; )
+	{
+		WaitFrame()
+		if ( !AnyEntAliveInArray( npcs ) )
+			break
+	}
+}
+void function MyRunTime( SkitInstance si, array<entity> targetPlayers )
+{
+	MyRunTime_( si, targetPlayers )
+}
+
+#endif // SERVER

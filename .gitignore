@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.swp
+*~
+
+# Local only
+*.log
+.cache/
+/tools/
+
+# No RE / handoff / status markdown (product only)
+*.md
+!README.md
+
+# Local user state and verified-host key (never publish)
+cfg/user/
+
+# Local junk (not product)
+scripts_pre_junction_backup/
+_fs1v1_ui_port/
+
+# scripts junction artifacts
+scripts/.git.bak_r5s21client_adapt/
+scripts/.gitattributes
+
+# product noise (via junctions into live)
+**/*.pre_dual.bak
+**/*.bak
+**/*bak*
+*.bak.*
+**/*.bak_*
+cfg/**/sdk_detours_quarantine.txt*
+localization/_merge_bak*/
+playlists_r5_patch.txt.*
+rsx_cache_db.bin

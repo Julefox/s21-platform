@@ -1,0 +1,29 @@
+// Freeplay aim trainer shared constants (DevMenu Flowstate Aim Trainer)
+
+// Exact challenge length (client countdown + server end match this).
+global const float AIMTRAINER_CHALLENGE_DURATION = 60.0
+// Unlimited: timer stays at 999, server watcher never times out.
+global const int AIMTRAINER_CHALLENGE_DURATION_UNLIMITED = 999
+// Description + control freeze before the clock/drill starts (legacy AimTrainer intro).
+global const float AIMTRAINER_PRE_START_TIME = 3.0
+global const string AIMTRAINER_SIGNAL_CHALLENGE_STOP = "AimTrainer_ChallengeStop"
+// Post-challenge "restart challenge" offer: client prompt lifetime, and the server
+// window that accepts the answer (slack covers the round trip).
+global const float AIMTRAINER_RESTART_PROMPT_DURATION = 5.0
+global const float AIMTRAINER_RESTART_OFFER_WINDOW = 6.0
+
+// Global cap across all players on the map (edict / performance guard).
+global const int AIMTRAINER_DUMMY_BUDGET = 128
+
+// player.p.aimTrainerFreeroamMode -- hold-R restarts this drill with fresh dummies.
+global const int AIMTRAINER_FREEROAM_NONE = 0
+global const int AIMTRAINER_FREEROAM_TARGET_SWITCH = 1
+global const int AIMTRAINER_FREEROAM_POPCORN = 2
+global const int AIMTRAINER_FREEROAM_FLOATING_TARGET = 3
+global const int AIMTRAINER_FREEROAM_SKYDIVING = 4
+global const int AIMTRAINER_FREEROAM_SMOOTHBOT = 5
+global const int AIMTRAINER_FREEROAM_AUTOSPAWN = 6
+global const int AIMTRAINER_FREEROAM_AUTOSPAWN_HARD = 7
+
+// Default freeplay primary if the player has no gun (loadout skin applied on give).
+global const string AIMTRAINER_DEFAULT_WEAPON = "mp_weapon_volt_smg"

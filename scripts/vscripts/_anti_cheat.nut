@@ -1,0 +1,137 @@
+global function RecordServerAbuseForAntiCheat
+global function CodeCallback_AntiCheatKickPlayer
+
+// Honeypot RPC with no real functionality
+global function ClientCallback_MigrateMeTransferPersistence
+
+global enum eRSALabels
+{
+	CC_MigrateMeTransferPersistence,
+	CC_PickupAllSurvivalItem,
+	CreateWaypointPingType,
+	NonItemFlavorLoadoutSet,
+
+	UnselectableUpgrade,
+
+	CC_CalledDEVOnlyRPC,
+	TriedToTakeBadItemFromBox,
+	CC_BloodTT_StoryPropDialogueAborted,
+	RSA_COUNT
+}
+
+struct RSAPair
+{
+	string pinLabel
+	string playlistLabel
+}
+
+RSAPair[eRSALabels.RSA_COUNT] RSALookup =
+[
+	// eRSALabels
+	// CC_MigrateMeTransferPersistence
+	{
+		pinLabel       = "CC_MigrateMeHoneyPot",
+		playlistLabel  = "rsa_mmhp"
+	},
+	// CC_PickupAllSurvivalItem
+	{
+		pinLabel       = "CC_PickupAllSurvivalItem",
+		playlistLabel  = "rsa_pickupasi"
+	},
+	// CreateWaypointPingType before S18: Malformed ping type on CreateWaypoint_Ping_Location
+	{
+		pinLabel       = "CreateWaypointPingType",
+		playlistLabel  = "rsa_cwpt"
+	},
+	// NonItemFlavorLoadoutSet trying to pass a non-ItemFlavor LoadoutEntry to ClientCallback_loadouts_set
+	{
+		pinLabel       = "NonItemFlavorLoadoutSet",
+		playlistLabel  = "rsa_nifls"
+	},
+
+	// UnselectableUpgrade trying to select an upgrade that cannot be selected, either because its in a tier we've already picked or in a level we haven't achieved yet
+	{
+		pinLabel       = "UnselectableUpgrade",
+		playlistLabel  = "rsa_uu"
+	},
+
+	// CC_CalledDEVOnlyRPC trying to call a remote Script function that should only be called in DEV
+	{
+		pinLabel       = "CC_CalledDEVOnlyRPC",
+		playlistLabel  = "rsa_DORPC"
+	},
+	// TriedToTakeBadItemFromBox trying to an item from a deathbox/black market that is hidden on the client.
+	{
+		pinLabel       = "TriedToTakeBadItemFromBox",
+		playlistLabel  = "rsa_bifb"
+	},
+	// CC_BloodTT_StoryPropDialogueAborted calling this remote function when not on worlds edge.
+	{
+		pinLabel       = "CC_BloodTT_StoryPropDialogueAborted",
+		playlistLabel  = "rsa_blottab"
+	},
+]
+
+bool function RecordServerAbuseForAntiCheat( entity player, int label )
+{
+	if ( !IsValid( player ) ) // Please validate your player before
+	{
+		Assert( false, "Please validate your player before calling" )
+		return false
+	}
+
+	if ( label < 0 || label >= eRSALabels.RSA_COUNT )
+	{
+		Assert( false, "Invalid RSA passed: " + label )
+		return false
+	}
+
+	RSAPair lookup = RSALookup[label]
+
+	bool shouldRecord = false//GetCurrentPlaylistVarBool( lookup.playlistLabel, true )
+	//if ( shouldRecord )
+		//RecordServerAbuse( player, lookup.pinLabel )
+
+	return shouldRecord
+}
+
+void function ClientCallback_MigrateMeTransferPersistence( entity player, entity fakeEntity )
+{
+	// Give them some hope and disconnect them
+	bool hasRecorded = RecordServerAbuseForAntiCheat( player, eRSALabels.CC_MigrateMeTransferPersistence )
+	if ( hasRecorded )
+		ClientCallback_LeaveMatch( player )
+}
+
+void function CodeCallback_AntiCheatKickPlayer( entity player, string status )
+{
+	void functionref( entity, int, bool ) doBannedRemote = void function( entity bannedPlayer, int entIdx, bool isAnonymous )
+	{
+		foreach ( player in GetPlayerArrayIncludingSpectators() )
+		{
+			if ( !IsValid( player ) )
+				continue
+
+			if ( player == bannedPlayer )
+				continue
+
+			Remote_CallFunction_Replay( player, "ServerCallback_BroadcastPlayerKicked", entIdx, isAnonymous )
+		}
+	}
+
+	// Safety guards
+	if ( !player.IsPlayer() )
+		return
+
+	if ( IsLobby() )
+		return
+
+	switch ( status )
+	{
+		case "#ANTICHEAT_BANNED":
+			thread doBannedRemote( player, player.GetEntIndex(), player.GetPlayerNetBool( "anonymizePlayerName" ) )
+			break
+		default:
+			break
+	}
+}

@@ -1,0 +1,47 @@
+global function EventRefresh_SharedInit
+
+#if SERVER
+global function SetPlayerEventCurrencyVarsToPendingGrant
+#endif
+
+void function EventRefresh_SharedInit()
+{
+	#if SERVER
+		AddCallback_QueueServersideScriptGRXOperations( GivePlayerAnyPendingEventCurrencyRewards )
+	#endif // SERVER
+}
+
+
+#if SERVER
+const string SEASONAL_CURRENCY_REWARD_SEQUENCE_NAME = "rewardseq_s17_seasonalcurrency"
+const string PVAR_EVENT_CURRENCY_GRANT_AMOUNT_NAME = "eventRefactorLastCurrencyGrant"
+void function GivePlayerAnyPendingEventCurrencyRewards( entity player )
+{
+	int currencyGrantAmount = player.GetPersistentVarAsInt( PVAR_EVENT_CURRENCY_GRANT_AMOUNT_NAME)
+	if ( currencyGrantAmount <= 0 )
+		return
+
+	GrantRewardsConfig grc
+	ItemFlavor eventCurrencyFlav = GRX_CURRENCIES[ GRX_CURRENCY_EVENT ]
+	grc.what = MakeItemFlavorBag( { [ eventCurrencyFlav ] = currencyGrantAmount } )
+	grc.rewardSequenceName = SEASONAL_CURRENCY_REWARD_SEQUENCE_NAME
+
+	// note: we could optionally use the day n * GRANTS_PER_DAY logic here to limit the number of times this
+	// could be redeemed per day, but it is currently being handled instead at mp_ability_loot_sensor:597
+
+	grc.rewardSequenceExpectedIdx = GRX_GetSequenceNumber( player, SEASONAL_CURRENCY_REWARD_SEQUENCE_NAME )
+	grc.rewardSequenceDesiredIdx = grc.rewardSequenceExpectedIdx + 1
+
+	int result = GRX_GrantRewards( player, grc )
+	Assert( result == eGrantRewardsResult.ASYNC )
+
+	// reset pvars for currency granted
+	player.SetPersistentVar( PVAR_EVENT_CURRENCY_GRANT_AMOUNT_NAME, 0 )
+}
+
+
+void function SetPlayerEventCurrencyVarsToPendingGrant( entity player, int currencyAmount )
+{
+	player.SetPersistentVar( PVAR_EVENT_CURRENCY_GRANT_AMOUNT_NAME, currencyAmount )
+}
+#endif // SERVER

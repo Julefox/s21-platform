@@ -1,0 +1,102 @@
+"WeaponData"
+{
+	"printname" "#FIRELINE_TAC_NAME"
+	"shortprintname" "#FIRELINE_TAC_NAME"
+	"description" "#FIRELINE_TAC_DESC"
+	"longdesc" "#FIRELINE_TAC_LONGDESC"
+	"menu_icon" "white"
+	"hud_icon" "rui/hud/tactical_icons/tactical_fireline"
+	"fire_mode" "offhand"
+	"charge_allow_hold_when_full" "1"
+	"cooldown_type" "ammo_timed"
+	"regen_ammo_refill_rate" "1"
+	"reload_enabled" "0"
+	"fire_rate" "10.000000"
+	"fire_duration" "0.700000"
+	"charge_time" "1.800000"
+	"ammo_clip_size" "70"
+	"ammo_per_shot" "35"
+	"ammo_min_to_fire" "35"
+	"zoom_effects" "0"
+	"fire_rumble" "wraith_phase_buildup"
+	"viewmodel" "mdl/weapons/empty_handed/ptpov_mirage_holopilot.rmdl"
+	"playermodel" "mdl/weapons/empty_handed/w_empty_handed_mirage.rmdl"
+	"charge_sound_1p" "arc_rifle_charge_1p"
+	"charge_sound_3p" "arc_cannon_charge_3p"
+	"battle_chatter_event" "bc_tactical"
+	"OnWeaponRegenEnd" "OnWeaponRegenEndGeneric"
+	"OnWeaponAttemptOffhandSwitch" "OnWeaponAttemptOffhandSwitch_ability_thermal_denial"
+	"OnWeaponActivate" "OnWeaponActivate_ability_thermal_denial"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_ability_thermal_denial"
+	"OnWeaponChargeBegin" "OnWeaponChargeBegin_ability_thermal_denial"
+	"OnWeaponChargeEnd" "OnWeaponChargeEnd_ability_thermal_denial"
+	"OnWeaponPrimaryAttack" "OnWeaponPrimaryAttack_ability_thermal_denial"
+	"burn_segment_radius" "50.000000"
+	"burn_segment_height" "48.000000"
+	"burn_segments" "4"
+	"burn_segment_spacing_dist" "80.000000"
+	"sound_burn_segment_start" "thermitegrenade_flamewall_flame_burn_front"
+	"sound_burn_segment_middle" "thermitegrenade_flamewall_flame_burn_middle"
+	"sound_burn_segment_end" "thermitegrenade_flamewall_flame_burn_end"
+	"preburn_duration" "2.000000"
+	"burn_duration" "4.000000"
+	"burn_damage" "25"
+	"burn_time" "2.800000"
+	"burn_stacks_max" "4"
+	"burn_stack_debounce" "0.700000"
+	"burn_tick_rate" "1.200000"
+	"sound_burn_damage_tick_1p" "flesh_fire_damage_1p"
+	"weaponType" "tactical"
+	"weapon_type_flags" "WPT_TACTICAL"
+	"offhand_default_inventory_slot" "1"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "survival_ui_tactical_ready"
+	"update_player_last_fire_time" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"survival_finite_ordnance"
+		{
+
+		}
+
+		"copycat_mod"
+		{
+			"weapon_type_flags" "WPT_SURVIVAL"
+
+		}
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+	}
+}

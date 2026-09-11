@@ -1,0 +1,284 @@
+// BannerAssets -- S21 port of Flowstate mp/banner/sh_banner_asset.nut
+// Registration + visibility mover + waiting-room world RUI (ui/basic_image).
+
+global function BannerAssets_SetEnabled
+global function BannerAssets_IsEnabled
+
+#if SERVER
+global function BannerAssets_Init
+global function BannerAssets_RegisterGroup
+global function BannerAssets_SetAllGroupsFunc
+global function BannerAssets_SetAllAssetsFunc
+global function BannerAssets_GroupAppendAsset
+global function BannerAssets_BannerVisibilityMover
+global function WorldDrawAsset_AssetRefToID
+global function FS_1v1_WorldBanner_StoreAndBroadcast
+global function FS_1v1_WorldBanner_PushToPlayer
+global function FS_1v1_WorldBanner_IsReady
+global function FS_1v1_WorldBanner_GetOrigin
+#endif
+
+const int SLOWEST = -4
+
+struct BannerImageData
+{
+	int id
+	string assetName
+	bool isValid = false
+}
+
+struct BannerGroupData
+{
+	string groupName
+	array<BannerImageData> groupBanners
+	vector org
+	vector ang
+	int groupId = -1
+	float width = -1
+	float height = -1
+	float alpha = 1
+	bool isVisible = true
+	int cycleTime = 10
+	bool isValid = false
+	bool useRandom = false
+	float intermediateTime = 2.0
+	int fadeSpeed = SLOWEST
+	float startDelay = 0
+}
+
+struct
+{
+	#if SERVER
+		table<string, BannerGroupData> groupDataMap
+		void functionref() groupsInitCallbackFunc
+		void functionref() runImageAppendtoGroupsFunc
+		int _uniqueGroupId = -1
+		bool loggedNoDraw = false
+		vector worldBannerOrigin
+		vector worldBannerAngles
+		float worldBannerWidth = 480.0
+		float worldBannerHeight = 270.0
+		bool worldBannerReady = false
+	#endif
+	bool _bBannerImages_Loaded = false
+	bool isEnabled = true
+} file
+
+void function BannerAssets_SetEnabled( bool state )
+{
+	if ( file._bBannerImages_Loaded )
+	{
+		printt( "[FS-Banner] SetEnabled ignored -- already init" )
+		return
+	}
+	file.isEnabled = state
+}
+
+bool function BannerAssets_IsEnabled()
+{
+	return file.isEnabled && GetCurrentPlaylistVarBool( "enable_banner_assets", false )
+}
+
+#if SERVER
+void function BannerAssets_Init()
+{
+	file.isEnabled = BannerAssets_IsEnabled()
+
+	if ( file.isEnabled && file.groupsInitCallbackFunc != null )
+	{
+		file.groupsInitCallbackFunc()
+
+		if ( file.runImageAppendtoGroupsFunc != null )
+			file.runImageAppendtoGroupsFunc()
+
+		int bannerCount = 0
+		foreach ( BannerGroupData g in file.groupDataMap )
+			bannerCount += g.groupBanners.len()
+
+		printt( "[FS-Banner] init groups=" + string( file.groupDataMap.len() ) + " assets=" + string( bannerCount )
+			+ " (WorldDraw draw not available on S21 -- registration only)" )
+	}
+	else
+	{
+		printt( "[FS-Banner] init disabled (playlist enable_banner_assets=0 or no groups callback)" )
+	}
+
+	file._bBannerImages_Loaded = true
+}
+
+void function BannerAssets_SetAllGroupsFunc( void functionref() callbackFunc )
+{
+	if ( file._bBannerImages_Loaded )
+		return
+	file.groupsInitCallbackFunc = callbackFunc
+}
+
+void function BannerAssets_SetAllAssetsFunc( void functionref() callbackFunc )
+{
+	if ( file._bBannerImages_Loaded )
+		return
+	file.runImageAppendtoGroupsFunc = callbackFunc
+}
+
+void function BannerAssets_RegisterGroup( string name, LocPair groupLoc, float width, float height, float alpha = -1.0, float startDelay = 0, bool isVisible = true, int cycleTime = 10, bool useRandom = false, float intermediateTime = 2.00, int fadeSpeed = SLOWEST )
+{
+	if ( file._bBannerImages_Loaded )
+		return
+
+	BannerGroupData bannerGroup
+	bannerGroup.groupId = ++file._uniqueGroupId
+	bannerGroup.groupName = name
+	bannerGroup.org = groupLoc.origin
+	bannerGroup.ang = groupLoc.angles
+	bannerGroup.width = width
+	bannerGroup.height = height
+	if ( alpha >= 0.0 )
+		bannerGroup.alpha = alpha
+	bannerGroup.isVisible = isVisible
+	bannerGroup.cycleTime = cycleTime
+	bannerGroup.isValid = true
+	bannerGroup.useRandom = useRandom
+	bannerGroup.fadeSpeed = fadeSpeed
+	bannerGroup.startDelay = startDelay
+	bannerGroup.intermediateTime = intermediateTime
+
+	if ( name in file.groupDataMap )
+	{
+		printt( "[FS-Banner] RegisterGroup overwrite " + name )
+	}
+	file.groupDataMap[ name ] <- bannerGroup
+}
+
+void function BannerAssets_GroupAppendAsset( string groupName, int assetIdRef, bool bLoopVideo = false, string assetName = "", string assetResourceRef = "" )
+{
+	if ( !( groupName in file.groupDataMap ) )
+	{
+		printt( "[FS-Banner] GroupAppendAsset invalid group " + groupName )
+		return
+	}
+
+	BannerImageData banner
+	banner.id = assetIdRef
+	banner.assetName = assetName != "" ? assetName : string( assetIdRef )
+	banner.isValid = assetIdRef != -1
+
+	file.groupDataMap[ groupName ].groupBanners.append( banner )
+}
+
+// Stub: no WorldDraw asset registry on S21.
+int function WorldDrawAsset_AssetRefToID( string assetRef )
+{
+	if ( !file.loggedNoDraw )
+	{
+		file.loggedNoDraw = true
+		printt( "[FS-Banner] WorldDrawAsset_AssetRefToID stub -- no asset registry; ref='" + assetRef + "'" )
+	}
+	return -1
+}
+
+bool function BannerAssets_IsPositionClear( vector position, vector simulateEyePos )
+{
+	TraceResults traceResult = TraceLine( simulateEyePos, position, [], TRACE_MASK_NPCWORLDSTATIC, TRACE_COLLISION_GROUP_NONE )
+	return traceResult.fraction >= 1.0
+}
+
+vector function BannerAssets_AdjustBannerPosition( vector currentPosition, vector currentAngles, vector simulateEyePos, float adjustmentDistance )
+{
+	array<vector> adjustments
+	adjustments.append( <0, 0, adjustmentDistance> )
+	adjustments.append( <0, 0, -adjustmentDistance> )
+	adjustments.append( AnglesToRight( currentAngles ) * adjustmentDistance )
+	adjustments.append( AnglesToRight( currentAngles ) * -adjustmentDistance )
+	adjustments.append( AnglesToForward( currentAngles ) * adjustmentDistance )
+
+	foreach ( vector adjustment in adjustments )
+	{
+		vector newPosition = currentPosition + adjustment
+		if ( BannerAssets_IsPositionClear( newPosition, simulateEyePos ) )
+			return newPosition
+	}
+	return currentPosition
+}
+
+// Trace-based nudge so waiting-room banner sits in free LOS from rest area.
+vector function BannerAssets_BannerVisibilityMover( vector eyePos, vector eyeAngles, vector initialPosition, vector initialAngles, float bannerWidth, float bannerHeight, float adjustmentDistance = 5.0, float maxIterations = 1000 )
+{
+	array<vector> corners
+	corners.resize( 4 )
+
+	float halfWidth = bannerWidth * 0.5
+	float halfHeight = bannerHeight * 0.5
+	vector currentPosition = initialPosition
+
+	vector forward = AnglesToForward( initialAngles )
+	vector right = AnglesToRight( initialAngles )
+	// up unused in corner math (matches Flowstate)
+
+	int iter = 0
+	while ( iter < int( maxIterations ) )
+	{
+		corners[ 0 ] = currentPosition + ( forward * halfHeight ) - ( right * halfWidth )
+		corners[ 1 ] = currentPosition + ( forward * halfHeight ) + ( right * halfWidth )
+		corners[ 2 ] = currentPosition - ( forward * halfHeight ) - ( right * halfWidth )
+		corners[ 3 ] = currentPosition - ( forward * halfHeight ) + ( right * halfWidth )
+
+		bool allCornersVisible = true
+		for ( int i = 0; i < 4; i++ )
+		{
+			vector corner = corners[ i ]
+			TraceResults traceResult = TraceLine( eyePos, corner, [], TRACE_MASK_NPCWORLDSTATIC, TRACE_COLLISION_GROUP_NONE )
+			float distanceToCorner = Distance( eyePos, corner )
+			float traceEndDistance = Distance( eyePos, traceResult.endPos )
+			if ( traceResult.fraction < 1.0 && traceEndDistance < distanceToCorner )
+			{
+				allCornersVisible = false
+				break
+			}
+		}
+
+		if ( allCornersVisible )
+			return currentPosition
+
+		currentPosition = BannerAssets_AdjustBannerPosition( currentPosition, initialAngles, eyePos, adjustmentDistance )
+		adjustmentDistance += 5.0
+		iter++
+	}
+
+	return initialPosition
+}
+
+bool function FS_1v1_WorldBanner_IsReady()
+{
+	return file.worldBannerReady
+}
+
+vector function FS_1v1_WorldBanner_GetOrigin()
+{
+	return file.worldBannerOrigin
+}
+
+void function FS_1v1_WorldBanner_StoreAndBroadcast( vector origin, vector angles, float width, float height )
+{
+	file.worldBannerOrigin = origin
+	file.worldBannerAngles = angles
+	file.worldBannerWidth = width
+	file.worldBannerHeight = height
+	file.worldBannerReady = true
+
+	printt( "[FS-Banner] world banner loc=" + string( origin ) + " size=" + string( width ) + "x" + string( height ) )
+
+	foreach ( entity player in GetPlayerArray() )
+		FS_1v1_WorldBanner_PushToPlayer( player )
+}
+
+void function FS_1v1_WorldBanner_PushToPlayer( entity player )
+{
+	if ( !file.worldBannerReady )
+		return
+	if ( !FS_1v1_PlayerHasClient( player ) )
+		return
+
+	Remote_CallFunction_NonReplay( player, "ServerCallback_FS_1v1_WorldBanner",
+		file.worldBannerOrigin, file.worldBannerAngles, file.worldBannerWidth, file.worldBannerHeight )
+}
+#endif // SERVER

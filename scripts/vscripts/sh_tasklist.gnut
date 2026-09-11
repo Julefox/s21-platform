@@ -1,0 +1,118 @@
+
+#if CLIENT
+global function Tasklist_ClientInit
+#endif // #if CLIENT
+
+#if SERVER
+//
+global function Tasklist_GetForSquad
+//
+global function Tasklist_ClearAll
+global function Tasklist_SetString
+global function Tasklist_SetStatus
+global function Tasklist_SetCountGoal
+global function Tasklist_SetCountNow
+global function Tasklist_NotifyUpdated
+global function Tasklist_SetFlags
+global function SetBasicTasklistItem
+global function AddTaskListFunc
+global function RefreshTasklistItems
+//
+
+global enum eTaskState
+{
+	UNKNOWN,
+	TO_DO,
+	DONE,
+	DID_NOT_DO,
+
+	//
+	_count
+}
+#endif // SERVER
+
+#if CLIENT
+void function Tasklist_ClientInit()
+{
+	AddCreateCallback( "player_tasklist", Tasklist_CreateCallback )
+	//AddDestroyCallback( "player_tasklist", Tasklist_DestroyCallback )
+}
+
+table<entity, var> s_entToRuiMap
+void function Tasklist_CreateCallback( entity tl )
+{
+	//int customInt = tl.GetTasklistCustomInt()
+	////printf( "%s() - New tasklist (%s), customInt: %d", FUNC_NAME(), string( tl ), customInt )
+	//if ( customInt != 0 )
+	//{
+	//	return
+	//}
+}
+
+#endif // CLIENT
+
+
+#if SERVER
+
+entity function Tasklist_GetForSquad( int squad )
+{
+	return null
+}
+
+void function Tasklist_ClearAll()
+{
+	//s_taskList.ClearAll()
+}
+
+void function Tasklist_SetString( int index, string taskString )
+{
+//	s_taskList.SetTasklistString( index, taskString )
+}
+
+void function Tasklist_SetStatus( int index, int statusType )
+{
+//	s_taskList.SetTasklistStatus( index, statusType )
+}
+
+void function Tasklist_SetCountGoal( int index, int countGoal )
+{
+///	s_taskList.SetTasklistCountGoal( index, countGoal )
+}
+
+void function Tasklist_SetCountNow( int index, int countNow )
+{
+//	s_taskList.SetTasklistCountNow( index, countNow )
+}
+
+void function Tasklist_NotifyUpdated()
+{
+//	s_taskList.SetNotifyTimeUpdate()
+}
+
+void function Tasklist_SetFlags( int index, int flags )
+{
+//	s_taskList.SetTasklistFlags( index, flags )
+}
+
+void function SetBasicTasklistItem( int index, string objText, bool isVisible, bool isComplete )
+{
+//	Tasklist_SetString( index, objText )
+//
+//	int state = eTaskState.UNKNOWN
+//	if ( isComplete && isVisible )
+//		state = eTaskState.DONE
+//	else if ( isVisible )
+//		state = eTaskState.TO_DO
+//	Tasklist_SetStatus( index, state )
+}
+
+void function AddTaskListFunc( void functionref() taskFunc )
+{
+	//file.taskLists.append( taskFunc )
+}
+
+void function RefreshTasklistItems()
+{
+}
+
+#endif // SERVER

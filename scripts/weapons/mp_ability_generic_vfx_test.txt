@@ -1,0 +1,286 @@
+"WeaponData"
+{
+	"printname" "#WPN_SONAR_DART"
+	"shortprintname" "#WPN_SONAR_DART_SHORT"
+	"description" "#WPN_SONAR_DART_DESC"
+	"longdesc" "#WPN_SONAR_DART_LONGDESC"
+	"menu_icon" "rui/hud/tactical_icons/tactical_shadow_prox_mine"
+	"hud_icon" "rui/hud/tactical_icons/tactical_shadow_prox_mine"
+	"fire_anim_rate" "1"
+	"viewmodel" "mdl/weapons/ash_glaive/ash_glaive_v21_base_v.rmdl"
+	"playermodel" "mdl/weapons/ash_glaive/ash_glaive_v21_base_w.rmdl"
+	"projectilemodel" "mdl/Weapons/ballistic_tact_projectile.rmdl"
+	"offhand_default_inventory_slot" "0"
+	"fire_in_real_world_while_phased" "1"
+	"trophy_system_ignores" "none"
+	"OnWeaponActivate" "OnWeaponActivate_GenericVFX"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_GenericVFX"
+	"OnProjectileCollision" "OnProjectileCollision_weapon_GenericVFX"
+	"OnWeaponTossReleaseAnimEvent" "OnWeaponTossReleaseAnimEvent_weapon_GenericVFX"
+	"OnWeaponTossPrep" "Grenade_OnWeaponTossPrep"
+	"OnWeaponRegenEnd" "OnWeaponRegenEndGeneric"
+	"max_cook_time" "-1"
+	"deploy_time" "0.150000"
+	"sprintcycle_time" "0.550000"
+	"toss_time" "1.000000"
+	"toss_hides_world_model" "0"
+	"fire_mode" "offhand"
+	"offhand_cancelled_by_melee" "1"
+	"offhand_active_slot" "altHand"
+	"fire_rate" "1000"
+	"zoom_effects" "0"
+	"critical_hit" "0"
+	"allow_headshots" "0"
+	"vortex_refire_behavior" "grenade"
+	"cooldown_type" "ammo_instant"
+	"is_toss_weapon" "1"
+	"impulse_force" "0"
+	"allow_empty_fire" "0"
+	"impact_effect_table" "mm_breach_projectile"
+	"bounce_effect_table" "mm_breach_projectile"
+	"projectile_trail_effect_0_1p" "P_mm_breach_proj_trail"
+	"projectile_trail_effect_0_3p" "P_mm_breach_proj_trail"
+	"projectile_adjust_to_gun_barrel" "1"
+	"projectile_adjust_to_hand" "0"
+	"fx_muzzle_flash_view" "P_mm_breach_muzzle_FP"
+	"fx_muzzle_flash_world" "P_mm_breach_muzzle"
+	"fx_muzzle_flash_attach" "muzzle_flash"
+	"alt_hand_3p_attach_name" "L_HAND"
+	"sound_throw_1p" "Maggie_Tac_Fire_1p"
+	"sound_deploy_1p" "Maggie_Tac_Deploy_1P"
+	"sound_throw_3p" "Maggie_Tac_Fire_3p"
+	"sound_deploy_3p" "Maggie_Tac_Deploy_3P"
+	"sound_grenade_projectile" "Maggie_Tactical_Projectile_3p"
+	"idle_sound_player_1p" "Maggie_Tac_Idle_1p"
+	"damage_type" "burn"
+	"damage_near_distance" "128"
+	"damage_far_distance" "128"
+	"damage_near_value" "0"
+	"damage_far_value" "0"
+	"explosion_shake_radius" "500"
+	"explosion_shake_amplitude" "5"
+	"explosion_shake_frequency" "45"
+	"explosion_shake_duration" "0.100000"
+	"damage_flags" "DF_RAGDOLL | DF_EXPLOSION"
+	"grenade_fuse_time" "0"
+	"grenade_ignition_time" "5.000000"
+	"start_fuse_on_launch" "0"
+	"grenade_orient_to_velocity" "1"
+	"grenade_disc_throw" "0"
+	"show_grenade_indicator" "1"
+	"show_grenade_indicator_to_owner" "1"
+	"grenade_bounce_vel_frac_shallow" "0.200000"
+	"grenade_bounce_vel_frac_sharp" "0.100000"
+	"grenade_bounce_vel_frac_along_normal" "0.200000"
+	"grenade_bounce_randomness" "0.200000"
+	"grenade_bounce_extra_vertical_randomness" "0.200000"
+	"grenade_roll_vel_frac_per_second" "0.100000"
+	"grenade_touch_triggers_on_impact" "1"
+	"grenade_arc_indicator_bounce_count" "1"
+	"grenade_arc_indicator_effect" "P_arc_blue"
+	"grenade_arc_indicator_effect_first" "P_arc_blue"
+	"grenade_arc_impact_indicator_effect" "P_arc_blue_end"
+	"reload_enabled" "0"
+	"allow_empty_click" "1"
+	"empty_reload_only" "0"
+	"aimassist_disable_hipfire" "1"
+	"aimassist_disable_ads" "1"
+	"red_crosshair_range" "0"
+	"projectile_launch_speed" "1600"
+	"projectile_launch_pitch_offset" "0"
+	"projectile_ignores_vortex" "1"
+	"projectile_lifetime" "10.000000"
+	"projectile_gravity_scale" "0.000000"
+	"ammo_suck_behavior" "primary_weapons"
+	"ammo_drains_to_empty_on_fire" "0"
+	"ammo_clip_size" "25"
+	"ammo_default_total" "25"
+	"ammo_display" "bar"
+	"ammo_min_to_fire" "25"
+	"ammo_per_shot" "25"
+	"ammo_stockpile_max" "25"
+	"regen_ammo_refill_rate" "1"
+	"regen_ammo_refill_start_delay" "0.000000"
+	"viewkick_spring" "pistol"
+	"bob_cycle_time" "0.400000"
+	"bob_vert_dist" "0.250000"
+	"bob_horz_dist" "0.250000"
+	"bob_max_speed" "150"
+	"viewdrift_hipfire_stand_scale_pitch" "0.325000"
+	"viewdrift_hipfire_crouch_scale_pitch" "0.275000"
+	"viewdrift_hipfire_air_scale_pitch" "0.500000"
+	"viewdrift_hipfire_stand_scale_yaw" "0.120000"
+	"viewdrift_hipfire_crouch_scale_yaw" "0.100000"
+	"viewdrift_hipfire_air_scale_yaw" "0.220000"
+	"viewdrift_hipfire_speed_pitch" "0.600000"
+	"viewdrift_hipfire_speed_yaw" "1.220000"
+	"rumble" "3"
+	"sway_rotate_attach" "jx_c_pov"
+	"sway_min_x" "-0.200000"
+	"sway_min_y" "-0.400000"
+	"sway_min_z" "-0.400000"
+	"sway_max_x" "0.200000"
+	"sway_max_y" "0.400000"
+	"sway_max_z" "0.100000"
+	"sway_min_pitch" "-1.500000"
+	"sway_min_yaw" "-1.500000"
+	"sway_min_roll" "-1"
+	"sway_max_pitch" "1.500000"
+	"sway_max_yaw" "1.500000"
+	"sway_max_roll" "1.500000"
+	"sway_translate_gain" "4"
+	"sway_rotate_gain" "10"
+	"sway_move_forward_translate_x" "0"
+	"sway_move_forward_translate_z" "-0.500000"
+	"sway_move_back_translate_x" "-2"
+	"sway_move_back_translate_z" "-1"
+	"sway_move_left_translate_y" "-1"
+	"sway_move_left_translate_z" "-0.500000"
+	"sway_move_left_rotate_roll" "-1"
+	"sway_move_right_translate_y" "1"
+	"sway_move_right_translate_z" "-0.500000"
+	"sway_move_right_rotate_roll" "2"
+	"sway_move_up_translate_z" "-1"
+	"sway_move_down_translate_z" "1"
+	"sway_turn_left_rotate_yaw" "-2"
+	"sway_turn_right_rotate_yaw" "2"
+	"sway_turn_up_rotate_pitch" "2"
+	"sway_turn_down_rotate_pitch" "-2"
+	"sway_turn_angle_factor" "-0.500000"
+	"sway_turn_origin_factor" "0"
+	"sway_turn_angle_factor_zoomed" "0"
+	"sway_turn_origin_factor_zoomed" "0.050000"
+	"sway_move_angle_factor" "0.500000"
+	"sway_move_origin_factor" "0.500000"
+	"sway_move_angle_factor_zoomed" "0"
+	"sway_move_origin_factor_zoomed" "0.030000"
+	"sway_gain" "15.000000"
+	"active_crosshair_count" "2"
+	"rui_crosshair_index" "0"
+	"ordnance_crosshair_always_on_start_index" "1"
+	"weaponType" "tactical"
+	"weapon_type_flags" "WPT_TACTICAL"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "survival_ui_tactical_ready"
+	"update_player_last_fire_time" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"drill_error"
+		{
+			"grenade_arc_impact_indicator_effect" "P_mm_breach_arc_end_fail"
+
+		}
+
+		"arenas_tac_max_cooldown"
+		{
+			"ammo_regen_takes_from_stockpile" "1"
+			"ammo_stockpile_max" "10000"
+
+		}
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_armor_cooldown_v2_mod"
+		{
+			"regen_ammo_refill_rate" "*1.33"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+
+		"matchmod_bonus_speed"
+		{
+			"move_speed_modifier" "*2.0"
+			"reload_time" "*0.50"
+			"reload_time_late1" "*0.50"
+			"reload_time_late2" "*0.50"
+			"reload_time_late3" "*0.50"
+			"reload_time_late4" "*0.50"
+			"reload_time_late5" "*0.50"
+			"reloadempty_time" "*0.50"
+			"reloadempty_time_late1" "*0.50"
+			"reloadempty_time_late2" "*0.50"
+			"reloadempty_time_late3" "*0.50"
+			"reloadempty_time_late4" "*0.50"
+			"reloadempty_time_late5" "*0.50"
+			"charge_cooldown_time" "*0.50"
+			"charge_overheat_cooldown_time" "*0.50"
+			"charge_overheat_cooldown_time_late1" "*0.50"
+			"charge_overheat_cooldown_time_late2" "*0.50"
+			"charge_overheat_cooldown_time_late3" "*0.50"
+
+		}
+	}
+
+	"RUI_CrosshairData"
+	{
+
+		"DefaultArgs"
+		{
+			"adjustedSpread" "weapon_spread"
+			"adsFrac" "player_zoomFrac"
+			"isSprinting" "player_is_sprinting"
+			"isReloading" "weapon_is_reloading"
+			"teamColor" "crosshair_team_color"
+			"isAmped" "weapon_is_amped"
+			"crosshairMovementX" "crosshair_movement_x"
+			"crosshairMovementY" "crosshair_movement_y"
+
+		}
+
+		"Crosshair_1"
+		{
+			"ui" "ui/crosshair_esmoke"
+			"base_spread" "0.000000"
+
+			"Args"
+			{
+				"isFiring" "weapon_is_firing"
+
+			}
+		}
+
+		"Crosshair_2"
+		{
+			"ui" "ui/crosshair_ordnance"
+
+			"Args"
+			{
+				"regenRate" "eWeaponVar.regen_ammo_refill_rate"
+				"ammoFrac" "progress_weapon_clip_ammo_frac"
+				"dryfireTime" "weapon_latest_dryfire_time"
+
+			}
+		}
+	}
+}

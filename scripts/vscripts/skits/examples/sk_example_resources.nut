@@ -1,0 +1,97 @@
+/*
+	Skit Example - "Resources"
+
+	To Show:
+		Map resources being queried for, reserved, and eventually released.
+
+	Does:
+		Gathers all infantry spawners in player #0's current zone, puts waypoints on them, waits, and shuts down after 5 seconds.
+		A seperate thread runs to print infantry resources before & after the skit runs.
+*/
+
+
+#if SERVER
+global function LaunchTestSkit_Resources
+
+struct MyVars
+{
+	array<InfantrySpawn> spawnsToUse
+}
+table<SkitInstance, MyVars> s_siToVars
+
+SkitInstance ornull function InitThisSkit( array<InfantrySpawn> spawnsToUse )
+{
+	SkitInstance si = Skit_AllocInstance( Runtime, null )
+	MyVars vars
+	s_siToVars[si] <- vars
+
+	vars.spawnsToUse = spawnsToUse
+	foreach( InfantrySpawn spawn in spawnsToUse )
+		SkRes_MarkResourceInUse( spawn.core, si )
+
+	return si
+}
+
+void function Runtime( SkitInstance si )
+{
+	MyVars vars = s_siToVars[si]
+
+	array <entity> waypoints
+	foreach( InfantrySpawn spawn in vars.spawnsToUse )
+		waypoints.append( CreateWaypoint_ObjectivePos( spawn.core.spawnOrigin, "spawn" ) )
+
+	wait 5.0
+
+	foreach( entity wp in waypoints )
+		wp.Destroy()
+
+	printf( "Skit is done: %s", FILE_NAME() )
+}
+
+//////////////////////
+
+void function ReportResourcesBeforeAndAfter( int zoneId, SkitInstance siToWatch )
+{
+	WaitSignal( siToWatch, SIG_SKIT_LAUNCHING )
+	{
+		int count = ORS_Find_( ORS_GetGroupForMapZone( zoneId ), 0, [eORType.INFANTRY_SPAWN], [], [] ).infantrySpawns.len()
+		BroadcastTestMsg( format( "Skit starting: %d spawns are free in zone #%d.", count, zoneId ), FILE_NAME() )
+	}
+
+	WaitSignal( siToWatch, SIG_SKIT_SHUTDOWN_COMPLETE )
+	{
+		int count = ORS_Find_( ORS_GetGroupForMapZone( zoneId ), 0, [eORType.INFANTRY_SPAWN], [], [] ).infantrySpawns.len()
+		BroadcastTestMsg( format( "Skit has shut down: %d spawns free in zone #%d.", count, zoneId ), FILE_NAME() )
+	}
+}
+
+void function LaunchTestSkit_Resources()
+{
+	int zoneId = MapZones_GetZoneForOrigin( GetPlayerArray()[0].GetOrigin() )
+	if ( zoneId < 0 )
+	{
+		BroadcastTestMsg( "Can't start - player #0 isn't in a map zone.", FILE_NAME() )
+		return
+	}
+
+	ResourceGroup group = ORS_GetGroupForMapZone( zoneId )
+	ResourceCollection coll = ORS_Find_( group, 0, [eORType.INFANTRY_SPAWN], [], [] )
+	if ( coll.infantrySpawns.len() == 0 )
+	{
+		BroadcastTestMsg( format( "Can't start - couldn't get infantry spawns in zone #%d.", zoneId ), FILE_NAME() )
+		return
+	}
+
+	SkitInstance ornull siRaw = InitThisSkit( coll.infantrySpawns )
+	if ( siRaw == null )
+	{
+		Warning( "%s() - Couldn't init skit.", FUNC_NAME() )
+		return
+	}
+
+	expect SkitInstance( siRaw )
+	thread ReportResourcesBeforeAndAfter( zoneId, siRaw )
+	Skit_LaunchInstance( siRaw )
+}
+
+#endif // #if SERVER

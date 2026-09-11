@@ -1,0 +1,140 @@
+global function ShPassiveZiplineShield_Init
+
+#if SERVER
+global function ZiplineShield_GetDamageMultiplier
+global function ZiplineShield_TryStart
+#endif
+
+const int ZIPLINE_OVERSHIELD_HEALTH = 50
+const float ZIPLINE_OVERSHIELD_COOLDOWN = 30.0
+const float ZIPLINE_DAMAGE_MITIGATION = 0.5
+const float ZIPLINE_ENERGIZED_DURATION = 30
+const asset ENERGIZED_ZIPLINE_FX = $"P_LU_Path_Zipline_elec"
+
+#if SERVER
+struct
+{
+	table< entity, float > lastOvershieldTime
+	table< entity, entity > playerToZipline
+}file
+#endif
+
+void function ShPassiveZiplineShield_Init()
+{
+	PrecacheParticleSystem( ENERGIZED_ZIPLINE_FX )
+	
+	#if SERVER
+	AddCallback_ZiplineStart( ZiplineShield_OnZiplineStart )
+	AddCallback_ZiplineStop( ZiplineShield_OnZiplineEnd )
+	PrecacheMaterial( $"cable/zipline_active_color_mod" )
+
+	RegisterSignal( "EndZiplineShield" )
+	RegisterSignal( "StartZiplineShield" )
+	#endif
+}
+
+#if SERVER
+void function ZiplineShield_TryStart( entity player, entity zipline, vector startPos, vector endPos )
+{
+	if ( !IsValid( player ) )
+		return
+	if ( !IsValid( zipline ) )
+		return
+	if( PlayerHasPassive( player, ePassives.PAS_ULT_UPGRADE_ONE ) )
+	{
+		zipline.kv.Material = "cable/zipline_active_color_mod"
+		zipline.Zipline_SetRopeColorModulation( <10, 30, 255> )
+
+		int fxId = GetParticleSystemIndex( ENERGIZED_ZIPLINE_FX )
+		entity effect = StartParticleEffectInWorld_ReturnEntity( fxId, startPos, <0, 0, 0> )
+		EffectSetControlPointVector( effect, 1, endPos )
+		thread DisableEnergizedZipline( zipline, effect )
+	}
+}
+
+void function DisableEnergizedZipline( entity zipline, entity effect )
+{
+	wait( ZIPLINE_ENERGIZED_DURATION )
+	if ( IsValid( zipline ) )
+	{
+		zipline.Zipline_SetRopeColorModulation( <0.0, 0.0, 0.0> )
+	}
+	if( IsValid( effect ) )
+	{
+		effect.Destroy()
+	}
+}
+
+void function ZiplineShield_OnZiplineStart( entity player, entity zipline )
+{
+	entity owner = zipline.GetOwner()
+	if( IsValid( owner ) && owner.IsPlayer() && PlayerHasPassive( owner, ePassives.PAS_ULT_UPGRADE_ONE ) && ZiplineShield_IsZiplineShieldActive( zipline ) ) // can non pathfinder players own a zipline? // upgrade_pathfinder_zipline_shield
+	{
+		player.Signal( "StartZiplineShield" )
+		thread AddDamageMitigation( player, zipline )
+		//thread CreateOvershieldAfterDelay( player )
+	}
+}
+
+void function ZiplineShield_OnZiplineEnd( entity player )
+{
+	player.Signal( "EndZiplineShield" )
+	//thread RemoveOvershieldAfterDelay( player )
+}
+
+void function AddDamageMitigation( entity player, entity zipline )
+{
+	EndSignal( player, "OnDeath", "OnDestroy", "EndZiplineShield" )
+
+	file.playerToZipline[player] <- zipline
+
+	OnThreadEnd(
+		function() : ( player )
+		{
+			delete file.playerToZipline[player]
+		}
+	)
+
+	WaitForever()
+}
+
+bool function ZiplineShield_IsZiplineShieldActive( entity zipline )
+{
+	return LengthSqr( zipline.Zipline_GetRopeColorModulation() ) > 1.0
+}
+
+float function ZiplineShield_GetDamageMultiplier( entity player )
+{
+	if( !( player in file.playerToZipline ) )
+		return 1.0
+	entity zipline = file.playerToZipline[player]
+	if( !IsValid( zipline ) )
+		return 1.0
+	if( ZiplineShield_IsZiplineShieldActive( zipline ) )
+		return GetCurrentPlaylistVarFloat( "pathfinder_zipline_damage_mitigation_upgrade", ZIPLINE_DAMAGE_MITIGATION )
+	player.Signal( "EndZiplineShield" )
+	return 1.0
+}
+
+void function RemoveOvershieldAfterDelay( entity player )
+{
+	EndSignal( player, "OnDeath", "OnDestroy", "StartZiplineShield" )
+	Wait( 2.0 )
+	if( PhysicalOvershield_Stop( player, eOvershieldSourceIndex.ZIPLINE_UPGRADE ) )
+	{
+		file.lastOvershieldTime[player] <- Time()
+	}
+}
+
+void function CreateOvershieldAfterDelay( entity player )
+{
+	EndSignal( player, "OnDeath", "OnDestroy", "EndZiplineShield" )
+	if( player in file.lastOvershieldTime && Time() - file.lastOvershieldTime[player] < ZIPLINE_OVERSHIELD_COOLDOWN )
+	{
+		return
+	}
+
+	Wait( 1.0 )
+	thread PhysicalOvershield_Start( player, ZIPLINE_OVERSHIELD_HEALTH, eOvershieldSourceIndex.ZIPLINE_UPGRADE )
+}
+#endif

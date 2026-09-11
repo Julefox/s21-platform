@@ -1,0 +1,1245 @@
+// Shared DM/TDM scaffolding for fs_1v1 on S21.
+// Keeps 1v1 bodies compiling without the full FSDM gamemode.
+
+global enum eTDMState
+{
+	IN_PROGRESS = 0
+	NEXT_ROUND_NOW = 1
+}
+
+global enum eFSDMScreen
+{
+	WinnerScreen = 0
+	VoteScreen = 1
+	TiedScreen = 2
+	SelectedScreen = 3
+	NextRoundScreen = 4
+	ScoreboardUI = 5
+	NotUsed = 230
+}
+
+global function GetTDMState
+global function FS_1v1_RoundIntroTime
+global function SetTdmStateToNextRound
+global function SetTdmStateToInProgress
+global function AddCallback_OnTdmStateEnter_InProgress
+global function getkd
+global function __InitAdmins
+global function IsAdmin
+global function ClientCommand_adminlogin
+global function ClientCommand_God
+global function ClientCommand_UnGod
+// ClientCommand_NextRound_1v1 lives in _gamemode_1v1.nut
+global function g_bIs1v1GameType
+global function FlowState_RoundTime
+global function bGlobalStats
+global function bBotEnabled
+global function bLog
+global function Equipment_GetDefaultShieldHP
+global function Message
+global function Message_New
+global function Concatenate
+global function ParseWeapon
+global function IsWeaponValid
+global function SavePlayerData
+global function print_string_array
+global function CheckRate
+global function ResetRate
+#if SERVER
+global function CreateFRButton
+global function GetPlayer
+global function GetPlayerEntityByUID
+// GetPlayerEntityByName already in sh_utility_all.gnut
+global function FS1v1_Stats_Load
+global function FS1v1_Stats_MarkDirty
+global function FS1v1_Stats_Cleanup
+global function FS_1v1_PublishCareerStats
+#endif
+global function sqerror
+global function sqwarning
+global function sqprint
+// COMMAND_RATE_LIMIT / DEFAULT_RATE_KEY / NOTIFY_RATELIMIT_FAILED live in sh_consts.gnut
+// empty / IsEven / FILE_NAME / printm already exist in utility/threads
+global function GetBestPlayer
+global function WaitForChampionToFinish
+global function GetScoreboardShowingState
+global function GetChampionShowingState
+global function SetChampionShowingState
+global function SetScoreboardShowingState
+global function SendScoreboardToClient
+// ValidateWeaponList lives in _gamemode_1v1.nut
+global function Common_DissolveDropable
+global function ClientCommand_Maki_SaveCurSkill
+global function ClientCommand_Maki_ResetSkills
+global function CC_MenuGiveAimTrainerWeapon
+global function CC_AimTrainer_SelectWeaponSlot
+global function CC_AimTrainer_CloseWeaponSelector
+#if SERVER
+global function __HighPingCheck
+global function SetPlayerCustomModel
+global function FS_GiveRandomMelee
+global function FS_ReturnLegendaryModelMapForWeaponFlavor
+// Coaching not ported -- stubs keep 1v1 bodies compiling.
+global function FS_Coaching_StartRecording
+global function FS_Coaching_StopRecording
+global function FS_Coaching_GetAvailableMatchIdentifier
+global function GetStartNewGameBool
+global function SetStartNewGameBool
+#endif
+global bool VOTING_PHASE_ENABLE = false
+global bool SCOREBOARD_ENABLE = true
+
+struct
+{
+	int tdmState = eTDMState.NEXT_ROUND_NOW
+	array<void functionref()> tdmStateInProgressCallbacks
+	array<string> mAdmins
+	string authkey = ""
+	bool loggedMsg = false
+	bool loggedOITC = false
+	bool loggedCustomModel = false
+	bool loggedCoachingStub = false
+	// true so coaching wait-for-admin never hangs if that path is hit
+	bool startNewGame = true
+	bool scoreboardShowing = false
+	bool bIsChampionShowing = false
+} file
+
+// Lead-in before a round's combat clock starts. Drives the TDM countdown RUI and
+// holds matchmaking; 0 disables the intro.
+float function FS_1v1_RoundIntroTime()
+{
+	float introTime = GetCurrentPlaylistVarFloat( "fs_1v1_round_intro_time", 3.0 )
+	return introTime > 0.0 ? introTime : 0.0
+}
+
+int function GetTDMState()
+{
+	return file.tdmState
+}
+
+void function SetTdmStateToNextRound()
+{
+	// SetGlobalNet* is SERVER-only; client reads via GetGlobalNet*
+	#if SERVER
+		SetGlobalNetTime( "flowstate_DMRoundEndTime", -1 )
+		SetGlobalNetTime( "FSDM_RoundIntroEndTime", -1 )
+		// Client clears gamestate matchEndTime from this netvar (RUI_BADGAMETIME is client-only).
+		SetGlobalNetInt( "FSDM_GameState", eTDMState.NEXT_ROUND_NOW )
+	#endif
+	file.tdmState = eTDMState.NEXT_ROUND_NOW
+}
+
+void function SetTdmStateToInProgress()
+{
+	// StartGame also calls this as a netvar safety after the round loop already
+	// entered IN_PROGRESS. Re-firing callbacks would double countdown / reset clocks.
+	bool alreadyInProgress = ( file.tdmState == eTDMState.IN_PROGRESS )
+	file.tdmState = eTDMState.IN_PROGRESS
+	#if SERVER
+		// Client HUD (rest/wait hints, VS strip) gates on this netvar; file.tdmState alone is not enough.
+		SetGlobalNetInt( "FSDM_GameState", eTDMState.IN_PROGRESS )
+	#endif
+	if ( alreadyInProgress )
+		return
+	foreach ( cb in file.tdmStateInProgressCallbacks )
+		cb()
+}
+
+void function AddCallback_OnTdmStateEnter_InProgress( void functionref() callbackFunc )
+{
+	if ( !file.tdmStateInProgressCallbacks.contains( callbackFunc ) )
+		file.tdmStateInProgressCallbacks.append( callbackFunc )
+}
+
+float function getkd( int kills, int deaths )
+{
+	if ( deaths == 0 )
+		return kills.tofloat()
+	float kd = kills.tofloat() / deaths.tofloat()
+	kd = kd * 100.0
+	int floorkd = int( floor( kd + 0.5 ) )
+	return ( float( floorkd ) ) / 100.0
+}
+
+void function __InitAdmins()
+{
+	file.mAdmins.clear()
+	array<string> splitAdmins = split( flowstateSettings.Admins, " " )
+	foreach ( string data in splitAdmins )
+	{
+		string username = strip( data )
+		if ( username != "" && file.mAdmins.find( username ) < 0 )
+			file.mAdmins.append( username )
+	}
+}
+
+bool function IsAdmin( entity player )
+{
+	if ( !IsValid( player ) )
+		return false
+	// player.p.isAdmin is ServerPlayerStruct-only
+	#if SERVER
+		if ( player.p.isAdmin )
+			return true
+	#endif
+	return file.mAdmins.find( player.GetPlayerName() ) >= 0
+}
+
+void function ClientCommand_adminlogin( entity player, array<string> args )
+{
+	if ( !IsValid( player ) )
+		return
+	// Open self-elevation removed. Admins come from flowstateSettings.Admins (IsAdmin name list).
+	// Sticky isAdmin only if name is already allowlisted, or authkey is set and args[0] matches.
+	#if SERVER
+		bool allowlisted = file.mAdmins.find( player.GetPlayerName() ) >= 0
+		bool authOk = file.authkey != "" && args.len() > 0 && args[0] == file.authkey
+		if ( !allowlisted && !authOk )
+		{
+			printt( "[FS-1V1] adminlogin DENIED " + player )
+			return
+		}
+		player.p.isAdmin = true
+	#endif
+	printt( "[FS-1V1] adminlogin OK " + player )
+}
+
+void function ClientCommand_God( entity player, array<string> args )
+{
+	if ( !IsValid( player ) || !IsAdmin( player ) )
+		return;	#if SERVER
+		player.MakeInvisible() // loud no-op-ish; real god mode later
+	#endif
+	printt( "[FS-1V1] god stub " + player )
+	return;}
+
+void function ClientCommand_UnGod( entity player, array<string> args )
+{
+	if ( !IsValid( player ) )
+		return;	printt( "[FS-1V1] ungod stub " + player )
+	return;}
+
+bool function g_bIs1v1GameType()
+{
+	return Flowstate_IsGame1v1Type()
+}
+
+float function FlowState_RoundTime()
+{
+	return GetCurrentPlaylistVarFloat( "flowstateRoundtime", 600.0 )
+}
+
+bool function bGlobalStats()
+{
+	return GetCurrentPlaylistVarBool( "bGlobalStats", true )
+}
+
+bool function bBotEnabled()
+{
+	return GetCurrentPlaylistVarBool( "bBotEnabled", false )
+}
+
+bool function bLog()
+{
+	return false
+}
+
+float function Equipment_GetDefaultShieldHP()
+{
+	return GetCurrentPlaylistVarFloat( "default_shield_hp", 125.0 )
+}
+
+// Flowstate Message(player, title, sub, duration, sound) -- freeform banner.
+void function Message( entity player, string text, string subText = "", float duration = 7.0, string sound = "" )
+{
+	if ( !IsValid( player ) )
+		return
+	#if SERVER
+		if ( subText != "" )
+			LocalSplashMsg( player, text + "\n" + subText, duration )
+		else
+			LocalSplashMsg( player, text, duration )
+		if ( sound != "" )
+			thread EmitSoundOnEntityOnlyToPlayer( player, player, sound )
+	#endif
+}
+
+// Flowstate freeform single-line banner.
+void function Message_New( entity player, string msg, float duration = 5.0 )
+{
+	if ( !IsValid( player ) )
+		return
+	#if SERVER
+		LocalSplashMsg( player, msg, duration )
+	#endif
+}
+
+// Playlist weapon-list join: str2 is a continuation field (prepended with comma).
+string function Concatenate( string str1, string str2 )
+{
+	if ( str1 == "" && str2 == "" )
+		return ""
+
+	if ( str2 != "" )
+		str2 = "," + str2
+
+	return str1 + str2
+}
+
+// Tracker used a weapon-id table; S21 validates via survival loot refs.
+bool function IsWeaponValid( string weaponref )
+{
+	return SURVIVAL_Loot_IsRefValid( weaponref )
+}
+
+bool function IsModValidForWeapon( string weaponref, string mod )
+{
+	array<string> attachPoint = GetAttachPointsForAttachment( mod )
+	if ( attachPoint.len() < 1 )
+		return false
+
+	LootData wData = SURVIVAL_Loot_GetLootDataByRef( weaponref )
+	return ( wData.supportedAttachments.contains( attachPoint[ 0 ] )
+		&& !wData.disabledAttachments.contains( attachPoint[ 0 ] ) )
+}
+
+void function PrintSupportedAttachpointsForWeapon( string weaponref )
+{
+	if ( !SURVIVAL_Loot_IsRefValid( weaponref ) )
+		return
+
+	LootData wData = SURVIVAL_Loot_GetLootDataByRef( weaponref )
+	string debug = format( "\n --- Attachment List for %s --- \n", weaponref )
+	int i = 1
+	foreach ( supported in wData.supportedAttachments )
+	{
+		debug += format( "%d. %s \n", i, supported )
+		i++
+	}
+	sqprint( debug )
+}
+
+void function SavePlayerData( entity player, string key, var value )
+{
+	if ( !IsValid( player ) )
+		return
+	#if SERVER
+		if ( key == "wait_time" )
+		{
+			player.p.IBMM_grace_period = expect float( value )
+			FS_1v1_RefreshQueueGrace( player )
+		}
+		else if ( key == "saved_weapons" )
+		{
+			player.p.weapon_loadout = expect string( value )
+		}
+		else
+		{
+			printt( "[FS-1V1] SavePlayerData unknown key " + player.GetPlayerName() + " " + key )
+			return
+		}
+		FS1v1_Stats_MarkDirty( player )
+	#else
+		printt( "[FS-1V1] SavePlayerData stub " + player.GetPlayerName() + " " + key + "=" + string( value ) )
+	#endif // SERVER
+}
+
+#if SERVER
+const float FS1V1_STATS_DEBOUNCE = 2.0
+
+table<entity, bool> statsDirty
+table<entity, bool> statsFlushRunning
+table<entity, bool> statsLoading
+table<entity, bool> statsPublishQueued
+
+bool function FS1v1_Stats_IsIntString( string s )
+{
+	if ( s.len() < 1 )
+		return false
+
+	int start = 0
+	if ( s.slice( 0, 1 ) == "-" )
+	{
+		if ( s.len() < 2 )
+			return false
+		start = 1
+	}
+
+	for ( int i = start; i < s.len(); i++ )
+	{
+		string ch = s.slice( i, i + 1 )
+		if ( ( ch < "0" ) || ( ch > "9" ) )
+			return false
+	}
+	return true
+}
+
+bool function FS1v1_Stats_IsFloatString( string s )
+{
+	if ( s.len() < 1 )
+		return false
+
+	int start = 0
+	if ( s.slice( 0, 1 ) == "-" )
+	{
+		if ( s.len() < 2 )
+			return false
+		start = 1
+	}
+
+	bool sawDot = false
+	bool sawDigit = false
+	for ( int i = start; i < s.len(); i++ )
+	{
+		string ch = s.slice( i, i + 1 )
+		if ( ch == "." )
+		{
+			if ( sawDot )
+				return false
+			sawDot = true
+			continue
+		}
+		if ( ( ch < "0" ) || ( ch > "9" ) )
+			return false
+		sawDigit = true
+	}
+	return sawDigit
+}
+
+string function FS1v1_Stats_SanitizeValue( string s )
+{
+	string out = ""
+	for ( int i = 0; i < s.len(); i++ )
+	{
+		if ( out.len() >= 256 )
+			break
+		string ch = s.slice( i, i + 1 )
+		if ( ch == "\n" || ch == "\r" )
+			continue
+		out += ch
+	}
+	return out
+}
+
+// Build totals at write time only -- never fold session netvars into the baseline in RAM.
+string function FS1v1_Stats_Build( entity player )
+{
+	string out = "v=1\n"
+	out += "# name=" + FS1v1_Stats_SanitizeValue( player.GetPlayerName() ) + "\n"
+
+	int totalKills = player.p.season_kills + player.GetPlayerNetInt( "kills" )
+	int totalDeaths = player.p.season_deaths + player.GetPlayerNetInt( "deaths" )
+	int careerBest = player.p.careerBestStreak
+	if ( player.p.bestStreak > careerBest )
+		careerBest = player.p.bestStreak
+
+	out += "i.season_kills=" + string( totalKills ) + "\n"
+	out += "i.season_deaths=" + string( totalDeaths ) + "\n"
+	out += "i.career_best_streak=" + string( careerBest ) + "\n"
+	out += "f.wait_time=" + string( player.p.IBMM_grace_period ) + "\n"
+
+	float hgTime = player.p.headglitchTime + HeadGlitch_GetTotalTime( player )
+	int hgEpisodes = player.p.headglitchEpisodes + HeadGlitch_GetEpisodeCount( player )
+	int hgFlags = player.p.headglitchFlags + HeadGlitch_GetFlagCount( player )
+
+	float hgPeak = player.p.headglitchPeak
+	float sessionPeak = HeadGlitch_GetPeakScore( player )
+	if ( sessionPeak > hgPeak )
+		hgPeak = sessionPeak
+
+	out += "f.headglitch_time=" + string( hgTime ) + "\n"
+	out += "f.headglitch_peak=" + string( hgPeak ) + "\n"
+	out += "i.headglitch_episodes=" + string( hgEpisodes ) + "\n"
+	out += "i.headglitch_flags=" + string( hgFlags ) + "\n"
+
+	string weapons = FS1v1_Stats_SanitizeValue( player.p.weapon_loadout )
+	out += "s.saved_weapons=" + weapons + "\n"
+
+	return out
+}
+
+void function FS1v1_Stats_Flush( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() || player.IsBot() )
+		return
+
+	string payload = FS1v1_Stats_Build( player )
+	player.Cafe_PlayerPrefs_Write( "1v1_stats", payload )
+}
+
+void function FS1v1_Stats_FlushThread( entity player )
+{
+	player.EndSignal( "OnDestroy" )
+
+	while ( ( player in statsDirty ) && statsDirty[ player ] )
+	{
+		statsDirty[ player ] = false
+		wait( FS1V1_STATS_DEBOUNCE )
+		FS1v1_Stats_Flush( player )
+	}
+
+	statsFlushRunning[ player ] <- false
+}
+
+void function FS1v1_Stats_MarkDirty( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() || player.IsBot() )
+		return
+
+	if ( ( player in statsLoading ) && statsLoading[ player ] )
+		return
+
+	statsDirty[ player ] <- true
+
+	if ( !( player in statsFlushRunning ) || !statsFlushRunning[ player ] )
+	{
+		statsFlushRunning[ player ] <- true
+		thread FS1v1_Stats_FlushThread( player )
+	}
+
+	FS_1v1_PublishCareerStats( player )
+	FS_1v1_PublishCareerStatsSoon( player )
+}
+
+void function FS1v1_Stats_Load( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	// Fake clients have no prefs store, so this is a disk hit for a player whose
+	// stats are never persisted.
+	if ( player.IsBot() )
+		return
+
+	statsLoading[ player ] <- true
+
+	string payload = player.Cafe_PlayerPrefs_Read( "1v1_stats" )
+	if ( payload == "" || payload.len() > 4096 )
+	{
+		statsLoading[ player ] = false
+		FS_1v1_PublishCareerStats( player )
+		return
+	}
+
+	array<string> lines = split( payload, "\n" )
+	bool sawVersion = false
+	int lineCount = 0
+
+	foreach ( string rawLine in lines )
+	{
+		if ( lineCount >= 64 )
+			break
+		lineCount++
+
+		string line = strip( rawLine )
+		if ( line.len() > 0 && line.slice( line.len() - 1, line.len() ) == "\r" )
+			line = line.slice( 0, line.len() - 1 )
+		line = strip( line )
+
+		if ( line.len() < 1 )
+			continue
+
+		if ( !sawVersion )
+		{
+			if ( line != "v=1" )
+			{
+				statsLoading[ player ] = false
+				FS_1v1_PublishCareerStats( player )
+				return
+			}
+			sawVersion = true
+			continue
+		}
+
+		if ( line.slice( 0, 1 ) == "#" )
+			continue
+
+		int eq = line.find( "=" )
+		if ( eq < 0 )
+			continue
+
+		string key = line.slice( 0, eq )
+		string valStr = line.slice( eq + 1, line.len() )
+
+		if ( key.len() < 3 )
+			continue
+
+		string prefix = key.slice( 0, 2 )
+		string name = key.slice( 2, key.len() )
+
+		if ( prefix == "i." )
+		{
+			if ( !FS1v1_Stats_IsIntString( valStr ) )
+				continue
+			int value = valStr.tointeger()
+			if ( name == "season_kills" )
+				player.p.season_kills = value
+			else if ( name == "season_deaths" )
+				player.p.season_deaths = value
+			else if ( name == "career_best_streak" )
+				player.p.careerBestStreak = value
+			else if ( name == "headglitch_episodes" && value >= 0 )
+				player.p.headglitchEpisodes = value
+			else if ( name == "headglitch_flags" && value >= 0 )
+				player.p.headglitchFlags = value
+		}
+		else if ( prefix == "f." )
+		{
+			if ( !FS1v1_Stats_IsFloatString( valStr ) )
+				continue
+			float value = valStr.tofloat()
+			if ( name == "wait_time" && value >= 0 )
+				player.p.IBMM_grace_period = value
+			else if ( name == "headglitch_time" && value >= 0 )
+				player.p.headglitchTime = value
+			else if ( name == "headglitch_peak" && value >= 0 )
+				player.p.headglitchPeak = value
+		}
+		else if ( prefix == "s." )
+		{
+			if ( name == "saved_weapons" )
+			{
+				if ( valStr == "" || valStr == "NA" )
+					continue
+				if ( valStr.len() > 256 )
+					valStr = valStr.slice( 0, 256 )
+				player.p.weapon_loadout = valStr
+				weaponlist_1v1[ player.p.handle ] <- valStr
+			}
+		}
+	}
+
+	statsLoading[ player ] = false
+	FS_1v1_PublishCareerStats( player )
+}
+
+void function FS_1v1_PublishCareerStats( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	int kills = player.p.season_kills + player.GetPlayerNetInt( "kills" )
+	int deaths = player.p.season_deaths + player.GetPlayerNetInt( "deaths" )
+	if ( kills < 0 )
+		kills = 0
+	if ( deaths < 0 )
+		deaths = 0
+
+	player.SetPlayerNetInt( "FS_1v1_CareerKills", kills )
+	player.SetPlayerNetInt( "FS_1v1_CareerDeaths", deaths )
+}
+
+void function FS_1v1_PublishCareerStatsSoon( entity player )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	if ( ( player in statsPublishQueued ) && statsPublishQueued[ player ] )
+		return
+
+	statsPublishQueued[ player ] <- true
+	thread FS_1v1_PublishCareerStatsSoon_Thread( player )
+}
+
+void function FS_1v1_PublishCareerStatsSoon_Thread( entity player )
+{
+	player.EndSignal( "OnDestroy" )
+	OnThreadEnd( void function() : ( player ) {
+		if ( player in statsPublishQueued )
+			delete statsPublishQueued[ player ]
+	} )
+	WaitFrame()
+	if ( !IsValid( player ) )
+		return
+	FS_1v1_PublishCareerStats( player )
+}
+
+void function FS1v1_Stats_Cleanup( entity player )
+{
+	if ( IsValid( player ) )
+	{
+		if ( ( player in statsDirty ) && statsDirty[ player ] )
+			FS1v1_Stats_Flush( player )
+	}
+
+	if ( player in statsDirty )
+		delete statsDirty[ player ]
+	if ( player in statsFlushRunning )
+		delete statsFlushRunning[ player ]
+	if ( player in statsLoading )
+		delete statsLoading[ player ]
+	if ( player in statsPublishQueued )
+		delete statsPublishQueued[ player ]
+}
+#endif // SERVER
+
+// "mp_weapon_r97 optic_x mag_y" -> validated weapon+mods string, or "".
+string function ParseWeapon( string weaponString )
+{
+	array<string> mods = split( strip( weaponString ), " " )
+
+	if ( mods.len() < 1 )
+		return ""
+
+	if ( !IsWeaponValid( mods[ 0 ] ) || !SURVIVAL_Loot_IsRefValid( mods[ 0 ] ) )
+		return ""
+
+	bool removed = false
+	for ( int i = mods.len() - 1; i >= 1; i-- )
+	{
+		if ( !SURVIVAL_Loot_IsRefValid( mods[ i ] ) || !IsModValidForWeapon( mods[ 0 ], mods[ i ] ) )
+		{
+			removed = true
+			sqprint( "removed: " + mods[ i ] )
+			mods.remove( i )
+		}
+	}
+
+	if ( removed )
+		PrintSupportedAttachpointsForWeapon( mods[ 0 ] )
+
+	return mods.join( " " )
+}
+
+void function print_string_array( array<string> args )
+{
+	string test = "\n\n------ PRINT STRING ARRAY ------\n\n"
+	foreach ( arg in args )
+		test += format( "\t\"%s\", \n", arg )
+	sqprint( test )
+}
+
+// Returns false when rate-limited. rateLimitTable is ServerPlayerStruct-only.
+bool function CheckRate( entity player, string key = DEFAULT_RATE_KEY, float rate = COMMAND_RATE_LIMIT, bool notify = NOTIFY_RATELIMIT_FAILED )
+{
+	if ( !IsValid( player ) )
+		return false
+
+	#if SERVER
+		if ( !( key in player.p.rateLimitTable ) )
+			player.p.rateLimitTable[ key ] <- 0.0
+
+		if ( Time() - player.p.rateLimitTable[ key ] <= rate )
+		{
+			if ( notify )
+				LocalEventMsg( player, "#FS_CMD", "", 2.0 )
+			return false
+		}
+
+		player.p.rateLimitTable[ key ] = Time()
+	#endif
+	return true
+}
+
+void function ResetRate( entity player, string key = DEFAULT_RATE_KEY )
+{
+	if ( !IsValid( player ) )
+		return
+	#if SERVER
+		if ( !( key in player.p.rateLimitTable ) )
+			player.p.rateLimitTable[ key ] <- 0.0
+		else
+			player.p.rateLimitTable[ key ] = 0.0
+	#endif
+}
+
+#if SERVER
+// Rest-room / challenge world buttons (firing-range access panel model).
+entity function CreateFRButton( vector pos, vector ang, string prompt )
+{
+	entity button = CreateEntity( "prop_dynamic" )
+	button.kv.solid = 6
+	button.SetValueForModelKey( $"mdl/props/global_access_panel_button/global_access_panel_button_console_w_stand.rmdl" )
+	button.SetOrigin( pos )
+	button.SetAngles( ang )
+	DispatchSpawn( button )
+	button.SetUsable()
+	button.SetUsableByGroup( "pilot" )
+	button.SetUsePrompts( prompt, prompt )
+	return button
+}
+
+// Challenge / admin name-or-UID lookup (Flowstate GetPlayer).
+entity function GetPlayerEntityByUID( string str )
+{
+	entity candidate = null
+	if ( str == "" )
+		return candidate
+
+	// Platform UIDs are numeric strings.
+	if ( !IsStringNumeric( str ) )
+		return candidate
+
+	foreach ( player in GetPlayerArray() )
+	{
+		if ( !IsValid( player ) )
+			continue
+		if ( player.GetPlatformUID() == str )
+			return player
+	}
+	return candidate
+}
+
+entity function GetPlayer( string str )
+{
+	entity candidate = GetPlayerEntityByUID( str )
+	if ( IsValid( candidate ) )
+		return candidate
+	return GetPlayerEntityByName( str )
+}
+#endif
+
+void function sqerror( string msg )
+{
+	printt( "[FS-SQERROR] " + msg )
+}
+
+void function sqwarning( string msg )
+{
+	printt( "[FS-SQWARN] " + msg )
+}
+
+void function sqprint( string msg )
+{
+	printt( "[FS] " + msg )
+}
+
+entity function GetBestPlayer()
+{
+	#if SERVER
+		entity best = null
+		int bestKills = -1
+		int bestDamage = -1
+		bool bestIsBot = true
+		foreach ( player in GetPlayerArray() )
+		{
+			if ( !IsValid( player ) )
+				continue
+
+			int k = player.GetPlayerNetInt( "kills" )
+			int d = player.GetPlayerNetInt( "damage" )
+			bool isBot = player.IsBot()
+
+			bool better = false
+			if ( best == null )
+				better = true
+			else if ( k > bestKills )
+				better = true
+			else if ( k == bestKills && d > bestDamage )
+				better = true
+			else if ( k == bestKills && d == bestDamage && bestIsBot && !isBot )
+				better = true
+
+			if ( !better )
+				continue
+
+			best = player
+			bestKills = k
+			bestDamage = d
+			bestIsBot = isBot
+		}
+		return best
+	#else
+		return null
+	#endif
+}
+
+void function WaitForChampionToFinish()
+{
+	#if SERVER || CLIENT
+		while ( Time() < GetGlobalNetTime( "championDisplayEndTime" ) )
+			WaitFrame()
+	#else
+		wait 0.1
+	#endif
+}
+
+bool function GetScoreboardShowingState()
+{
+	return file.scoreboardShowing
+}
+
+void function SetScoreboardShowingState( bool showing )
+{
+	file.scoreboardShowing = showing
+}
+
+bool function GetChampionShowingState()
+{
+	return file.bIsChampionShowing
+}
+
+void function SetChampionShowingState( bool setting, float newTime = -1.0 )
+{
+	file.bIsChampionShowing = setting
+	#if SERVER
+		if ( newTime >= 0.0 )
+			SetGlobalNetTime( "championDisplayEndTime", newTime )
+	#endif
+}
+
+void function SendScoreboardToClient()
+{
+	// Remote_CallFunction_NonReplay is SERVER-only
+	#if SERVER
+		foreach ( entity sPlayer in GetPlayerArray() )
+		{
+			if ( !IsValid( sPlayer ) )
+				continue
+			Remote_CallFunction_NonReplay( sPlayer, "ServerCallback_ClearScoreboardOnClient" )
+		}
+	#endif
+}
+
+#if SERVER
+const string FS_1V1_LOBBY_WALL_SCRIPTNAME = "fs_1v1_lobby_wall"
+const int FS_1V1_BARRIER_BOX_COLS = 2
+const int FS_1V1_BARRIER_BOX_ROWS = 3
+
+void function FS_1v1_SpawnArenaBarrierBox( vector origin )
+{
+	asset model = FS_1v1_GetArenaBarrierModel()
+	float thick = 16.0
+	float length = 552.0
+	float panelH = 316.0
+	bool thinIsX = true
+
+	entity probe = FS_1v1_CreateBarrierBrush( model, origin + <0, 0, -4096>, <0, 0, 0> )
+	if ( IsValid( probe ) )
+	{
+		vector mins = probe.GetBoundingMins()
+		vector maxs = probe.GetBoundingMaxs()
+		float sx = maxs.x - mins.x
+		float sy = maxs.y - mins.y
+		float sz = maxs.z - mins.z
+		if ( sx > 4.0 && sy > 4.0 && sz > 4.0 && sx < 4096.0 && sy < 4096.0 )
+		{
+			thinIsX = ( sx <= sy )
+			thick = thinIsX ? sx : sy
+			length = thinIsX ? sy : sx
+			panelH = sz
+		}
+		probe.Destroy()
+	}
+
+	float span = FS_1V1_BARRIER_BOX_COLS.tofloat() * length
+	float halfInner = span * 0.5
+	float sideOff = halfInner + thick * 0.5
+	vector wallYaw = thinIsX ? <0, 0, 0> : <0, 90, 0>
+	vector sideYaw = thinIsX ? <0, 90, 0> : <0, 0, 0>
+	vector slabAng = thinIsX ? <90, 0, 0> : <0, 0, 90>
+	float stepX = thinIsX ? panelH : length
+	float stepY = thinIsX ? length : panelH
+
+	int n = 0
+	int row
+	int col
+	for ( row = 0; row < FS_1V1_BARRIER_BOX_ROWS; row++ )
+	{
+		float z = origin.z + panelH * 0.5 + row.tofloat() * panelH
+		for ( col = 0; col < FS_1V1_BARRIER_BOX_COLS; col++ )
+		{
+			float along = -halfInner + length * 0.5 + col.tofloat() * length
+			if ( FS_1v1_SpawnBarrierPanel( model, <origin.x + sideOff, origin.y + along, z>, wallYaw ) )
+				n++
+			if ( FS_1v1_SpawnBarrierPanel( model, <origin.x - sideOff, origin.y + along, z>, wallYaw ) )
+				n++
+			if ( FS_1v1_SpawnBarrierPanel( model, <origin.x + along, origin.y + sideOff, z>, sideYaw ) )
+				n++
+			if ( FS_1v1_SpawnBarrierPanel( model, <origin.x + along, origin.y - sideOff, z>, sideYaw ) )
+				n++
+		}
+	}
+
+	float zFloor = origin.z - thick * 0.5
+	float zCeil = origin.z + FS_1V1_BARRIER_BOX_ROWS.tofloat() * panelH + thick * 0.5
+	n += FS_1v1_SpawnBarrierPlane( model, origin, zFloor, slabAng, stepX, stepY, span )
+	n += FS_1v1_SpawnBarrierPlane( model, origin, zCeil, slabAng, stepX, stepY, span )
+
+	if ( span >= 400.0 )
+		Gamemode1v1_SetWaitingRoomRadius( halfInner - 16.0 )
+	printt( "[FS-1V1] arena barrier room origin=" + string( origin ) + " panels=" + string( n ) + " model=" + string( model ) + " inner=" + string( span ) )
+}
+
+int function FS_1v1_SpawnBarrierPlane( asset model, vector origin, float z, vector angles, float stepX, float stepY, float cover )
+{
+	int nX = int( ceil( cover / stepX ) )
+	int nY = int( ceil( cover / stepY ) )
+	if ( nX < 1 )
+		nX = 1
+	if ( nY < 1 )
+		nY = 1
+
+	float spanX = nX.tofloat() * stepX
+	float spanY = nY.tofloat() * stepY
+	int n = 0
+	int ix
+	int iy
+	for ( ix = 0; ix < nX; ix++ )
+	{
+		for ( iy = 0; iy < nY; iy++ )
+		{
+			float x = origin.x - spanX * 0.5 + stepX * 0.5 + ix.tofloat() * stepX
+			float y = origin.y - spanY * 0.5 + stepY * 0.5 + iy.tofloat() * stepY
+			if ( FS_1v1_SpawnBarrierPanel( model, <x, y, z>, angles ) )
+				n++
+		}
+	}
+	return n
+}
+
+asset function FS_1v1_GetArenaBarrierModel()
+{
+	asset best = $"*1"
+	float bestThick = 99999.0
+	array<asset> candidates = [ $"*1", $"*2", $"*3", $"*4", $"*5", $"*6", $"*7", $"*8" ]
+	foreach ( asset model in candidates )
+	{
+		entity probe = FS_1v1_CreateBarrierBrush( model, <0, 0, -16000>, <0, 0, 0> )
+		if ( !IsValid( probe ) )
+			continue
+
+		vector mins = probe.GetBoundingMins()
+		vector maxs = probe.GetBoundingMaxs()
+		probe.Destroy()
+
+		float sx = maxs.x - mins.x
+		float sy = maxs.y - mins.y
+		float sz = maxs.z - mins.z
+		if ( sx < 4.0 || sy < 4.0 || sz < 200.0 || sx > 4096.0 || sy > 4096.0 )
+			continue
+
+		float thick = ( sx <= sy ) ? sx : sy
+		float length = ( sx <= sy ) ? sy : sx
+		if ( thick > 32.0 || length < 400.0 )
+			continue
+		if ( thick >= bestThick )
+			continue
+
+		bestThick = thick
+		best = model
+	}
+
+	return best
+}
+
+bool function FS_1v1_SpawnBarrierPanel( asset model, vector origin, vector angles )
+{
+	return IsValid( FS_1v1_CreateBarrierBrush( model, origin, angles ) )
+}
+
+entity function FS_1v1_CreateBarrierBrush( asset model, vector origin, vector angles )
+{
+	entity wall = CreateEntity( "func_brush" )
+	if ( !IsValid( wall ) )
+		return null
+
+	wall.kv.solid = 6
+	wall.kv.solidity = 2
+	wall.kv.solidbsp = 0
+	wall.kv.triangle_collision = 1
+	wall.kv.disableshadows = 1
+	wall.kv.angles = angles
+	wall.kv.contents = CONTENTS_SOLID | CONTENTS_PLAYERCLIP | CONTENTS_MONSTERCLIP | CONTENTS_NOGRAPPLE | CONTENTS_NOCLIMB | CONTENTS_BULLETCLIP
+	wall.SetScriptName( FS_1V1_LOBBY_WALL_SCRIPTNAME )
+	wall.SetValueForModelKey( model )
+	wall.SetOrigin( origin )
+	wall.SetAngles( angles )
+	DispatchSpawn( wall )
+	if ( !IsValid( wall ) )
+		return null
+	wall.SetOrigin( origin )
+	wall.SetAbsAngles( angles )
+	wall.Solid()
+	return wall
+}
+#endif // SERVER
+
+void function Common_DissolveDropable( entity prop )
+{
+#if SERVER
+	if ( !IsValid( prop ) )
+		return
+
+	if ( prop.GetScriptName() == "flowstate_halo_mod_weapon" || prop.GetScriptName() == "fs_ball" )
+		return
+
+	thread
+	(
+		void function() : ( prop )
+		{
+			if ( !IsValid( prop ) )
+				return
+
+			prop.EndSignal( "OnDestroy" )
+			if ( IsValidSignal( "OnPickup" ) )
+				prop.EndSignal( "OnPickup" )
+
+			wait Flowstate_GetDissolveTime()
+
+			if ( IsValid( prop ) )
+				prop.Dissolve( ENTITY_DISSOLVE_CORE, <0, 0, 0>, 200 )
+		}
+	)()
+#endif
+}
+
+void function ClientCommand_Maki_SaveCurSkill( entity player, array<string> args )
+{
+	return;}
+
+void function ClientCommand_Maki_ResetSkills( entity player, array<string> args )
+{
+	return;}
+
+void function CC_MenuGiveAimTrainerWeapon( entity player, array<string> args )
+{
+	// Give router is SERVER-only (sv_freeroam_weapons_menu). Bridge is shared.
+	#if SERVER
+		FreeroamWeaponsMenu_OnGiveCommand( player, args )
+	#endif
+}
+
+void function CC_AimTrainer_SelectWeaponSlot( entity player, array<string> args )
+{
+	#if SERVER
+		FreeroamWeaponsMenu_OnSelectSlot( player, args )
+	#endif
+}
+
+void function CC_AimTrainer_CloseWeaponSelector( entity player, array<string> args )
+{
+	#if SERVER
+		FreeroamWeaponsMenu_OnCloseSelector( player, args )
+	#endif
+}
+
+#if SERVER
+// scripts_old / FSDM high-ping gate (shared by 1v1 spawn path).
+void function __HighPingCheck( entity player )
+{
+	wait 12 // latency is high while connecting
+
+	if ( !IsValid( player ) || IsAdmin( player ) )
+		return
+
+	int pingMs = int( player.GetLatency() * 1000 ) - 40
+	int maxPing = FlowState_MaxPingAllowed()
+
+	if ( flowstateSettings.enable_ping_kick && FlowState_KickHighPingPlayer() && pingMs > maxPing )
+	{
+		player.FreezeControlsOnServer()
+		player.ForceStand()
+		HolsterAndDisableWeapons( player )
+
+		LocalMsg( player, "#FS_AFK_KICK", "", eMsgUI.DEFAULT, 5.0, string( maxPing ), string( pingMs ) )
+		LocalSplashMsg( player, "Ping too high: " + string( pingMs ) + "ms (limit " + string( maxPing ) + "ms)", 5.0 )
+
+		wait 5
+
+		if ( !IsValid( player ) )
+			return
+
+		Warning( "[FS-1V1] kicking " + player.GetPlayerName() + " high ping " + string( pingMs ) + " > " + string( maxPing ) )
+		KickPlayerById( player.GetPlatformUID(), "Your ping is too high for admin limit" )
+		UpdatePlayerCounts()
+		FS_1v1_PublishConnectedCount()
+	}
+}
+
+// Custom pilot models for legend indices past the stock roster (FSDM port).
+void function SetPlayerCustomModel( entity player, int index )
+{
+	if ( !IsValid( player ) )
+		return
+
+	if ( !file.loggedCustomModel )
+	{
+		file.loggedCustomModel = true
+		printt( "[FS-1V1] SetPlayerCustomModel active" )
+	}
+
+	switch ( index )
+	{
+		case 12:
+			player.SetBodyModelOverride( $"mdl/Humans/pilots/w_phantom.rmdl" )
+			player.SetArmsModelOverride( $"mdl/Humans/pilots/ptpov_phantom.rmdl" )
+			break
+
+		case 14:
+			player.SetBodyModelOverride( $"mdl/Humans/pilots/w_rhapsody.rmdl" )
+			player.SetArmsModelOverride( $"mdl/Humans/pilots/ptpov_rhapsody.rmdl" )
+			break
+
+		case 19:
+			player.SetBodyModelOverride( $"mdl/Humans/pilots/ballistic_base_w.rmdl" )
+			player.SetArmsModelOverride( $"mdl/Humans/pilots/ballistic_base_v.rmdl" )
+			break
+
+		case 20:
+			player.SetBodyModelOverride( $"mdl/flowstate_custom/w_marvin.rmdl" )
+			player.SetArmsModelOverride( $"mdl/Humans/pilots/ptpov_amogino.rmdl" )
+			break
+
+		case 21:
+			// Body only -- SetArmsModelOverride(ptpov_pete_mri) AVs client.
+			player.SetBodyModelOverride( $"mdl/w_pete_mri.rmdl" )
+			break
+
+		default:
+			printt( "[FS-1V1] SetPlayerCustomModel unhandled index=" + string( index ) )
+			break
+	}
+}
+
+void function FS_Coaching_StartRecording( entity player )
+{
+	if ( !file.loggedCoachingStub )
+	{
+		file.loggedCoachingStub = true
+		printt( "[FS-1V1] coaching stubs active (not ported)" )
+	}
+}
+
+void function FS_Coaching_StopRecording( int matchIdentifier, entity victim, entity attacker )
+{
+	// coaching not ported
+}
+
+int function FS_Coaching_GetAvailableMatchIdentifier()
+{
+	return -1
+}
+
+// Coaching admin "start new" flag. Default true so wait loops do not hang.
+bool function GetStartNewGameBool()
+{
+	return file.startNewGame
+}
+
+void function SetStartNewGameBool( bool value )
+{
+	file.startNewGame = value
+}
+
+// Stock fists melee -- heirloom table not ported.
+void function FS_GiveRandomMelee( entity player, bool is1v1 = false )
+{
+	if ( !IsValid( player ) )
+		return
+
+	player.TakeNormalWeaponByIndexNow( WEAPON_INVENTORY_SLOT_PRIMARY_2 )
+	player.TakeOffhandWeapon( OFFHAND_MELEE )
+	player.GiveWeapon( "mp_weapon_melee_survival", WEAPON_INVENTORY_SLOT_PRIMARY_2, [] )
+	player.GiveOffhandWeapon( "melee_pilot_emptyhanded", OFFHAND_MELEE, [] )
+}
+
+// Legendary skin GUID map not ported -- empty => no random legendary skin.
+array<int> function FS_ReturnLegendaryModelMapForWeaponFlavor( ItemFlavor weaponFlavor )
+{
+	array<int> empty
+	return empty
+}
+#endif // SERVER
+
+// Realm helpers: implemented in _1v1_match.nut

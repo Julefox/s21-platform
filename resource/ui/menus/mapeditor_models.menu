@@ -1,0 +1,162 @@
+resource/ui/menus/mapeditor_models.menu
+{
+	menu
+	{
+		ControlName				Frame
+		xpos					0
+		ypos					0
+		zpos					3
+		wide					f0
+		tall					f0
+		autoResize				0
+		pinCorner				0
+		visible					1
+		enabled					1
+		PaintBackgroundType		0
+		infocus_bgcolor_override	"0 0 0 0"
+		outoffocus_bgcolor_override	"0 0 0 0"
+
+		ScreenBlur
+		{
+			ControlName				Label
+			labelText				""
+		}
+
+		DarkenBackground
+		{
+			ControlName				ImagePanel
+			xpos					0
+			ypos					0
+			wide					%100
+			tall					%100
+			visible					1
+			scaleImage				1
+			image					"vgui/white"
+			drawColor				"0 0 0 200"
+			zpos					0
+		}
+
+		TitleLabel
+		{
+			ControlName				Label
+			labelText				"Models"
+			font					DefaultBold_41
+			fontHeight				28
+			xpos					40
+			ypos					36
+			wide					1840
+			tall					40
+			fgcolor_override		"255 255 255 255"
+			visible					1
+			zpos					10
+		}
+
+		CategoryBG
+		{
+			ControlName				ImagePanel
+			xpos					40
+			ypos					90
+			wide					360
+			tall					820
+			fillColor				"20 20 20 190"
+			drawColor				"20 20 20 190"
+			visible					1
+			zpos					1
+		}
+
+		CategoryList
+		{
+			ControlName				GridButtonListPanel
+			xpos					40
+			ypos					90
+			wide					360
+			tall					820
+			columns					1
+			rows					16
+			buttonSpacing			2
+			scrollbarSpacing		1
+			scrollbarOnLeft			0
+			setUnusedScrollbarInvisible 0
+			visible					1
+			zpos					5
+			tabPosition				1
+			selectOnDpadNav			1
+
+			ButtonSettings
+			{
+				rui						"ui/generic_item_button.rpak"
+				clipRui					1
+				wide					352
+				tall					48
+				cursorVelocityModifier	0.7
+				rightClickEvents		0
+				doubleClickEvents		1
+				sound_focus				"UI_Menu_Focus_Small"
+				sound_accept			""
+				sound_deny				""
+			}
+		}
+
+		ModelListBG
+		{
+			ControlName				ImagePanel
+			xpos					420
+			ypos					90
+			wide					1480
+			tall					820
+			fillColor				"20 20 20 190"
+			drawColor				"20 20 20 190"
+			visible					1
+			zpos					1
+		}
+
+		ModelList
+		{
+			ControlName				GridButtonListPanel
+			xpos					420
+			ypos					90
+			wide					1480
+			tall					820
+			columns					1
+			rows					16
+			buttonSpacing			2
+			scrollbarSpacing		1
+			scrollbarOnLeft			0
+			setUnusedScrollbarInvisible 0
+			visible					1
+			zpos					5
+			tabPosition				2
+			selectOnDpadNav			1
+
+			ButtonSettings
+			{
+				rui						"ui/generic_item_button.rpak"
+				clipRui					1
+				wide					1472
+				tall					48
+				cursorVelocityModifier	0.7
+				rightClickEvents		0
+				doubleClickEvents		1
+				sound_focus				"UI_Menu_Focus_Small"
+				sound_accept			""
+				sound_deny				""
+			}
+		}
+
+		FooterButtons
+		{
+			ControlName				CNestedPanel
+			controlSettingsFile		"resource/ui/menus/panels/footer_buttons.res"
+			xpos					0
+			ypos					0
+			zpos					20
+			wide					f0
+			tall					36
+			visible					1
+
+			pin_to_sibling			DarkenBackground
+			pin_corner_to_sibling	BOTTOM
+			pin_to_sibling_corner	BOTTOM
+		}
+	}
+}

@@ -1,0 +1,91 @@
+global function MpWeaponArtifactDaggerPrimary_Init
+
+global function OnWeaponActivate_weapon_artifact_dagger_primary
+global function OnWeaponDeactivate_weapon_artifact_dagger_primary
+global function OnWeaponOwnerChanged_weapon_artifact_dagger
+
+const string ARTIFACT_MODEL_IDENTIFIER = "char_artifact"
+
+void function MpWeaponArtifactDaggerPrimary_Init()
+{
+	RegisterScriptAnimWindowCallbacks( "Artifact_Dagger", ArtifactDagger_ScriptAnimWindowStartCallback, ArtifactDagger_ScriptAnimWindowStopCallback )
+}
+
+void function OnWeaponActivate_weapon_artifact_dagger_primary( entity weapon )
+{
+	entity owner = weapon.GetOwner()
+
+	Melee_SetModsForLegendAbilities( owner )
+
+	if ( owner.p.artifactConfig != null )
+	{
+		Artifacts_Loadouts_SetupWeaponComponents( weapon, owner )
+		Artifacts_FX_StopWeaponFX( weapon, eArtifactFXPackageType.IDLE ) // TODO: it's not clear if this actually serves it's intended purpose as a "safeguard"
+		Artifacts_FX_StopWeaponFX( weapon, eArtifactFXPackageType.ATTACK ) // for observers, these leak
+		Artifacts_FX_StartWeaponFX( weapon, eArtifactFXPackageType.IDLE )
+		Artifacts_FX_StartWeaponFX( weapon, eArtifactFXPackageType.BLADE_EMISSIVE )
+	}
+}
+
+void function OnWeaponDeactivate_weapon_artifact_dagger_primary( entity weapon )
+{
+	weapon.Signal( "WeaponDeactivateEvent" )
+	Artifacts_FX_StopWeaponFX( weapon, eArtifactFXPackageType.IDLE )
+	Artifacts_FX_StopWeaponFX( weapon, eArtifactFXPackageType.BLADE_EMISSIVE )
+
+	#if SERVER
+		Artifacts_FX_StopWeaponFX( weapon, eArtifactFXPackageType.FLOURISH ) // these can get left on in 3P if players interrupt the activation emote
+	#endif
+
+	Melee_RemoveModsForLegendAbilities( weapon.GetOwner() )
+}
+
+void function OnWeaponOwnerChanged_weapon_artifact_dagger( entity weapon, WeaponOwnerChangedParams params )
+{
+	entity owner = params.newOwner
+
+	if( !IsValid( owner ) )
+		return
+
+	if ( !owner.IsBot() )
+	{
+		Artifacts_StoreLoadoutDataOnPlayerEntityStruct( owner, weapon, false )
+		Artifacts_Loadouts_SetupWeaponComponents( weapon, owner )
+		Artifacts_OnWeaponOwnerChanged( weapon, owner )
+	}
+}
+
+void function ArtifactDagger_ScriptAnimWindowStartCallback( entity ent, string parameter )
+{
+	entity weapon
+
+	if ( ent.IsWeaponX() )
+		weapon = ent
+	else if ( ent.IsPlayer() )
+		weapon = ent.GetActiveWeapon( 0 )
+
+	// The viewmodel's weapon can be null if our ActiveWeapon has already been switched (such as doing a Melee Attack)
+	if ( !IsValid( weapon ) || weapon.GetWeaponClassName() != ARTIFACT_DAGGER_MP_WEAPON )
+		return
+
+	Artifacts_FX_ScriptAnimWindowCallback( weapon, parameter, true )
+}
+
+void function ArtifactDagger_ScriptAnimWindowStopCallback( entity ent, string parameter )
+{
+	if ( !ent.IsWeaponX() && ent.GetModelName().find( ARTIFACT_MODEL_IDENTIFIER ) == -1 ) // R5DEV-567984 - in rare cases when swapping weapons, we'll get a view model & weapon mismatch
+		return
+
+	entity weapon
+
+	if ( ent.IsWeaponX() )
+		weapon = ent
+	else if ( ent.IsPlayer() )
+		weapon = ent.GetActiveWeapon( 0 )
+
+	// The viewmodel's weapon can be null if our ActiveWeapon has already been switched (such as doing a Melee Attack)
+	if ( !IsValid( weapon ) || weapon.GetWeaponClassName() != ARTIFACT_DAGGER_MP_WEAPON )
+		return
+
+	Artifacts_FX_ScriptAnimWindowCallback( weapon, parameter, false )
+}

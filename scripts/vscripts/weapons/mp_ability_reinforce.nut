@@ -1,0 +1,59 @@
+global function MpAbilityReinforce_Init
+global function OnWeaponPrimaryAttack_ability_reinforce
+
+global const int ABILITY_REINFORCE_OFFHAND_SLOT = OFFHAND_ORDNANCE
+
+void function MpAbilityReinforce_Init()
+{
+	PrecacheWeapon( PASSIVE_REINFORCE_WEAPON_NAME )
+	AddCallback_OnPassiveChanged( ePassives.PAS_LOCKDOWN, OnPassiveChanged )
+}
+
+void function OnPassiveChanged( entity player, int passive, bool didHave, bool nowHas )
+{
+	#if CLIENT
+		if ( !IsValid( GetLocalClientPlayer() ) || player != GetLocalClientPlayer() )
+			return
+	#endif
+
+	if ( didHave && !nowHas )
+	{
+		#if SERVER
+			TakeReinforceBombWeapon( player )
+		#endif
+	}
+	else if ( nowHas && !didHave )
+	{
+		#if SERVER
+			GiveReinforceWeapon( player )
+		#endif
+	}
+}
+
+var function OnWeaponPrimaryAttack_ability_reinforce( entity weapon, WeaponPrimaryAttackParams attackParams )
+{
+	return 0
+}
+
+#if SERVER
+entity function GiveReinforceWeapon( entity player )
+{
+	entity weapon = player.GetOffhandWeapon( ABILITY_REINFORCE_OFFHAND_SLOT )
+	if ( IsValid( weapon ) && weapon.GetWeaponClassName() != PASSIVE_REINFORCE_WEAPON_NAME )
+		player.TakeOffhandWeapon( ABILITY_REINFORCE_OFFHAND_SLOT )
+
+	if ( !IsValid( player.GetOffhandWeapon( ABILITY_REINFORCE_OFFHAND_SLOT ) ) )
+	{
+		player.GiveOffhandWeapon( PASSIVE_REINFORCE_WEAPON_NAME, ABILITY_REINFORCE_OFFHAND_SLOT )
+	}
+
+	return player.GetOffhandWeapon( ABILITY_REINFORCE_OFFHAND_SLOT )
+}
+
+void function TakeReinforceBombWeapon( entity player )
+{
+	entity weapon = player.GetOffhandWeapon( ABILITY_REINFORCE_OFFHAND_SLOT )
+	if ( IsValid( weapon ) && weapon.GetWeaponClassName() == PASSIVE_REINFORCE_WEAPON_NAME )
+		player.TakeOffhandWeapon( ABILITY_REINFORCE_OFFHAND_SLOT )
+}
+#endif

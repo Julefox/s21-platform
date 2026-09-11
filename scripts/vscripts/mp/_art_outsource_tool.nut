@@ -1,0 +1,60 @@
+global function OutsourceViewer_Toggle
+global function ClientCallback_GetModelBounds
+
+void function OutsourceViewer_Toggle( entity player )
+{
+#if DEVELOPER
+	if ( PlayerIsOnPC( player ) )
+	{
+		Remote_CallFunction_NonReplay( player, "ServerCallback_OVToggle" )
+	}
+#endif // DEV
+}
+
+#if DEVELOPER
+void function UpdateModelBounds( asset model )
+{
+	entity prop = CreatePropDynamic( model )
+	vector mins = prop.GetBoundingMins()
+	vector maxs = prop.GetBoundingMaxs()
+
+	Remote_CallFunction_NonReplay( GetPlayerArray()[ 0 ], "ServerCallback_OVUpdateModelBounds", mins, maxs )
+	prop.Destroy()
+}
+
+bool function PlayerIsOnPC( entity player )
+{
+	return ( player.GetPlayerPlatformName().tolower() == "pc" || player.GetPlayerPlatformName().tolower() == "pc_steam" )
+}
+#endif // #if DEVELOPER
+
+////////////////////////////////////////////////////////////
+///////////////////// CLIENT CALLBACKS /////////////////////
+////////////////////////////////////////////////////////////
+
+void function ClientCallback_GetModelBounds( entity player, int assetType, int itemFlavorGuid )
+{
+#if DEVELOPER
+	string modelTypeName
+	switch ( assetType )
+	{
+		case eAssetType.ASSETTYPE_CHARACTER:
+			modelTypeName = "bodyModel"
+			break
+
+		case eAssetType.ASSETTYPE_WEAPON:
+			modelTypeName = "worldModel"
+			break
+	}
+
+	asset itemAsset = GetSettingsAssetForUniqueId( itemFlavorGuid )
+	if( itemAsset == $"" )
+		return
+
+	asset model = GetGlobalSettingsAsset( itemAsset, modelTypeName )
+	if( model == $"" )
+		return
+
+	thread UpdateModelBounds( model )
+#endif // #if DEVELOPER
+}

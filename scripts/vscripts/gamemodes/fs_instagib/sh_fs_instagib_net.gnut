@@ -1,0 +1,69 @@
+// fs_instagib shared init, netvars, remotes. No R5V ePlaylists.
+
+global function FS_Instagib_RegisterNetwork
+global function FS_Instagib_SharedInit
+global function FS_IsInstagib
+
+global const string INSTAGIB_WEAPON_CLASS = "mp_weapon_instagib"
+global const string INSTAGIB_TAC_CLASS = "mp_ability_instagib_railjump"
+
+struct
+{
+	bool netRegistered = false
+} file
+
+bool function FS_IsInstagib()
+{
+	if ( GetCurrentPlaylistName() == "fs_instagib" )
+		return true
+	return FS_IsActiveMode( "fs_instagib" )
+}
+
+void function FS_Instagib_SharedInit()
+{
+	FS_Core_SharedInit()
+	FS_Instagib_RegisterNetwork()
+
+	#if SERVER
+		FlagInit( "DeathFieldCalculationComplete" )
+		FlagInit( "Survival_LootSpawned" )
+		FlagInit( "BleedoutDebug", false )
+		if ( !FlagExists( "DeathCircleActive" ) )
+			FlagInit( "DeathCircleActive" )
+		if ( !FlagExists( "SUR_DeathFieldShrinking" ) )
+			FlagInit( "SUR_DeathFieldShrinking" )
+		if ( !Flag( "DeathFieldCalculationComplete" ) )
+			FlagSet( "DeathFieldCalculationComplete" )
+		if ( !Flag( "Survival_LootSpawned" ) )
+			FlagSet( "Survival_LootSpawned" )
+		printt( "[FS-IG] survival world flags set" )
+	#endif
+
+	#if CLIENT
+		FlagInit( "SquadEliminated" )
+	#endif
+
+	printt( "[FS-IG] SharedInit complete" )
+}
+
+void function FS_Instagib_RegisterNetwork()
+{
+	#if !( SERVER || CLIENT )
+		return
+	#endif
+
+	if ( file.netRegistered )
+		return
+	file.netRegistered = true
+
+	RegisterNetworkedVariable( "championDisplayEndTime", SNDC_GLOBAL, SNVT_TIME, -1 )
+	RegisterNetworkedVariable( "flowstate_DMStartTime", SNDC_GLOBAL, SNVT_TIME, -1 )
+	RegisterNetworkedVariable( "flowstate_DMRoundEndTime", SNDC_GLOBAL, SNVT_TIME, -1 )
+	RegisterNetworkedVariable( "FSDM_GameState", SNDC_GLOBAL, SNVT_INT, -1 )
+
+	Remote_RegisterClientFunction( "ServerCallback_Instagib_RespawnUI", "int", -1, 1200 )
+	Remote_RegisterClientFunction( "ServerCallback_Instagib_ClearDeathUI" )
+	Remote_RegisterClientFunction( "ServerCallback_Instagib_Score", "int", 0, 9999, "int", 0, 9999 )
+
+	printt( "[FS-IG] network registered" )
+}

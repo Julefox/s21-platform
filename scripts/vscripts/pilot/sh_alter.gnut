@@ -1,0 +1,102 @@
+global function AlterExtraScript_Init
+
+//HAS_ALTER
+#if SERVER
+const string ON_PLAY_ANIM_THREAD_START_SIGNAL = "alter_extra_anim_start"
+const string PAS_CHANGED_SIGNAL = "alter_extra_anim_pas_changed"
+#endif
+#if CLIENT
+#endif
+
+const bool ALTER_EXTRA_SCRIPT_DEBUG = false
+
+struct
+{
+	#if SERVER
+	float onMurderModifierDuration = 7
+	#endif
+} tuning
+
+struct
+{
+} file
+
+
+void function AlterExtraScript_Init()
+{
+	if ( !IsAlterExtraScriptEnabled() )
+		return
+
+	SetupTuning()
+
+	#if SERVER
+		RegisterSignal( ON_PLAY_ANIM_THREAD_START_SIGNAL )
+		RegisterSignal( PAS_CHANGED_SIGNAL )
+
+		AddCallback_OnPassiveChanged( ePassives.PAS_ALTER, OnPassiveChanged )
+
+		Bleedout_AddCallback_OnPlayerStartBleedout( EnableAnimModifierOnMurder )
+		AddCallback_OnPlayerKilled( EnableAnimModifierOnMurder )
+	#elseif CLIENT
+	#endif
+}
+
+void function SetupTuning()
+{
+	#if SERVER
+	tuning.onMurderModifierDuration = GetCurrentPlaylistVarFloat( "alter_on_kill_anim_duration", tuning.onMurderModifierDuration )
+	#endif
+}
+
+bool function IsAlterExtraScriptEnabled()
+{
+	return GetCurrentPlaylistVarBool( "alter_extra_script_enabled", true )
+}
+
+
+void function OnPassiveChanged( entity player, int passive, bool didHave, bool nowHas )
+{
+	#if SERVER
+		if ( nowHas && !didHave )
+		{
+			RegisterPlayerUsingScriptAnimModifier( player, passive )
+		}
+		else if ( didHave && !nowHas )
+		{
+			player.Signal( PAS_CHANGED_SIGNAL )
+			UnregisterPlayerUsingScriptAnimModifier( player, passive )
+		}
+	#endif
+}
+
+#if SERVER
+void function EnableAnimModifierOnMurder( entity victim, entity player, var damageInfo )
+{
+	Assert( IsAlterExtraScriptEnabled() )
+
+	if ( !IsValidPlayer( player ) || !PlayerHasPassive( player, ePassives.PAS_ALTER ) )
+		return
+
+	thread AnimModifier_Thread( player )
+}
+
+void function AnimModifier_Thread( entity player )
+{
+	Assert ( IsNewThread(), "Must be started as new thread" )
+
+	player.Signal( ON_PLAY_ANIM_THREAD_START_SIGNAL )
+	player.EndSignal( "OnDeath", "OnDestroy", "BleedOut_OnStartDying", ON_PLAY_ANIM_THREAD_START_SIGNAL, PAS_CHANGED_SIGNAL )
+
+	OnThreadEnd(
+		function() : ( player )
+		{
+			SetPlayerScriptAnimModifierValue( player, false, ePassives.PAS_ALTER )
+		}
+	)
+
+	SetPlayerScriptAnimModifierValue( player, true, ePassives.PAS_ALTER )
+
+	wait tuning.onMurderModifierDuration
+}
+#endif
+

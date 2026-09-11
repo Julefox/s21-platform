@@ -1,0 +1,314 @@
+#if SERVER
+
+global function SkFlagInit
+global function SkFlagSet
+global function SkFlagSetDelayed
+global function SkFlagClear
+global function SkFlagClearDelayed
+global function SkFlagEnd
+global function SkFlagClearEnd
+global function SkFlag
+global function SkFlagsAll
+global function SkFlagToggle
+global function SkFlagWait
+global function SkFlagWaitAll
+global function SkFlagWaitWithTimeout
+global function SkFlagWaitClearWithTimeout
+global function SkFlagWaitAny
+global function SkFlagWaitClear
+global function SkFlagWaitClearAll
+global function SkFlagWaitClearAllArray
+global function SkFlagWaitClearAny
+global function SkFlagExists
+global function SkFlagSetOnFlag
+global function SkFlagClearOnFlag
+
+
+void function SkFlagInit( SkitInstance si, string msg, bool isSet = false )
+{
+	if ( msg in si.skitFlags )
+		return
+
+	Assert( !(msg.find_olduntyped( " " )), format( "Can not have spaces in the name of a flag: '%s'", msg ) )
+	si.skitFlags[ msg ] <- isSet
+	RegisterSignal( msg )
+}
+
+void function SkFlagSet( SkitInstance si, string msg )
+{
+	Assert( msg in si.skitFlags, format( "flag '%s' not initialized yet for skit: %s", msg, SkDebug_GetDebugLineForSkit( si ) ) )
+	__FlagSetValue( si, msg, true )
+}
+
+void function SkFlagSetDelayed( SkitInstance si, string msg, float delay )
+{
+	thread SkFlagSetDelayed_Thread( si, msg, delay )
+}
+
+void function SkFlagSetDelayed_Thread( SkitInstance si, string msg, float delay )
+{
+	if ( delay > 0 )
+		wait delay
+	if ( !SkFlag( si, msg ) )
+		SkFlagSet( si, msg )
+}
+
+void function SkFlagClear( SkitInstance si, string msg )
+{
+	Assert( msg in si.skitFlags, format( "flag '%s' not initialized yet for skit: %s", msg, SkDebug_GetDebugLineForSkit( si ) ) )
+	__FlagSetValue( si, msg, false )
+}
+
+void function SkFlagClearDelayed( SkitInstance si, string msg, float delay )
+{
+	if ( !SkFlag( si, msg ) )
+		return
+
+	thread SkFlagClearDelayed_Thread( si, msg, delay )
+}
+
+void function SkFlagClearDelayed_Thread( SkitInstance si, string msg, float delay )
+{
+	if ( !SkFlag( si, msg ) )
+		return
+
+	SkFlagClearEnd( si, msg )
+
+	if ( delay > 0 )
+		wait delay
+	if ( SkFlag( si, msg ) )
+		SkFlagClear( si, msg )
+}
+
+
+void function SkFlagEnd( SkitInstance si, string msg )
+{
+	Assert( msg in si.skitFlags, format( "flag '%s' not initialized yet for skit: %s", msg, SkDebug_GetDebugLineForSkit( si ) ) )
+	Assert( !SkFlag( si, msg ), format( "flag '%s' was already set, for skit: %s", msg, SkDebug_GetDebugLineForSkit( si ) ) )
+	EndSignal( si, msg )
+}
+
+void function SkFlagClearEnd( SkitInstance si, string msg )
+{
+	Assert( msg in si.skitFlags, format( "flag '%s' not initialized yet for skit: %s", msg, SkDebug_GetDebugLineForSkit( si ) ) )
+	Assert( SkFlag( si, msg ), format( "flag '%s' is not already set, for skit: %s", msg, SkDebug_GetDebugLineForSkit( si ) ) )
+	EndSignal( si, msg )
+}
+
+bool function SkFlag( SkitInstance si, string msg )
+{
+	Assert( msg in si.skitFlags, format( "flag '%s' not initialized yet for skit: %s", msg, SkDebug_GetDebugLineForSkit( si ) ) )
+	return si.skitFlags[ msg ]
+}
+
+bool function SkFlagsAll( SkitInstance si, array<string> msgs )
+{
+	foreach( string msg in msgs )
+	{
+		if ( !SkFlag( si, msg ) )
+			return false
+	}
+	return (msgs.len() > 0)
+}
+
+void function SkFlagToggle( SkitInstance si, string msg )
+{
+	if ( SkFlag( si, msg ) )
+		SkFlagClear( si, msg )
+	else
+		SkFlagSet( si, msg )
+}
+
+void function SkFlagWait( SkitInstance si, string msg )
+{
+	Assert( msg in si.skitFlags, format( "flag '%s' not initialized yet for skit: %s", msg, SkDebug_GetDebugLineForSkit( si ) ) )
+	while ( !si.skitFlags[ msg ] )
+	WaitSignal( si, msg )
+}
+
+void function SkFlagWaitAll( SkitInstance si, ... )
+{
+	array<string> args
+	for ( int i = 0; i < vargc; i++ )
+	{
+		args.append( expect string( vargv[i] ) )
+	}
+
+	bool loop = true
+
+	while ( loop )
+	{
+		foreach ( msg in args )
+		{
+			SkFlagWait( si, msg )
+		}
+
+		loop = false
+
+		//extra check to make sure one didn't get cleared after a wait
+		foreach ( i, msg in args )
+		{
+			if ( SkFlag( si, msg ) )
+				continue
+
+			loop = true
+			break
+		}
+	}
+}
+
+void function SkFlagWaitWithTimeout( SkitInstance si, string flag, float timeout )
+{
+	string newFlag = ("SkFlagWaitAny" + UniqueString())
+	SkFlagInit( si, newFlag )
+	thread __FlagWaitAny( si, flag, newFlag )
+	thread __FlagWaitTime( si, timeout, newFlag )
+	SkFlagWait( si, newFlag )
+}
+
+void function SkFlagWaitClearWithTimeout( SkitInstance si, string flag, float timeout )
+{
+	string newFlag = ("SkFlagWaitClearAny" + UniqueString())
+	SkFlagInit( si, newFlag )
+	thread __FlagWaitClearAny( si, flag, newFlag )
+	thread __FlagWaitTime( si, timeout, newFlag )
+	SkFlagWait( si, newFlag )
+}
+
+void function __FlagWaitTime( SkitInstance si, float timeout, string newFlag )
+{
+	EndSignal( si, newFlag )
+	Wait( timeout )
+	SkFlagSet( si, newFlag )
+}
+
+//this function only works in threaded functions
+void function SkFlagWaitAny( SkitInstance si, ... )
+{
+	string newFlag = ("SkFlagWaitAny" + UniqueString())
+	SkFlagInit( si, newFlag )
+
+	array<string> args
+	for ( int i = 0; i < vargc; i++ )
+		args.append( expect string( vargv[i] ) )
+
+	foreach ( msg in args )
+		thread __FlagWaitAny( si, msg, newFlag )
+
+	SkFlagWait( si, newFlag )
+}
+
+void function SkFlagWaitClear( SkitInstance si, string msg )
+{
+	Assert( msg in si.skitFlags, format( "flag '%s' not initialized yet for skit: %s", msg, SkDebug_GetDebugLineForSkit( si ) ) )
+	while ( si.skitFlags[msg] )
+		WaitSignal( si, msg )
+}
+
+void function SkFlagWaitClearAll( SkitInstance si, ... )
+{
+	array<string> args
+	for ( int i = 0; i < vargc; i++ )
+		args.append( expect string( vargv[i] ) )
+	waitthread SkFlagWaitClearAllArray( si, args )
+}
+
+void function SkFlagWaitClearAllArray( SkitInstance si, array<string> flags )
+{
+	bool loop = true
+
+	while ( loop )
+	{
+		foreach ( flag in flags )
+			SkFlagWaitClear( si, flag )
+
+		loop = false
+
+		//extra check to make sure one didn't get cleared after a wait
+		foreach ( flag in flags )
+		{
+			if ( !SkFlag( si, flag ) )
+				continue
+
+			loop = true
+			break
+		}
+	}
+}
+
+void function SkFlagWaitClearAny( SkitInstance si, ... )
+{
+	string newFlag = "SkFlagWaitAny" + UniqueString()
+	SkFlagInit( si, newFlag )
+
+	array<string> args
+	for ( int i = 0; i < vargc; i++ )
+		args.append( expect string( vargv[i] ) )
+
+	foreach ( msg in args )
+		thread __FlagWaitClearAny( si, msg, newFlag )
+
+	SkFlagWait( si, newFlag )
+}
+
+void function __FlagWaitAny( SkitInstance si, string msg, string newFlag )
+{
+	EndSignal( si, newFlag )
+	SkFlagWait( si, msg )
+	SkFlagSet( si, newFlag )
+}
+
+void function __FlagWaitClearAny( SkitInstance si, string msg, string newFlag )
+{
+	EndSignal( si, newFlag )
+	SkFlagWaitClear( si, msg )
+	SkFlagSet( si, newFlag )
+}
+
+void function __FlagSetValue( SkitInstance si, string msg, bool val )
+{
+	if ( si.skitFlags[ msg ] == val )
+		return
+
+	si.skitFlags[ msg ] = val
+
+//#if SERVER
+//	UpdateTriggerStatusFromFlagChange( msg )
+//#endif
+
+	// WARNING: Use SkFlagEnd instead of end signalling directly on this signal
+	Signal( si, msg )
+}
+
+bool function SkFlagExists( SkitInstance si, string msg )
+{
+	if ( msg in si.skitFlags )
+		return true
+	return false
+}
+
+void function SkFlagSetOnFlag( SkitInstance si, string flagset, string flagwait, float delay = 0 )
+{
+	thread _ThreadFlagSetOnFlag( si, flagset, flagwait, delay )
+}
+void function _ThreadFlagSetOnFlag( SkitInstance si, string flagset, string flagwait, float delay )
+{
+	SkFlagWait( si, flagwait )
+
+	if ( delay > 0 )
+		wait delay
+
+	SkFlagSet( si, flagset )
+}
+
+void function SkFlagClearOnFlag( SkitInstance si, string flagclear, string flagwait )
+{
+	thread _ThreadFlagClearOnFlag( si, flagclear, flagwait )
+}
+void function _ThreadFlagClearOnFlag( SkitInstance si, string flagclear, string flagwait )
+{
+	SkFlagWait( si, flagwait )
+	SkFlagClear( si, flagclear )
+}
+
+#endif // #if SERVER

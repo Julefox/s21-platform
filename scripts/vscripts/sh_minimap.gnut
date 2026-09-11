@@ -1,0 +1,335 @@
+untyped
+
+global function MinimapShared_Init
+global function GetMinimapMaterial
+global function MiniMapIsDisabled
+
+const MINIMAP_MINION_SCALE = 0.035
+const MINIMAP_MINION_SCALE_COOP = 0.021
+
+//global const MFD_MINIMAP_FRIENDLY_MATERIAL = $"vgui/HUD/minimap_mfd_friendly"
+//global const MFD_MINIMAP_PENDING_MARK_FRIENDLY_MATERIAL = $"vgui/HUD/minimap_mfd_pre_friendly"
+//global const MFD_MINIMAP_ENEMY_MATERIAL = $"vgui/HUD/minimap_mfd_enemy"
+
+#if SERVER
+global function InitMinimapSettings
+global function UpdatePlayerMinimapMaterials
+global function Minimap_RingPulseForPlayer
+global function Minimap_RingPulseForTeam
+global function IsValidRingPulsePos
+#endif
+
+struct
+{
+	array<asset> minimapRuis
+	bool allowRegisterMinimapRuis
+} file
+
+
+global enum eMinimapObject_info_hardpoint
+{
+	DEFAULT,
+	HARDPOINT_A,
+	HARDPOINT_B,
+	HARDPOINT_C,
+	HARDPOINT_D,
+	HARDPOINT_E,
+	COUNT
+}
+
+
+global enum eMinimapObject_prop_script
+{
+	DEFAULT,
+	AT_DROPZONE_A,
+	AT_DROPZONE_B,
+	AT_DROPZONE_C,
+	SPAWNZONE_MIL,
+	SPAWNZONE_IMC,
+	FW_CAMP_A,
+	FW_CAMP_B,
+	FW_CAMP_C,
+	FW_BUILDSITE,
+	FW_BUILDSITE_TURRET,
+	FW_BUILDSITE_SHIELDED,
+	LTS_SITE_A,
+	LTS_SITE_B,
+	AT_BANK,
+	FD_HARVESTER,
+	FD_LOADOUT_CHEST,
+	FD_BATTERY_EXCHANGE,
+	FD_MORTAR_POSITION,
+	OBJECTIVE_AREA,
+	BOOST_STORE,
+	ARC_TRAP,
+	TROPHY_SYSTEM,
+	BLACK_MARKET,
+	DIRTY_BOMB,
+       
+	SPIKE_STRIP,
+	DEPLOYABLE_MEDIC,
+	PHASE_GATE,
+	VAULT_PANEL,
+	VAULT_PANEL_OPEN,
+	VAULT_KEY,
+	SURVEY_BEACON,
+	                   
+	NEXT_ZONE_SURVEY_BEACON,
+	MUNITIONS_BOX,
+	SUPPORT_BIN,
+       
+	CRYPTO_DRONE,
+	RAMPART_WALL,
+	RAMPART_TURRET,
+	HOVERTANK,
+	HOVERTANK_DESTINATION,
+	RESPAWN_CHAMBER,
+	RESPAWN_DNA,
+		TRAIN,
+		//TRAIN_CAR_OPEN,
+		//TRAIN_CAR_CLOSED,
+       
+                       
+        
+       
+                      
+                       
+       
+                       
+              
+                          
+       
+	                
+		CRAFTING_HARVESTER,
+		CRAFTING_WORKBENCH,
+		CRAFTING_WORKBENCH_LIMITED,
+		CRAFTING_ZONE,
+       
+                        
+               
+           
+       
+	                     
+		HOVER_VEHICLE_SPAWNPOINT,
+       
+	                         
+		CAMPFIRE,
+       
+                                               
+                   
+       
+                              
+              
+       
+                      
+                            
+                
+       
+
+	                        
+		CONTROL_OBJECTIVE,
+       
+	                      
+		SPECTRE_SHACK,
+	RISING_WALL_DOWN,
+	RISING_WALL_MOVING,
+	RISING_WALL_UP,
+	                           
+		PROWLER_CAMP,
+		SPIDER_CAMP,
+       
+
+	                               
+		PLAYER_DUMMY,
+       
+
+                         
+              
+       
+
+               
+                 
+       
+
+                     
+              
+       
+
+	                             
+		REDEPLOY_BALLOON
+       
+
+	                    
+		UPGRADE_CORE_BIN,
+		BOUNTY_BIN,
+       
+
+                
+               
+       
+
+                
+          
+       
+	             
+		PORTAL,
+		TRANSPORT_PORTAL_TRANSLOCATOR,
+		TRANSPORT_PORTAL_RECEIVER_PREVIEW,
+		TRANSPORT_PORTAL_RECEIVER,
+		TRANSPORT_PORTAL_CHASE_PORTAL,
+       
+
+                         
+                  
+                               
+	COUNT
+}
+
+global enum eMinimapObject_npc
+{
+	DEFAULT,
+	AI_TDM_AI,
+	AI_PVEOBJECTIVE,
+	FD_TURRET,
+	                    
+		LOOT_TICK_GH,
+       
+	COUNT
+}
+
+global enum eMinimapObject_npc_titan
+{
+	DEFAULT,
+	AT_BOUNTY_BOSS,
+	COUNT
+}
+
+void function MinimapShared_Init()
+{
+	level.minimapMaterials <- {}
+	level.minimapMaterialsIndexes <- []
+	level.allowRegisterMinimapMaterials <- true
+	file.allowRegisterMinimapRuis = true
+
+	RegisterMinimapMaterial( "minimap_default", $"vgui/hud/minimap_default" )
+
+	level.allowRegisterMinimapMaterials = false
+	file.allowRegisterMinimapRuis = false
+}
+
+
+void function RegisterMinimapRuiAsset( asset ruiAsset )
+{
+	Assert( file.allowRegisterMinimapRuis )
+
+	file.minimapRuis[file.minimapRuis.len()] = ruiAsset
+}
+
+
+void function RegisterMinimapMaterial( string materialRef, asset material )
+{
+	Assert( !(materialRef in level.minimapMaterials) )
+	Assert( level.allowRegisterMinimapMaterials )
+
+	level.minimapMaterials[ materialRef ] <- material
+}
+
+
+asset function GetMinimapMaterial( string materialRef )
+{
+	return expect asset( level.minimapMaterials[ materialRef ] )
+}
+
+const MINIMAP_TITAN_SCALE = 0.3
+const MINIMAP_PILOT_SCALE = 0.15
+//coop = x * 0.572
+const MINIMAP_TITAN_SCALE_COOP = 0.13
+const MINIMAP_PILOT_SCALE_COOP = 0.13
+
+void function UpdatePlayerMinimapMaterials( entity player )
+{
+	float titanscale = MINIMAP_TITAN_SCALE
+	float pilotscale = MINIMAP_PILOT_SCALE
+
+	player.Minimap_SetClampToEdge( true )
+	player.Minimap_SetAlignUpright( false )
+	if ( player.IsTitan() )
+	{
+		player.Minimap_SetObjectScale( titanscale )
+		player.Minimap_SetZOrder( MINIMAP_Z_PLAYER )
+	}
+	else
+	{
+		player.Minimap_SetObjectScale( pilotscale )
+		player.Minimap_SetZOrder( MINIMAP_Z_PLAYER )
+	}
+}
+
+#if SERVER
+void function InitMinimapSettings( entity npc )
+{
+	if ( npc.IsTitan() )
+	{
+		//npc.Minimap_SetCustomState( eMinimapObject.TITAN )
+
+		npc.Minimap_SetClampToEdge( false )
+	}
+	else if ( IsTurret( npc ) )
+	{
+		//if ( npc.GetClassName() == "npc_turret_mega" )
+		//	npc.Minimap_SetCustomState( eMinimapObject.MEGA_TURRET )
+		//else if ( npc.GetClassName() == "npc_turret_sentry" )
+		//	npc.Minimap_SetCustomState( eMinimapObject.SENTRY_TURRET )
+
+		npc.Minimap_SetClampToEdge( false )
+	}
+	else
+	{
+		//npc.Minimap_SetCustomState( eMinimapObject.NPC )
+
+		npc.Minimap_SetClampToEdge( false )
+	}
+
+	npc.Minimap_SetZOrder( MINIMAP_Z_NPC )
+}
+
+void function Minimap_RingPulseForPlayer( entity player, vector origin, float radius, float duration, int pulseCount, vector color, bool reverse = false )
+{
+	Remote_CallFunction_NonReplay( player, "ServerCallback_RingPulseMinimap", origin, radius, duration, pulseCount, color, reverse )
+}
+
+bool function IsValidRingPulsePos( vector pos )
+{
+	float maxExtentPos = 64000
+	float maxExtentNeg = -64000
+
+	if ( pos.x > maxExtentPos || pos.x < ( maxExtentNeg ) )
+		return false
+
+	if ( pos.y > maxExtentPos || pos.y < ( maxExtentNeg ) )
+		return false
+
+	if ( pos.z > maxExtentPos || pos.z < ( maxExtentNeg ) )
+		return false
+
+	return true
+}
+
+void function Minimap_RingPulseForTeam( int team, vector origin, float radius, float duration, int pulseCount, vector color, bool reverse = false )
+{
+	array<entity> players = GetPlayerArrayOfTeam( team )
+	{
+		foreach ( player in players )
+		{
+			Minimap_RingPulseForPlayer( player, origin, radius, duration, pulseCount, color, reverse )
+		}
+	}
+}
+#endif // SERVER
+
+bool function MiniMapIsDisabled()
+{
+	if ( GetCurrentPlaylistVarBool( "disable_minimap", false ) )
+		return true
+	return false
+}

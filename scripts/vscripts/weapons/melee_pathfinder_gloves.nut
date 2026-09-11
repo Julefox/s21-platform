@@ -1,0 +1,57 @@
+global function MeleePathfinderGloves_Init
+
+global function OnWeaponActivate_melee_pathfinder_gloves
+global function OnWeaponDeactivate_melee_pathfinder_gloves
+
+// Future: Define Effects here, Currently defined inside of animation events
+
+                         
+                                
+      
+
+void function MeleePathfinderGloves_Init()
+{
+	// Future: precache particles etc.
+
+                          
+                                  
+       
+}
+
+// this weapon is only used for attacks (not "primary weapon" idling onscreen)
+// - activate = attack start; deactivate = attack finished
+void function OnWeaponActivate_melee_pathfinder_gloves( entity weapon )
+{
+	entity player = weapon.GetWeaponOwner()
+	string meleeSkinName = MeleeSkin_GetSkinNameFromPlayer( player )
+
+	if ( meleeSkinName == "gloves" )
+	{
+		// Future: Play Effects Here
+	}
+                         
+                                           
+  
+                              
+  
+      
+
+}
+
+void function OnWeaponDeactivate_melee_pathfinder_gloves( entity weapon )
+{
+	entity player = weapon.GetWeaponOwner()
+	string meleeSkinName = MeleeSkin_GetSkinNameFromPlayer( player )
+
+	if ( meleeSkinName == "gloves" )
+	{
+		// Future: Stop Effects Here
+	}
+                         
+                                           
+  
+                              
+  
+      
+
+}

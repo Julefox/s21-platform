@@ -1,0 +1,82 @@
+//=============================================================================//
+//
+// Purpose: S21-style netvar change callback registration
+//
+// Bridges the S21 script API (RegisterNetVarBoolChangeCallback with 2-arg
+// callback) to the S3 engine native (RegisterNetworkedVariableChangeCallback_bool
+// with 4-arg callback). On SERVER: no-ops (callbacks fire on CLIENT only).
+//
+//=============================================================================//
+
+global function NetVarCallbacks_Init
+global function RegisterNetVarBoolChangeCallback
+global function RegisterNetVarIntChangeCallback
+global function RegisterNetVarFloatChangeCallback
+global function RegisterNetVarTimeChangeCallback
+global function RegisterNetVarEntChangeCallback
+global function TriggerGlobalNetVarCallbacks
+global function TriggerPlayerNetVarCallbacks
+
+void function NetVarCallbacks_Init()
+{
+}
+
+#if CLIENT || UI
+
+void function RegisterNetVarBoolChangeCallback( string varName, void functionref( entity, bool ) callback, int category = 0 )
+{
+	RegisterNetworkedVariableChangeCallback_bool( varName,
+		void function( entity ent, bool oldVal, bool newVal, bool changed ) : ( callback )
+		{ if ( changed ) callback( ent, newVal ) }
+	)
+}
+
+void function RegisterNetVarIntChangeCallback( string varName, void functionref( entity, int ) callback, int category = 0 )
+{
+	RegisterNetworkedVariableChangeCallback_int( varName,
+		void function( entity ent, int oldVal, int newVal, bool changed ) : ( callback )
+		{ if ( changed ) callback( ent, newVal ) }
+	)
+}
+
+void function RegisterNetVarFloatChangeCallback( string varName, void functionref( entity, float ) callback, int category = 0 )
+{
+	RegisterNetworkedVariableChangeCallback_float( varName,
+		void function( entity ent, float oldVal, float newVal, bool changed ) : ( callback )
+		{ if ( changed ) callback( ent, newVal ) }
+	)
+}
+
+void function RegisterNetVarTimeChangeCallback( string varName, void functionref( entity, float ) callback, int category = 0 )
+{
+	RegisterNetworkedVariableChangeCallback_time( varName,
+		void function( entity ent, float oldVal, float newVal, bool changed ) : ( callback )
+		{ if ( changed ) callback( ent, newVal ) }
+	)
+}
+
+void function RegisterNetVarEntChangeCallback( string varName, void functionref( entity, entity ) callback, int category = 0 )
+{
+	RegisterNetworkedVariableChangeCallback_ent( varName,
+		void function( entity ent, entity oldVal, entity newVal, bool changed ) : ( callback )
+		{ if ( changed ) callback( ent, newVal ) }
+	)
+}
+
+#elseif SERVER
+
+void function RegisterNetVarBoolChangeCallback( string varName, void functionref( entity, bool ) callback, int category = 0 ) {}
+void function RegisterNetVarIntChangeCallback( string varName, void functionref( entity, int ) callback, int category = 0 ) {}
+void function RegisterNetVarFloatChangeCallback( string varName, void functionref( entity, float ) callback, int category = 0 ) {}
+void function RegisterNetVarTimeChangeCallback( string varName, void functionref( entity, float ) callback, int category = 0 ) {}
+void function RegisterNetVarEntChangeCallback( string varName, void functionref( entity, entity ) callback, int category = 0 ) {}
+
+#endif
+
+void function TriggerGlobalNetVarCallbacks()
+{
+}
+
+void function TriggerPlayerNetVarCallbacks( entity player )
+{
+}

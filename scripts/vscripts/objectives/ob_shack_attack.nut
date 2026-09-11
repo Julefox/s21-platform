@@ -1,0 +1,175 @@
+global function InitObjectiveType_ShackAttack
+
+
+const string MY_TYPE = "shackattack"
+void function InitObjectiveType_ShackAttack()
+{
+#if SERVER
+	ObjectiveRegistrationInfo reg
+	reg.title = "\"Shack Attack\""
+	reg.icon = $"rui/hud/objectives/generic_icon_b"
+	reg.func_onGatherPossibleLaunches = OnGatherPossibleLaunches
+	reg.func_runtime = MyRunTime
+	reg.func_onRuntimeFinished = OnRunTimeFinished
+
+	ObjectiveSystem_RegisterType( MY_TYPE, reg )
+#endif // SERVER
+}
+
+#if SERVER
+const string MAGIC_GROUP_KEYWORD = "garrison_shack"
+const int REQUIRED_INDOOR_SPAWNS = 6
+const int REQUIRED_OUTDOOR_SPAWNS = 2
+void function OnGatherPossibleLaunches( array<ObjectiveLaunchData> results )
+{
+	// return groups that fit our criteria (shack, min spawns)
+	// on per zone at most
+
+	table<int, array<ResourceGroup> > validZones
+	array<ResourceGroup> shackGroups = ORS_Find_( ORS_GetGlobalGroup(), 0, [eORType.GROUP], [MAGIC_GROUP_KEYWORD], [] ).groups
+	foreach( ResourceGroup group in shackGroups )
+	{
+		int zoneId = ORS_GetTopParentZoneIdForResource( group.core )
+		if ( zoneId < 0 )
+			continue
+		if ( Objectives_AnyObjectiveIsUsingZoneId( zoneId ) )
+			continue
+		if ( Objectives_AnyObjectiveIsUsingZoneGroup( MapZones_GetZoneGroupForZone( zoneId ) ) )
+			continue
+		// Enough spawns?
+		if ( GetIndoorSpawnsFromGroup( group ).len() < REQUIRED_INDOOR_SPAWNS )
+			continue
+		if ( GetOutdoorSpawnsFromGroup( group ).len() < REQUIRED_OUTDOOR_SPAWNS )
+			continue
+
+		if ( !(zoneId in validZones) )
+			validZones[zoneId] <- [group]
+		else
+			validZones[zoneId].append( group )
+	}
+
+	foreach( zoneId, groupArray in validZones )
+	{
+		ResourceGroup thisGroup = groupArray.getrandom()
+
+		ObjectiveLaunchData dat
+		dat.objectiveType = MY_TYPE
+		dat.homeZones = [zoneId]
+		dat.zoneGroups = [MapZones_GetZoneGroupForZone( zoneId )]
+		dat.ambientOverrideType = eAmbientOverrideType.RESTRICTED
+		dat.defaultOrigin = thisGroup.core.spawnOrigin
+		dat.custom.res.groups.append( thisGroup )
+		results.append( dat )
+	}
+}
+
+
+struct MyVars
+{
+	NPCSquadInfo outsideSquad
+	NPCSquadInfo insideSquad
+
+	int killsGoal
+}
+table<SkitInstance, MyVars> s_siToVars
+
+void function MyRunTime( SkitInstance si )
+{
+	ObjectiveInstance oi = ObjectiveSystem_GetObjectiveForSkit( si )
+	ObjectiveLaunchData ld = oi.launchData
+
+	// Setup our resources:
+	ResourceGroup groupToUse = ld.custom.res.groups[0]
+	SkRes_MarkResourceInUse( groupToUse.core, si )
+
+	//
+	MyVars vars
+	s_siToVars[si] <- vars
+
+	// Ourdoors squad:
+	vars.outsideSquad.spawnPoints = GetOutdoorSpawnsFromGroup( groupToUse )
+	vars.outsideSquad.spawnCredits = REQUIRED_OUTDOOR_SPAWNS
+	vars.outsideSquad.npcTypes = [eNPC.SPECTRE]
+	vars.outsideSquad.npcRank = 2
+	SkTools_WatchZonePopulationsForThreshold( si, ld.homeZones, eZonePop.PLAYERS_NEARBY,
+		//OnArrive:
+		void function( SkitInstance si ) : (vars)
+		{
+			SkNPC_SquadRespawn( si, vars.outsideSquad )
+		},
+		//OnLeave:
+		void function( SkitInstance si ) : (vars)
+		{
+			SkNPC_SquadReleaseAll( vars.outsideSquad )
+		}
+	)
+
+	// Indoors squad:
+	vars.insideSquad.spawnPoints = GetIndoorSpawnsFromGroup( groupToUse )
+	vars.insideSquad.spawnCredits = REQUIRED_INDOOR_SPAWNS
+                           
+                                                   
+     
+	vars.insideSquad.npcTypes = [eNPC.SPECTRE]
+      
+	vars.insideSquad.npcRank = 2
+	SkTools_WatchZonePopulationsForThreshold( si, ld.homeZones, eZonePop.PLAYERS_INSIDE,
+		//OnArrive:
+		void function( SkitInstance si ) : (vars)
+		{
+			SkNPC_SquadRespawn( si, vars.insideSquad )
+		},
+		//OnLeave:
+		void function( SkitInstance si ) : (vars)
+		{
+			SkNPC_SquadReleaseAll( vars.insideSquad )
+		}
+	)
+
+	vars.killsGoal = (REQUIRED_INDOOR_SPAWNS + REQUIRED_OUTDOOR_SPAWNS)
+
+	oi.tasklist.SetTasklistStatus( 0, eTaskState.TO_DO )
+	oi.tasklist.SetTasklistString( 0, "#OB_TASK_CLEAR_SOLDIERS_COUNT" )
+	oi.tasklist.SetTasklistCountGoal( 0, vars.killsGoal )
+
+	int oldKills = -1
+	int lastState = oi.objectiveState
+	for( ;; )
+	{
+		WaitFrame()
+
+		if ( (oi.objectiveState == eObjectiveState.REVEALED) && (lastState != eObjectiveState.REVEALED) )
+			PlayRadioDialogueToObjective( "OBSHACK_Intro", oi )
+		lastState = oi.objectiveState
+
+		int killsNow = (vars.insideSquad.deathCount + vars.outsideSquad.deathCount)
+		if ( oldKills != killsNow )
+			oi.tasklist.SetTasklistCountNow( 0, killsNow )
+		if ( (oldKills <= (vars.killsGoal / 2)) && (killsNow > (vars.killsGoal / 2)) && (killsNow != (vars.killsGoal)) )
+			delaythread( 1.0 ) PlayRadioDialogueToObjective( "OBSHACK_Halfway", oi )
+		oldKills = killsNow
+		if ( killsNow >= vars.killsGoal )
+			break
+	}
+
+	Wait( 0.5 )
+	oi.tasklist.SetTasklistStatus( 0, eTaskState.DONE )
+	PlayRadioDialogueToObjective( "OBSHACK_Finished", oi )
+	Wait( 1.0 )
+	Objectives_MarkObjectiveAsComplete( oi )
+}
+void function OnRunTimeFinished( SkitInstance si )
+{
+	delete s_siToVars[si]
+}
+
+array<InfantrySpawn> function GetIndoorSpawnsFromGroup( ResourceGroup group )
+{
+	return ORS_Find_( group, 0, [eORType.INFANTRY_SPAWN], [RES_KEYWORD_INDOORS], [] ).infantrySpawns
+}
+
+array<InfantrySpawn> function GetOutdoorSpawnsFromGroup( ResourceGroup group )
+{
+	return ORS_Find_( group, 0, [eORType.INFANTRY_SPAWN], [], [RES_KEYWORD_INDOORS] ).infantrySpawns
+}
+#endif // SERVER

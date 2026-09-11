@@ -1,0 +1,69 @@
+global function ShPassiveSquadwipeBoost_Init
+
+#if CLIENT
+global function ServerToClient_NotifySquadwipeCooldownReduction
+#endif
+
+void function ShPassiveSquadwipeBoost_Init()
+{
+	Remote_RegisterClientFunction( "ServerToClient_NotifySquadwipeCooldownReduction", "entity" )
+
+	#if SERVER
+		AddCallback_OnPlayerKilled( SquadwipeBoost_TryApply )
+	#endif
+}
+
+#if SERVER
+void function SquadwipeBoost_TryApply( entity victim, entity attacker, var damageInfo )
+{
+	if ( !IsValid( victim ) )
+		return
+	if ( !IsValid( attacker ) )
+		return
+	if ( !attacker.IsPlayer() || !IsAlive( attacker ) || Bleedout_IsBleedingOut( attacker ) )
+		return
+
+	if( !attacker.HasPassive( ePassives.PAS_SQUADWIPE ) )
+		return
+
+	// Grant "Cherry On Top" Upgrade Core benefits on squad wipe.
+	int victimTeam = victim.GetTeam()
+	if ( GetPlayerArrayOfTeam_Alive( victimTeam ).len() <= 0 )
+	{
+		// Give % of ult charge
+		entity ultWeapon = attacker.GetOffhandWeapon( OFFHAND_ULTIMATE )
+		if ( !IsValid( ultWeapon ) )
+			return
+		int oldAmmo    = ultWeapon.GetWeaponPrimaryClipCount()
+		int maxAmmo    = ultWeapon.GetWeaponPrimaryClipCountMax()
+		int newAmmoRaw = oldAmmo + (maxAmmo * ( GetCurrentPlaylistVarInt( "squadwipe_percent_ult_gain", 10 ) )/ 100)
+		int newAmmo    = minint( newAmmoRaw, maxAmmo )
+
+		ultWeapon.SetWeaponPrimaryClipCountNoRegenReset( newAmmo )
+
+		if ( (newAmmo > oldAmmo) && (newAmmo >= maxAmmo) )
+			Ultimates_OnPlayerUltIsReady( attacker, ultWeapon )
+
+		// Reset tac cooldown
+		entity tacWeapon = attacker.GetOffhandWeapon( OFFHAND_TACTICAL )
+		if ( !IsValid( tacWeapon ) )
+			return
+		int clipCount = tacWeapon.GetWeaponPrimaryClipCount()
+		int oneCharge = tacWeapon.GetWeaponSettingInt( eWeaponVar.ammo_min_to_fire )
+		int maxClipCount = tacWeapon.GetWeaponPrimaryClipCountMax()
+
+		tacWeapon.SetWeaponPrimaryClipCount( minint( clipCount + oneCharge, maxClipCount ) )
+
+		Remote_CallFunction_NonReplay( attacker, "ServerToClient_NotifySquadwipeCooldownReduction", attacker )
+	}
+}
+#endif
+
+#if CLIENT
+void function ServerToClient_NotifySquadwipeCooldownReduction( entity player )
+{
+	entity localViewPlayer = GetLocalViewPlayer()
+	if ( IsValid( localViewPlayer ) )
+		AddPlayerHint( 4.0, 0.5, $"", "#SQUADWIPE_EVENT_ABILIT_HINT" )
+}
+#endif

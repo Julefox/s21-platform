@@ -1,0 +1,85 @@
+resource/ui/menus/serverbrowser.menu
+{
+	menu
+	{
+		ControlName				Frame
+		xpos					0
+		ypos					0
+		zpos					3
+		wide					f0
+		tall					f0
+		autoResize				0
+		pinCorner				0
+		visible					1
+		enabled					1
+		PaintBackgroundType		0
+		infocus_bgcolor_override	"0 0 0 0"
+		outoffocus_bgcolor_override	"0 0 0 0"
+
+		ScreenBlur
+		{
+			ControlName				Label
+			labelText				""
+		}
+
+		DarkenBackground
+		{
+			ControlName				ImagePanel
+			xpos					0
+			ypos					0
+			wide					%100
+			tall					%100
+			visible					1
+			scaleImage				1
+			image					"vgui/white"
+			drawColor				"0 0 0 235"
+			zpos					0
+		}
+
+		TitleLabel
+		{
+			ControlName				Label
+			labelText				"#MAINMENU_BROWSE_SERVERS"
+			font					DefaultBold_41
+			fontHeight				28
+			xpos					40
+			ypos					24
+			wide					1840
+			tall					40
+			fgcolor_override		"255 255 255 255"
+			visible					1
+			zpos					10
+		}
+
+		MainMenuServerBrowserPanel
+		{
+			ControlName				CNestedPanel
+			xpos					0
+			ypos					0
+			wide					%100
+			tall					%100
+			// Start hidden; MENU_OPEN ShowPanel makes it paint + fires PANEL_SHOW.
+			visible					0
+			enabled					1
+			zpos					5
+			proportionalToParent	1
+			controlSettingsFile		"resource/ui/menus/panels/serverbrowser.res"
+		}
+
+		FooterButtons
+		{
+			ControlName				CNestedPanel
+			controlSettingsFile		"resource/ui/menus/panels/footer_buttons.res"
+			xpos					0
+			ypos					0
+			zpos					20
+			wide					f0
+			tall					48
+			visible					1
+
+			pin_to_sibling			DarkenBackground
+			pin_corner_to_sibling	BOTTOM
+			pin_to_sibling_corner	BOTTOM
+		}
+	}
+}

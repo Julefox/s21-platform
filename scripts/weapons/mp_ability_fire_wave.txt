@@ -1,0 +1,162 @@
+"WeaponData"
+{
+	"printname" "#ABL_TAC_FIRE_WAVE"
+	"shortprintname" "#ABL_TAC_FIRE_WAVE_SHORT"
+	"description" "#ABL_TAC_FIRE_WAVE_DESC"
+	"longdesc" "#ABL_TAC_FIRE_WAVE_LONGDESC"
+	"weaponType" "shoulder"
+	"fire_mode" "offhand"
+	"offhand_active_slot" "mainHand"
+	"offhand_activates_on_zoom" "0"
+	"offhand_interupts_weapon_anims" "1"
+	"hud_icon" "rui/hud/tactical_icons/tactical_silvershot"
+	"OnWeaponActivate" "OnWeaponActivate_ability_fire_wave"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_ability_fire_wave"
+	"OnWeaponPrimaryAttack" "OnWeaponPrimaryAttack_ability_fire_wave"
+	"OnWeaponAttemptOffhandSwitch" "OnWeaponAttemptOffhandSwitch_ability_fire_wave"
+	"viewmodel" "mdl/weapons/empty_handed/ptpov_wraith_phasetunnel.rmdl"
+	"playermodel" "mdl/weapons/empty_handed/w_empty_handed_human.rmdl"
+	"ammo_display" "count"
+	"ammo_clip_size" "25"
+	"ammo_default_total" "0"
+	"ammo_min_to_fire" "25"
+	"ammo_per_shot" "25"
+	"ammo_stockpile_max" "25"
+	"ammo_drains_to_empty_on_fire" "0"
+	"ammo_no_remove_from_clip" "0"
+	"regen_ammo_refill_rate" "1.000000"
+	"regen_ammo_refill_start_delay" "0.000000"
+	"critical_hit" "0"
+	"sound_throw_1p" "Revenant_Silence_Mvmt_Fire_1P"
+	"sound_deploy_1p" "Revenant_Silence_Mvmt_Draw_1P"
+	"sound_throw_3p" "Revenant_Silence_Mvmt_Fire_3p"
+	"sound_deploy_3p" "Revenant_Silence_Mvmt_Draw_3p"
+	"idle_sound_player_1p" "Revenant_Silence_DrawIdle_1p"
+	"battle_chatter_event" "bc_tactical"
+	"cooldown_type" "ammo_instant"
+	"max_cook_time" "99999.992188"
+	"grenade_fuse_time" "0"
+	"start_fuse_on_launch" "0"
+	"grenade_ignition_time" "5.000000"
+	"fire_rate" "4.000000"
+	"fire_anim_rate" "1"
+	"vortex_refire_behavior" "grenade"
+	"allow_empty_fire" "0"
+	"reload_enabled" "0"
+	"allow_empty_click" "1"
+	"empty_reload_only" "0"
+	"trigger_snipercam" "0"
+	"allow_headshots" "0"
+	"aimassist_disable_hipfire" "1"
+	"aimassist_disable_ads" "1"
+	"toss_pullout_time" "0.300000"
+	"toss_time" "0.600000"
+	"toss_overhead_time" "0.600000"
+	"damage_type" "burn"
+	"fire_rumble" "rumble_shotgun"
+	"impact_effect_table" "exp_ability_silence"
+	"projectile_trail_effect_0_1p" "P_Bdagger_trail"
+	"projectile_trail_effect_0_3p" "P_Bdagger_trail"
+	"projectile_trail_attachment" "FX_CENTER"
+	"projectile_adjust_to_gun_barrel" "1"
+	"projectile_adjust_to_hand" "0"
+	"grenade_disc_throw" "1"
+	"burn_damage" "15"
+	"burn_time" "2.000000"
+	"burn_stacks_max" "4"
+	"burn_stack_debounce" "0.700000"
+	"burn_tick_rate" "1.200000"
+	"burn_duration" "8.000000"
+	"burn_segment_radius" "75.000000"
+	"burn_segment_height" "75.000000"
+	"sound_burn_damage_tick_1p" "flesh_fire_damage_1p"
+	"weapon_type_flags" "WPT_TACTICAL"
+	"offhand_default_inventory_slot" "1"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "survival_ui_tactical_ready"
+	"update_player_last_fire_time" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"copycat_mod"
+		{
+			"weapon_type_flags" "WPT_SURVIVAL"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+	}
+
+	"RUI_CrosshairData"
+	{
+
+		"DefaultArgs"
+		{
+			"adjustedSpread" "weapon_spread"
+			"adsFrac" "player_zoomFrac"
+			"isSprinting" "player_is_sprinting"
+			"isReloading" "weapon_is_reloading"
+			"teamColor" "crosshair_team_color"
+			"isAmped" "weapon_is_amped"
+			"crosshairMovementX" "crosshair_movement_x"
+			"crosshairMovementY" "crosshair_movement_y"
+
+		}
+
+		"Crosshair_1"
+		{
+			"ui" "ui/crosshair_esmoke"
+			"base_spread" "0.000000"
+
+			"Args"
+			{
+				"isFiring" "weapon_is_firing"
+
+			}
+		}
+
+		"Crosshair_2"
+		{
+			"ui" "ui/crosshair_ordnance"
+
+			"Args"
+			{
+				"regenRate" "eWeaponVar.regen_ammo_refill_rate"
+				"ammoFrac" "progress_weapon_clip_ammo_frac"
+				"dryfireTime" "weapon_latest_dryfire_time"
+
+			}
+		}
+	}
+}

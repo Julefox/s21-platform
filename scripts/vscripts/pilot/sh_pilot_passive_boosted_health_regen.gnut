@@ -1,0 +1,32 @@
+global function ShPassiveBoostedHealthRegen_Init
+
+void function ShPassiveBoostedHealthRegen_Init()
+{
+	#if SERVER
+	AddCallback_OnPassiveChanged( ePassives.PAS_INCREASED_HEALTH_REGEN, BoostedHealthRegen_OnPassiveChanged )
+	#endif
+}
+
+#if SERVER
+float function BoostedRegen_GetUpgradedPassiveRegenRateMultiplier()
+{
+	return GetCurrentPlaylistVarFloat( "AirboneRegen_upgraded_passive_regen_rate_multiplier", 1.1 )
+}
+
+void function BoostedHealthRegen_OnPassiveChanged( entity player, int passive, bool didHave, bool nowHas )
+{
+	if ( didHave )
+	{
+		HealthRegen_End( player )
+	}
+
+	if ( nowHas )
+	{
+		int regenSource = eRegenSource.STIM_PASSIVE
+		float regenHealthPerSec = Octane_GetPassiveRegenRate() * BoostedRegen_GetUpgradedPassiveRegenRateMultiplier()
+		float regenStartDelay = Octane_GetPassiveRegenDelay()
+
+		thread HealthRegen_Thread( player, regenSource, regenHealthPerSec, 0.0, regenStartDelay, true )
+	}
+}
+#endif

@@ -1,0 +1,285 @@
+untyped
+
+// R5V Remote_CallFunction_ByRef: no-arg client functions called by integer ID.
+// untyped required for MakeFunctionRefFromString / compilestring (must be alone on line 1 for S21 DEVELOPER prelude inject).
+// Server: Remote_CallFunction_ByRef( player, "FuncName" )
+//   -> NonReplay( player, "Remote_CallFunction_ByRef_internal", id )
+// Client: index table -> functionref from compilestring.
+
+global function ByRef_RemoteFunctions_Init
+global function ByRef_RemoteFunctions_Finish
+global function FindFuncName_ByID
+global function FindFuncID_ByRef
+global function RegisterExternalRemoteFunction_ByRef
+global function RegisterExternalRemoteFunction_ByRef_Array
+global function IsExternalRemoteFunction
+global function GetRemoteFunctionModSource
+global function GetTotalRemoteFunctionCount
+
+#if SERVER
+	global function Remote_CallFunction_ByRef
+#endif
+
+#if CLIENT
+	global function Remote_CallFunction_ByRef_internal
+	global function FS_ByRef_ConsistencyCheck
+#endif
+
+struct
+{
+	table functionrefs
+	table< int, string > intToFunctionRef
+	table< string, int > functionrefsToInt
+
+	int iConsistencyCheck = 0
+
+	#if CLIENT
+		bool bConsistencyCheckComplete = false
+	#endif
+
+	array<string> externalRemoteFunctions
+	table<string, string> externalFunctionModSources
+	int coreFunctionCount = 0
+	bool allowExternalRegistration = false
+	bool inited = false
+} file
+
+// Keep order stable for ID sync client/server. Only no-arg client globals.
+int function SetupRemoteFuncAliases()
+{
+	array<string> functions =
+	[
+		// S21 public APIs (stock); R5V used Internal variants
+		"Minimap_EnableDraw",
+		"Minimap_DisableDraw",
+		"ServerCallback_DeleteSpawnedClientSideDynamicLights",
+		"ServerCallback_KillReplayHud_Activate",
+		"ServerCallback_KillReplayHud_Deactivate",
+		"TridentBoost_Visuals",
+		"ServerCallback_UpdateHeroStats",
+		"SCB_WeaponInspectHint",
+		"ServerCallback_PlayMatchEndMusic",
+		"ServerCallback_DestroyEndAnnouncement",
+		"ServerCallback_ShowDeathScreen",
+		"ServerCallback_DeathScreenSwitchTab",
+		"ServerCallback_ShowFlowstateDeathRecapNoSpectate",
+		"ServerCallback_RespawnDNAHint",
+		"ServerCallback_PlayerBootsOnGround",
+		"ServerCallback_RefreshDeathBoxHighlight",
+		"ServerCallback_RefreshLootbinHighlight",
+		"ServerCallback_ClearHints",
+		"ServerCallback_AnnounceCircleClosing",
+		"ServerCallback_PlayScreenFXWarpJump",
+		"ServerCallback_GameModeAnnouncement",
+		"SCB_AbortCurrentDialogue",
+		"ServerCallback_CTF_HideCustomUI",
+		"ServerToClient_DisplayCancelReviveHintForPlayer",
+		"ServerToClient_RemoveCancelReviveHintForPlayer",
+		"ServerCallback_FlashScreenForPlayer",
+		"ServerCallback_PlayPhaseGateSoundSuite",
+		"FS_CreateIntroScreen",
+		"FSIntro_ForceEnd",
+		"ServerCallback_CTF_CheckUpdatePlayerLegend",
+		"ForceScoreboardLoseFocus",
+		"ForceScoreboardFocus",
+		"UpdateDpadHud_Copy",
+		"ServerCallback_Scenarios_MatchEndAnnouncement",
+		"Tracker_StatRequestFailed",
+		"FS_ForceCompass",
+		"FS_DestroyCompass",
+		"ServerCallback_ShowWinningSquadSequence",
+		"ServerCallback_Ash_OnPlayerDash",
+		"ServerCallback_Ash_OnPlayerLanded",
+		"ServerCallback_TitanCockpitBoot",
+	]
+
+	int iter = 1
+	foreach ( string func in functions )
+	{
+		#if CLIENT
+			var fref = MakeFunctionRefFromString( func )
+			if ( fref != null )
+				file.functionrefs[ func ] <- fref
+			else
+				printt( "[BYREF] client unresolved '" + func + "'" )
+		#endif
+
+		file.functionrefsToInt[ func ] <- iter
+		file.intToFunctionRef[ iter ] <- func
+		iter++
+	}
+
+	file.coreFunctionCount = functions.len()
+	return functions.len()
+}
+
+int function FindFuncID_ByRef( string funcRef )
+{
+	if ( funcRef in file.functionrefsToInt )
+		return file.functionrefsToInt[ funcRef ]
+	return -1
+}
+
+string function FindFuncName_ByID( int funcID )
+{
+	if ( funcID in file.intToFunctionRef )
+		return file.intToFunctionRef[ funcID ]
+	return ""
+}
+
+#if SERVER
+void function Remote_CallFunction_ByRef( entity player, string funcName )
+{
+	int id = FindFuncID_ByRef( funcName )
+	if ( id < 0 )
+	{
+		printt( "[BYREF] unknown func '" + funcName + "'" )
+		return
+	}
+	if ( !IsValid( player ) )
+		return
+	Remote_CallFunction_NonReplay( player, "Remote_CallFunction_ByRef_internal", id )
+}
+#endif
+
+#if CLIENT
+void function Remote_CallFunction_ByRef_internal( int funcID )
+{
+	string funcName = FindFuncName_ByID( funcID )
+	if ( funcName == "" )
+	{
+		printt( "[BYREF] invalid function ID: " + string( funcID ) )
+		return
+	}
+
+	if ( funcName in file.functionrefs )
+		file.functionrefs[ funcName ]()
+	else
+		printt( "[BYREF] not resolved on client: '" + funcName + "' id=" + string( funcID ) )
+}
+#endif
+
+void function RegisterExternalRemoteFunction_ByRef( string functionName, string modSource )
+{
+	if ( !file.allowExternalRegistration )
+	{
+		printt( "[BYREF] external registration closed for '" + functionName + "'" )
+		return
+	}
+	if ( functionName == "" || modSource == "" )
+		return
+	if ( functionName in file.functionrefsToInt )
+	{
+		printt( "[BYREF] already registered: " + functionName )
+		return
+	}
+
+	file.externalRemoteFunctions.append( functionName )
+	file.externalFunctionModSources[ functionName ] <- modSource
+
+	int functionId = file.coreFunctionCount + file.externalRemoteFunctions.len()
+
+	#if CLIENT
+		var fref = MakeFunctionRefFromString( functionName )
+		if ( fref != null )
+			file.functionrefs[ functionName ] <- fref
+		else
+			printt( "[BYREF] external unresolved '" + functionName + "'" )
+	#endif
+
+	file.functionrefsToInt[ functionName ] <- functionId
+	file.intToFunctionRef[ functionId ] <- functionName
+	printt( "[BYREF] external '" + functionName + "' mod=" + modSource + " id=" + string( functionId ) )
+}
+
+void function RegisterExternalRemoteFunction_ByRef_Array( array<string> functionNames, string modSource )
+{
+	foreach ( string functionName in functionNames )
+		RegisterExternalRemoteFunction_ByRef( functionName, modSource )
+}
+
+bool function IsExternalRemoteFunction( string functionName )
+{
+	return ( functionName in file.externalFunctionModSources )
+}
+
+string function GetRemoteFunctionModSource( string functionName )
+{
+	if ( functionName in file.externalFunctionModSources )
+		return file.externalFunctionModSources[functionName]
+	return "core"
+}
+
+int function GetTotalRemoteFunctionCount()
+{
+	return file.coreFunctionCount + file.externalRemoteFunctions.len()
+}
+
+void function ByRef_RemoteFunctions_Init()
+{
+	if ( file.inited )
+		return
+	file.inited = true
+
+	int coreFunctionCount = SetupRemoteFuncAliases()
+	file.allowExternalRegistration = true
+
+	// Reserve room for external ids
+	int functionsMax = coreFunctionCount + 128
+	Remote_RegisterClientFunction( "Remote_CallFunction_ByRef_internal", "int", 0, functionsMax )
+	Remote_RegisterClientFunction( "FS_ByRef_ConsistencyCheck" )
+
+	AddCallback_OnNetworkRegistration( ByRef_ConsistencyCheck )
+	printt( "[BYREF] init coreCount=" + string( coreFunctionCount ) + " maxId=" + string( functionsMax ) )
+}
+
+void function ByRef_RemoteFunctions_Finish()
+{
+	file.allowExternalRegistration = false
+	printt( "[BYREF] finish total=" + string( GetTotalRemoteFunctionCount() ) )
+}
+
+void function ByRef_ConsistencyCheck()
+{
+	#if SERVER
+		file.iConsistencyCheck = file.intToFunctionRef.len()
+		AddClientCommandCallback( "byRefIntegrityCheck", ClientCommand_CheckByRefConsistency )
+		AddCallback_OnClientConnected(
+			void function( entity player )
+			{
+				if ( IsValid( player ) )
+					Remote_CallFunction_NonReplay( player, "FS_ByRef_ConsistencyCheck" )
+			}
+		)
+	#endif
+
+	#if CLIENT
+		file.iConsistencyCheck = file.functionrefs.len()
+	#endif
+}
+
+#if CLIENT
+void function FS_ByRef_ConsistencyCheck()
+{
+	if ( file.bConsistencyCheckComplete )
+		return
+	entity player = GetLocalClientPlayer()
+	if ( !IsValid( player ) )
+		return
+	player.ClientCommand( "byRefIntegrityCheck " + string( file.iConsistencyCheck ) )
+	file.bConsistencyCheckComplete = true
+}
+#endif
+
+#if SERVER
+void function ClientCommand_CheckByRefConsistency( entity player, array<string> args )
+{
+	if ( args.len() < 1 )
+		return
+	int clientCount = int( args[0] )
+	if ( clientCount != file.iConsistencyCheck )
+		printt( "[BYREF] integrity mismatch player=" + player + " client=" + string( clientCount ) + " server=" + string( file.iConsistencyCheck ) )
+	else
+		printt( "[BYREF] integrity ok player=" + player + " count=" + string( clientCount ) )
+}
+#endif

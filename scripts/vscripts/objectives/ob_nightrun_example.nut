@@ -1,0 +1,210 @@
+global function InitObjectiveType_NightrunExample
+
+#if SERVER
+global function RunObjectiveType_NightrunExample
+
+const string MY_TYPE = "nightrun_example"
+const string FLAG_OBJECTIVE_DISCOVERED = "ObjDiscovered"
+const string FLAG_GOT_THE_THING_DONE = "ObjGotItDone"
+#endif // SERVER
+
+void function InitObjectiveType_NightrunExample()
+{
+#if SERVER
+	ObjectiveRegistrationInfo reg
+	reg.title = "Nightrun Example"
+	reg.icon = $"rui/hud/objectives/generic_icon_a"
+	reg.func_onGatherPossibleLaunches = OnGatherPossibleLaunches
+	reg.func_runtime = MainThread
+	reg.func_onRuntimeFinished = OnRunTimeFinished
+	reg.func_onObjectiveDelete = OnObjectiveDelete
+
+	ObjectiveSystem_RegisterType( MY_TYPE, reg )
+#endif // SERVER
+}
+
+#if SERVER
+struct MyVars
+{
+	NPCSquadInfo guardSquad
+	vector goalPos
+}
+table<SkitInstance, MyVars> s_skitInstanceToVars
+table<ObjectiveInstance, MyVars> s_objInstanceToVars
+
+void function MainThread( SkitInstance si )
+{
+	ObjectiveInstance oi = ObjectiveSystem_GetObjectiveForSkit( si )
+
+	MyVars vars
+	s_skitInstanceToVars[si] <- vars
+	s_objInstanceToVars[oi] <- vars
+
+	//
+	oi.tasklist.SetTasklistStatus( 0, eTaskState.TO_DO )
+	oi.tasklist.SetTasklistString( 0, "Trip the Light Fantastic" )
+
+	//
+	SkFlagInit( si, FLAG_OBJECTIVE_DISCOVERED )
+	SkFlagInit( si, FLAG_GOT_THE_THING_DONE )
+
+	///////////////////////
+
+	SetupGuards( si, oi, vars )
+
+	vars.goalPos = oi.launchData.defaultOrigin
+
+	thread GoalWatching_Thread( si, oi, vars )
+	while( true )
+	{
+		WaitFrame()
+
+		// Objective Discovered First Time:
+		if ( (oi.objectiveState == eObjectiveState.REVEALED) && !SkFlag( si, FLAG_OBJECTIVE_DISCOVERED ) )
+			SkFlagSet( si, FLAG_OBJECTIVE_DISCOVERED )
+
+		// Wait for success:
+		if ( SkFlag( si, FLAG_GOT_THE_THING_DONE ) )
+			break
+	}
+
+	Wait( 0.5 )
+	oi.tasklist.SetTasklistStatus( 0, eTaskState.DONE )
+	Wait( 1.0 )
+	Objectives_MarkObjectiveAsComplete( oi )
+}
+
+array<ProwlerSpawn> function GetOutdoorProwlerSpawnsFromGroup( ResourceGroup group )
+{
+	return ORS_Find_( group, 0, [eORType.PROWLER_SPAWN], [], [RES_KEYWORD_INDOORS] ).prowlerSpawns
+}
+
+void function SetupGuards( SkitInstance si, ObjectiveInstance oi, MyVars vars )
+{
+	ObjectiveLaunchData ld = oi.launchData
+	foreach( homeZone in ld.homeZones )
+		vars.guardSquad.prowlerSpawnPoints.extend( GetOutdoorProwlerSpawnsFromGroup( ORS_GetGroupForMapZone( homeZone ) ) )
+
+	vars.guardSquad.spawnCredits = 5
+	vars.guardSquad.npcTypes = [eNPC.PROWLER]
+	SkTools_WatchZonePopulationsForThreshold( si, ld.homeZones, eZonePop.PLAYERS_NEARBY,
+		//OnArrive:
+		void function( SkitInstance si ) : (vars)
+		{
+			SkNPC_SquadRespawn( si, vars.guardSquad )
+		},
+		//OnLeave:
+		void function( SkitInstance si ) : (vars)
+		{
+			SkNPC_SquadReleaseAll( vars.guardSquad )
+		}
+	)
+}
+
+void function GoalWatching_Thread( SkitInstance si, ObjectiveInstance oi, MyVars vars )
+{
+	wait( 5.0 )
+
+	entity wp = CreateWaypoint_ObjectivePos( vars.goalPos, "Stand Here" )
+	Waypoint_Objectives_BindToObjective( wp, oi )
+	Waypoint_Objectives_SetHideWhenOutside( wp )
+
+	for( ;; )
+	{
+		WaitFrame()
+
+		bool didIt = false
+		foreach( player in GetPlayerArray_Alive() )
+		{
+			if ( Distance( player.GetOrigin(), vars.goalPos ) < 3000.0 )
+				didIt = true
+		}
+		if ( didIt )
+			break
+	}
+
+	FreelanceMode_SignalMainTimerStop()
+
+	for( ;; )
+	{
+		WaitFrame()
+
+		bool didIt = false
+		foreach( player in GetPlayerArray_Alive() )
+		{
+			if ( Distance( player.GetOrigin(), vars.goalPos ) < 300.0 )
+				didIt = true
+		}
+		if ( didIt )
+			break
+	}
+
+	FreelanceMode_SignalEndingStart()
+	Wait( 10.0 )
+	FreelanceMode_SignalEndingDropshipArrival()
+
+	SkFlagSet( si, FLAG_GOT_THE_THING_DONE )
+}
+
+void function OnRunTimeFinished( SkitInstance si )
+{
+	delete s_skitInstanceToVars[si]
+}
+
+void function OnObjectiveDelete( ObjectiveInstance oi )
+{
+	MyVars vars = s_objInstanceToVars[oi]
+
+	delete s_objInstanceToVars[oi]
+}
+
+ObjectiveInstance function RunObjectiveType_NightrunExample( vector targetPos )
+{
+	ObjectiveLaunchData ld
+
+	int zoneId = MapZones_GetZoneForOrigin( targetPos )
+	Assert( zoneId >= 0 )
+
+	ld.objectiveType = MY_TYPE
+	ld.homeZones = [zoneId]
+	ld.zoneGroups = [MapZones_GetZoneGroupForZone( zoneId )]
+	ld.ambientOverrideType = eAmbientOverrideType.BLOCKED
+	ld.defaultOrigin = targetPos	// MapZones_GetAveragePositionOfZones( ld.homeZones )
+	//ld.custom.intVars["locId"] <- locId
+
+	ObjectiveInstance oi = ObjectiveSystem_LaunchInstance( ld )
+	return oi
+}
+
+void function OnGatherPossibleLaunches( array<ObjectiveLaunchData> results )
+{
+	/*
+	for ( int locId = 0; locId < eMyLocations._count; ++locId )
+	{
+		MyLaunchInfo launchInfo = GetLaunchInfoForSpot( locId )
+		bool spotInUse = false
+		foreach ( string zoneGroup in launchInfo.zoneGroups )
+		{
+			if ( Objectives_AnyObjectiveIsUsingZoneGroup( zoneGroup ) )
+				spotInUse = true
+		}
+		if ( spotInUse )
+			continue
+
+		if ( Objectives_AnyObjectiveIsUsingZoneIds( launchInfo.homeZones ) )
+			continue
+
+		ObjectiveLaunchData launchData
+		launchData.objectiveType = MY_TYPE
+		launchData.homeZones = launchInfo.homeZones
+		launchData.zoneGroups = launchInfo.zoneGroups
+		launchData.ambientOverrideType = eAmbientOverrideType.BLOCKED
+		launchData.defaultOrigin = MapZones_GetAveragePositionOfZones( launchData.homeZones )
+		launchData.custom.intVars["locId"] <- locId
+		results.append( launchData )
+	}
+	*/
+}
+
+
+#endif // SERVER

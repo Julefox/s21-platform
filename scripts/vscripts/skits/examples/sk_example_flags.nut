@@ -1,0 +1,69 @@
+/*
+	Skit Example - "Flags"
+
+	To Show:
+		How to use skit-local flags, akin to the global flags we've used in R1/R2/R5.
+		See "_skit_flags.gnut", derived from the global "sh_flag.gnut".
+
+	Does:
+		Spins off two threads that wait for the main thread to set their flags so they can end.
+*/
+
+
+#if SERVER
+global function LaunchTestSkit_Flags
+
+
+SkitInstance ornull function InitThisSkit()
+{
+	SkitInstance si = Skit_AllocInstance( Runtime, null )
+	return si
+}
+
+void function Runtime( SkitInstance si )
+{
+	SkFlagInit( si, "apples" )
+	SkFlagInit( si, "oranges" )
+
+	thread AppleThread( si )
+	thread OrangeThread( si )
+
+	wait 2.5
+	SkFlagSet( si, "apples" )
+	wait 2.5
+	SkFlagSet( si, "oranges" )
+	wait 2.5
+	printf( "Skit is done: %s", FILE_NAME() )
+}
+
+void function AppleThread( SkitInstance si )
+{
+	SkThread_MarkAsNewSubthread( si )
+	SkFlagWait( si, "apples" )
+	BroadcastTestMsg( "Apples!", FILE_NAME() )
+}
+
+void function OrangeThread( SkitInstance si )
+{
+	SkThread_MarkAsNewSubthread( si )
+	SkFlagWait( si, "oranges" )
+	BroadcastTestMsg( "Oranges!", FILE_NAME() )
+}
+
+//////////////////////
+
+
+void function LaunchTestSkit_Flags()
+{
+	SkitInstance ornull siRaw = InitThisSkit()
+	if ( siRaw == null )
+	{
+		Warning( "%s() - Couldn't init skit.", FUNC_NAME() )
+		return
+	}
+
+	expect SkitInstance( siRaw )
+	Skit_LaunchInstance( siRaw )
+}
+
+#endif // #if SERVER

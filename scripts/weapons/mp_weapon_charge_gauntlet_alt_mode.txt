@@ -1,0 +1,1039 @@
+"WeaponData"
+{
+	"printname" "#WPN_CHARGE_RIFLE_RAILGUN"
+	"shortprintname" "#WPN_CHARGE_RIFLE_RAILGUN_SHORT"
+	"description" "#WPN_CHARGE_RIFLE_RAILGUN_DESC"
+	"longdesc" "#WPN_CHARGE_RIFLE_RAILGUN_LONGDESC"
+	"fire_mode" "offhandHybrid"
+	"offhand_cancelled_by_melee" "1"
+	"is_semi_auto" "1"
+	"offhand_restore_after_melee" "1"
+	"offhand_active_slot" "mainHand"
+	"offhand_activates_on_zoom" "0"
+	"offhand_interupts_weapon_anims" "1"
+	"offhand_toss_activates_on_attack" "1"
+	"offhand_hybrid_switch_on_attack" "0"
+	"offhand_hybrid_block_switch_if_empty" "0"
+	"offhand_uses_hud_ammo_status" "1"
+	"offhand_hybrid_reset_shot_count_on_attack" "0"
+	"offhand_raise_is_interrupt_resumable" "1"
+	"offhand_allows_inpect" "1"
+	"offhand_wants_first_deploy" "0"
+	"offhand_allow_player_interact" "1"
+	"menu_icon" "rui/menu/battlepass/weapon_icons/icon_BPS1_weapon_bow"
+	"hud_icon" "rui/menu/battlepass/weapon_icons/icon_BPS1_weapon_bow"
+	"OnWeaponActivate" "OnWeaponActivate_weapon_charge_gauntlet_alt_mode"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_weapon_charge_gauntlet_alt_mode"
+	"OnWeaponPrimaryAttack" "OnWeaponPrimaryAttack_weapon_charge_gauntlet_alt_mode"
+	"OnWeaponChargeBegin" "OnWeaponChargeBegin_weapon_charge_gauntlet_alt_mode"
+	"stat_damage" "88"
+	"stat_range" "96"
+	"stat_accuracy" "93"
+	"stat_rof" "15"
+	"vortex_absorb_effect" "P_impact_lstar_default"
+	"vortex_absorb_effect_third_person" "P_impact_lstar_default"
+	"vortex_impact_sound_1p" "vortex_shield_deflect_amped"
+	"vortex_impact_sound_3p" "vortex_shield_deflect_amped"
+	"vortex_refire_behavior" "absorb"
+	"grenade_arc_indicator_show_from_hip" "0"
+	"grenade_arc_indicator_show_on_raise_if_ready" "0"
+	"grenade_arc_indicator_show_in_sprint_if_ready" "0"
+	"grenade_arc_indicator_bounce_count" "0"
+	"grenade_arc_indicator_effect" "P_sprw_tactical_arc_red"
+	"grenade_arc_indicator_effect_first" "P_sprw_tactical_arc_red"
+	"grenade_arc_impact_indicator_effect" "P_arc_sprw_ult_end"
+	"grenade_bounce_vel_frac_shallow" "0.000000"
+	"grenade_bounce_vel_frac_sharp" "0.100000"
+	"grenade_bounce_vel_frac_along_normal" "0.010000"
+	"grenade_bounce_randomness" "0.050000"
+	"grenade_bounce_extra_vertical_randomness" "0.000000"
+	"grenade_roll_vel_frac_per_second" "0.100000"
+	"viewmodel" "mdl/Weapons/sparrow_ult/ptpov_sparrow_ult.rmdl"
+	"playermodel" "mdl/weapons/compound_bow/w_compound_bow.rmdl"
+	"projectilemodel" "mdl/props/arrow/sparrow_ult_arrow.rmdl"
+	"projectile_trail_effect_0_1p" "P_plasma_proj_LG_DLight"
+	"projectile_trail_effect_0_3p" "P_plasma_proj_LG_DLight"
+	"impact_effect_table" "lstar"
+	"projectile_adjust_to_gun_barrel" "1"
+	"damage_type" "burn"
+	"impulse_force" "5000"
+	"critical_hit" "1"
+	"sound_dryfire" "Bow_Empty_shot"
+	"sound_zoom_in" "Weapons_Bow_ADS_IN"
+	"sound_zoom_out" "Weapons_Bow_ADS_OUT"
+	"sound_trigger_pull" "Bow_Empty_shot"
+	"projectile_launch_speed" "6000"
+	"projectile_gravity_scale" "0.000000"
+	"projectile_drag_coefficient" "0.000010"
+	"projectile_gravity_scale_time_2" "0.500000"
+	"projectile_gravity_scale_2" "1.500000"
+	"projectile_air_friction_2" "3000"
+	"projectile_gravity_scale_time_final" "1.000000"
+	"projectile_gravity_scale_final" "2.000000"
+	"projectile_air_friction_final" "6000"
+	"ammo_clip_size" "120"
+	"ammo_default_total" "120"
+	"ammo_min_to_fire" "40"
+	"ammo_per_shot" "40"
+	"ammo_stockpile_max" "120"
+	"ammo_drains_to_empty_on_fire" "0"
+	"ammo_no_remove_from_clip" "0"
+	"ammo_no_remove_from_stockpile" "1"
+	"no_ammo_used_on_primary_attack" "0"
+	"regen_ammo_refill_rate" "1.000000"
+	"regen_ammo_refill_start_delay" "0.000000"
+	"cooldown_type" "ammo"
+	"r_trig_custom_str" "1"
+	"r_trig_custom_mode" "1"
+	"fire_rate" "1.300000"
+	"zoom_fov" "45"
+	"reload_enabled" "0"
+	"allow_empty_click" "1"
+	"empty_reload_only" "0"
+	"allow_headshots" "1"
+	"reload_time" "3.500000"
+	"reloadempty_time" "4.600000"
+	"deployfirst_time" "1.500000"
+	"deploy_time" "0.800000"
+	"holster_time" "0.300000"
+	"raise_time" "0.700000"
+	"lower_time" "0.000000"
+	"heartbeat_sensor_size" "65"
+	"charge_time" "0.350000"
+	"charge_require_input" "1"
+	"charge_allow_hold_when_full" "1"
+	"charge_remain_full_when_fired" "1"
+	"charge_attack_min_charge_required" "0.000000"
+	"charge_cooldown_time" "0.210000"
+	"charge_cooldown_delay" "0.100000"
+	"charge_levels" "6"
+	"charge_level_base" "1"
+	"charge_curve_coefficients" "1.4205 -1.1607 .7338"
+	"red_crosshair_range" "0"
+	"entity_uses_emissive_events" "1"
+	"entity_color_from_charge" "1"
+	"blast_pattern_default_scale" "2.250000"
+	"primary_attack_ignores_spread" "1"
+	"spread_stand_hip" "0"
+	"spread_stand_hip_run" "0"
+	"spread_stand_hip_sprint" "0"
+	"spread_crouch_hip" "0"
+	"spread_air_hip" "0"
+	"spread_stand_ads" "0.000000"
+	"spread_crouch_ads" "0.000000"
+	"spread_air_ads" "0"
+	"bolt_hitsize" "2"
+	"bolt_hitsize_grow1_time" "0.040000"
+	"bolt_hitsize_grow1_size" "7"
+	"bolt_hitsize_grow2_time" "0.100000"
+	"bolt_hitsize_grow2_size" "10"
+	"bolt_hitsize_growfinal_lerptime" "0.160000"
+	"bolt_hitsize_growfinal_size" "15"
+	"damage_near_value" "60"
+	"damage_far_value" "60"
+	"damage_very_far_value" "60"
+	"damage_near_value_titanarmor" "60"
+	"damage_far_value_titanarmor" "60"
+	"damage_very_far_value_titanarmor" "60"
+	"damage_near_distance" "1970"
+	"damage_far_distance" "11820"
+	"damage_very_far_distance" "11828"
+	"damage_flags" "DF_SNIPER | DF_GIB | DF_KNOCK_BACK"
+	"pass_through_depth" "0"
+	"pass_through_damage_preserved_scale" "0.000000"
+	"proficiency_poor_spreadscale" "5.000000"
+	"proficiency_average_spreadscale" "3.000000"
+	"proficiency_good_spreadscale" "3.000000"
+	"proficiency_very_good_spreadscale" "2.000000"
+	"dof_nearDepthStart" "0.000000"
+	"dof_nearDepthEnd" "0.000000"
+	"charge_sound_1p" "Weapon_ChargeRifle_WindUp_1P"
+	"charge_sound_3p" "Weapon_ChargeRifle_WindUp_3P"
+	"charge_sound_stop_when_full" "1"
+	"charge_sound_seek_to_charge_fraction" "1"
+	"charge_complete_sound_1p" "weapon_bow_pullback_lock_1p"
+	"fire_sound_1_player_1p" "Weapon_ChargeRifle_Fire_1P"
+	"fire_sound_1_player_3p" "Weapon_ChargeRifle_Fire_3P"
+	"low_ammo_sound_name_1" "Bow_lowammo_shot"
+	"sound_dryfire" "Bow_Empty_shot"
+	"sound_zoom_in" "Weapons_Bow_ADS_IN"
+	"sound_zoom_out" "Weapons_Bow_ADS_OUT"
+	"sound_trigger_pull" "Bow_Empty_shot"
+	"fx_shell_eject_view" ""
+	"fx_shell_eject_world" ""
+	"fx_shell_eject_attach" ""
+	"fx_shell_eject_attach_scoped" ""
+	"viewdrift_hipfire_stand_scale_pitch" "0.000000"
+	"viewdrift_hipfire_crouch_scale_pitch" "0.000000"
+	"viewdrift_hipfire_air_scale_pitch" "0.000000"
+	"viewdrift_hipfire_speed_pitch" "0.000000"
+	"viewdrift_hipfire_stand_scale_yaw" "0.000000"
+	"viewdrift_hipfire_crouch_scale_yaw" "0.000000"
+	"viewdrift_hipfire_air_scale_yaw" "0.000000"
+	"viewdrift_hipfire_speed_yaw" "0.000000"
+	"viewdrift_ads_delay" "1.000000"
+	"viewdrift_ads_delay_debounce_time" "0.400000"
+	"viewdrift_ads_speed_pitch" "0.300000"
+	"viewdrift_ads_speed_yaw" "0.400000"
+	"viewdrift_ads_stand_scale_pitch" "0.650000"
+	"viewdrift_ads_stand_scale_yaw" "0.450000"
+	"viewdrift_ads_crouch_scale_pitch" "0.450000"
+	"viewdrift_ads_crouch_scale_yaw" "0.350000"
+	"viewdrift_ads_air_scale_pitch" "1.200000"
+	"viewdrift_ads_air_scale_yaw" "1.400000"
+	"sway_rotate_attach" "L_BACKHAND"
+	"sway_min_x" "-0.100000"
+	"sway_min_y" "-0.200000"
+	"sway_min_z" "-0.200000"
+	"sway_max_x" "0.100000"
+	"sway_max_y" "0.200000"
+	"sway_max_z" "0.200000"
+	"sway_min_pitch" "-4"
+	"sway_max_pitch" "4"
+	"sway_min_yaw" "-2.500000"
+	"sway_max_yaw" "2.500000"
+	"sway_min_roll" "-3"
+	"sway_max_roll" "3"
+	"sway_translate_gain" "1"
+	"sway_rotate_gain" "4"
+	"sway_move_forward_translate_x" "-0.100000"
+	"sway_move_forward_translate_z" "-0.500000"
+	"sway_move_back_translate_x" "0.200000"
+	"sway_move_back_translate_z" "-0.200000"
+	"sway_move_left_translate_y" "-1"
+	"sway_move_left_translate_z" "-0.500000"
+	"sway_move_left_rotate_roll" "-4"
+	"sway_move_right_translate_y" "1"
+	"sway_move_right_translate_z" "-0.500000"
+	"sway_move_right_rotate_roll" "4"
+	"sway_move_up_translate_z" "-1"
+	"sway_move_down_translate_z" "1"
+	"sway_turn_left_rotate_yaw" "-2.500000"
+	"sway_turn_right_rotate_yaw" "2.500000"
+	"sway_turn_left_translate_y" "0.500000"
+	"sway_turn_right_translate_y" "-0.500000"
+	"sway_turn_up_translate_z" "0.200000"
+	"sway_turn_down_translate_z" "-0.200000"
+	"sway_turn_up_translate_x" "0.100000"
+	"sway_turn_down_translate_x" "-0.100000"
+	"sway_turn_left_rotate_roll" "4"
+	"sway_turn_right_rotate_roll" "-4"
+	"sway_turn_up_rotate_pitch" "3"
+	"sway_turn_down_rotate_pitch" "-3"
+	"sway_turn_up_rotate_roll" "-0.800000"
+	"sway_turn_down_rotate_roll" "0.800000"
+	"sway_rotate_attach_zoomed" "SWAY_ROTATE_ZOOMED"
+	"sway_rotate_attach_blend_time_zoomed" "0.200000"
+	"sway_rotate_gain_zoomed" "5"
+	"sway_min_yaw_zoomed" "-0.027500"
+	"sway_max_yaw_zoomed" "0.027500"
+	"sway_turn_left_rotate_yaw_zoomed" "-0.085000"
+	"sway_turn_right_rotate_yaw_zoomed" "0.085000"
+	"sway_min_roll_zoomed" "-1"
+	"sway_max_roll_zoomed" "1"
+	"sway_turn_left_rotate_roll_zoomed" "-1"
+	"sway_turn_right_rotate_roll_zoomed" "1"
+	"sway_move_right_rotate_roll_zoomed" "0.200000"
+	"sway_move_left_rotate_roll_zoomed" "-0.200000"
+	"sway_min_pitch_zoomed" "-0.006500"
+	"sway_max_pitch_zoomed" "0.008000"
+	"sway_turn_up_rotate_pitch_zoomed" "0.070000"
+	"sway_turn_down_rotate_pitch_zoomed" "-0.070000"
+	"bob_cycle_time" "0.400000"
+	"bob_vert_dist" "0.100000"
+	"bob_horz_dist" "0.050000"
+	"bob_max_speed" "75"
+	"bob_pitch" "0.500000"
+	"bob_yaw" "-0.300000"
+	"bob_roll" "1"
+	"bob_cycle_time_zoomed" "0.400000"
+	"bob_vert_dist_zoomed" "0.027500"
+	"bob_horz_dist_zoomed" "0.065000"
+	"bob_max_speed_zoomed" "155"
+	"bob_yaw_zoomed" "-0.010000"
+	"bob_roll_zoomed" "0.250000"
+	"fire_rumble" "rumble_antititan"
+	"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_ACGS"
+	"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_ACGS"
+	"viewmodel_offset_ads_by_centerpoint" "1"
+	"active_crosshair_count" "1"
+	"rui_crosshair_index" "0"
+	"ui1_enable" "1"
+	"ui1_draw_cloaked" "0"
+	"active_crosshair_count" "1"
+	"rui_crosshair_index" "0"
+	"weapon_type_flags" "WPT_ULTIMATE"
+	"offhand_default_inventory_slot" "4"
+	"OnWeaponRegenBegin" "Ultimate_OnWeaponRegenBegin"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_weapon_ready" "Survival_UI_Ultimate_Ready"
+	"drops_on_death" "0"
+	"offhand_match_player_skin" "1"
+	"bodygroup6_name" "sight_hcog_og"
+	"bodygroup6_set" "0"
+	"ui6_enable" "0"
+	"ui6_draw_cloaked" "1"
+	"bodygroup7_name" "sight_hcog"
+	"bodygroup7_set" "0"
+	"ui7_enable" "0"
+	"ui7_draw_cloaked" "1"
+	"bodygroup8_name" "sight_holo"
+	"bodygroup8_set" "0"
+	"ui8_enable" "0"
+	"ui8_draw_cloaked" "1"
+	"bodygroup9_name" "sight_holo_mag"
+	"bodygroup9_set" "0"
+	"ui9_enable" "0"
+	"ui9_draw_cloaked" "1"
+	"bodygroup16_name" "sight_acgs"
+	"bodygroup16_set" "0"
+	"ui16_enable" "0"
+	"ui16_draw_cloaked" "1"
+	"bodygroup17_name" "sight_aog"
+	"bodygroup17_set" "0"
+	"ui17_enable" "0"
+	"ui17_draw_cloaked" "1"
+	"bodygroup21_name" "scope_dcom"
+	"bodygroup21_set" "0"
+	"ui30_enable" "0"
+	"ui30_draw_cloaked" "1"
+	"bodygroup22_name" "scope_talon"
+	"bodygroup22_set" "0"
+	"ui31_enable" "0"
+	"ui31_draw_cloaked" "1"
+	"bodygroup23_name" "scope_zoom"
+	"bodygroup23_set" "0"
+	"ui32_enable" "0"
+	"ui32_draw_cloaked" "1"
+
+	"Mods"
+	{
+
+		"upgrade_core_ult_cooldown_reduction"
+		{
+			"ammo_clip_size" "150"
+			"ammo_min_to_fire" "150"
+			"ammo_per_shot" "150"
+
+		}
+
+		"instant_holster"
+		{
+			"holster_time" "0.000000"
+
+		}
+
+		"ultimates_charge_over_time_disabled"
+		{
+			"regen_ammo_refill_rate" "0"
+
+		}
+
+		"arenas_ammo_regen_off"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_armor_cooldown_v2_mod"
+		{
+			"regen_ammo_refill_rate" "*1.33"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+
+		"matchmod_bonus_speed"
+		{
+			"move_speed_modifier" "*2.0"
+			"reload_time" "*0.50"
+			"reload_time_late1" "*0.50"
+			"reload_time_late2" "*0.50"
+			"reload_time_late3" "*0.50"
+			"reload_time_late4" "*0.50"
+			"reload_time_late5" "*0.50"
+			"reloadempty_time" "*0.50"
+			"reloadempty_time_late1" "*0.50"
+			"reloadempty_time_late2" "*0.50"
+			"reloadempty_time_late3" "*0.50"
+			"reloadempty_time_late4" "*0.50"
+			"reloadempty_time_late5" "*0.50"
+			"charge_cooldown_time" "*0.50"
+			"charge_overheat_cooldown_time" "*0.50"
+			"charge_overheat_cooldown_time_late1" "*0.50"
+			"charge_overheat_cooldown_time_late2" "*0.50"
+			"charge_overheat_cooldown_time_late3" "*0.50"
+
+		}
+
+		"matchmod_quick_charge"
+		{
+			"regen_ammo_refill_rate" "*2"
+
+		}
+
+		"amped_damage"
+		{
+			"sustained_laser_damage_scale" "*0.83333"
+			"damage_near_value" "*1.2"
+			"damage_far_value" "*1.2"
+			"damage_very_far_value" "*1.2"
+			"damage_near_value_titanarmor" "*1.2"
+			"damage_far_value_titanarmor" "*1.2"
+			"damage_very_far_value_titanarmor" "*1.2"
+			"projectile_trail_effect_0_1p" "P_tracer_proj_smg_shield_breaker"
+			"projectile_trail_effect_0_3p" "P_tracer_proj_smg_shield_breaker"
+			"impact_effect_table" "hammer_point_bullet"
+
+		}
+
+		"ferro_damage"
+		{
+			"sustained_laser_damage_scale" "*2"
+			"damage_near_value" "*0.5"
+			"damage_far_value" "*0.5"
+			"damage_very_far_value" "*0.5"
+			"damage_near_value_titanarmor" "*0.5"
+			"damage_far_value_titanarmor" "*0.5"
+			"damage_very_far_value_titanarmor" "*0.5"
+			"projectile_trail_effect_0_1p" "P_tracer_proj_smg_shield_breaker"
+			"projectile_trail_effect_0_3p" "P_tracer_proj_smg_shield_breaker"
+			"impact_effect_table" "hammer_point_bullet"
+
+		}
+
+		"auto_loader"
+		{
+			"reload_time" "*0.60"
+			"reload_time_late1" "*0.60"
+			"reload_time_late2" "*0.60"
+			"reload_time_late3" "*0.60"
+			"reload_time_late4" "*0.60"
+			"reload_time_late5" "*0.60"
+			"reloadempty_time" "*0.60"
+			"reloadempty_time_late1" "*0.60"
+			"reloadempty_time_late2" "*0.60"
+			"reloadempty_time_late3" "*0.60"
+			"reloadempty_time_late4" "*0.60"
+			"reloadempty_time_late5" "*0.60"
+			"charge_cooldown_time" "*0.60"
+			"charge_overheat_cooldown_time" "*0.60"
+			"charge_overheat_cooldown_time_late1" "*0.60"
+			"charge_overheat_cooldown_time_late2" "*0.60"
+			"charge_overheat_cooldown_time_late3" "*0.60"
+
+		}
+
+		"innate_threat_vision"
+		{
+			"threat_scope_enabled" "1"
+
+		}
+
+		"hopup_ultimate_accelerator"
+		{
+
+		}
+
+		"dormant_hopup_ultimate_accelerator"
+		{
+
+		}
+
+		"endorsement_fast_reload"
+		{
+			"reload_time" "*0.60"
+			"reload_time_late1" "*0.60"
+			"reload_time_late2" "*0.60"
+			"reload_time_late3" "*0.60"
+			"reload_time_late4" "*0.60"
+			"reload_time_late5" "*0.60"
+			"reloadempty_time" "*0.60"
+			"reloadempty_time_late1" "*0.60"
+			"reloadempty_time_late2" "*0.60"
+			"reloadempty_time_late3" "*0.60"
+			"reloadempty_time_late4" "*0.60"
+			"reloadempty_time_late5" "*0.60"
+			"charge_cooldown_time" "*0.60"
+			"charge_overheat_cooldown_time" "*0.60"
+			"charge_overheat_cooldown_time_late1" "*0.60"
+			"charge_overheat_cooldown_time_late2" "*0.60"
+			"charge_overheat_cooldown_time_late3" "*0.60"
+
+		}
+
+		"endorsement_fast_reload_fast_heals"
+		{
+			"reload_time" "*0.60"
+			"reload_time_late1" "*0.60"
+			"reload_time_late2" "*0.60"
+			"reload_time_late3" "*0.60"
+			"reload_time_late4" "*0.60"
+			"reload_time_late5" "*0.60"
+			"reloadempty_time" "*0.60"
+			"reloadempty_time_late1" "*0.60"
+			"reloadempty_time_late2" "*0.60"
+			"reloadempty_time_late3" "*0.60"
+			"reloadempty_time_late4" "*0.60"
+			"reloadempty_time_late5" "*0.60"
+			"charge_cooldown_time" "*0.60"
+			"charge_overheat_cooldown_time" "*0.60"
+			"charge_overheat_cooldown_time_late1" "*0.60"
+			"charge_overheat_cooldown_time_late2" "*0.60"
+			"charge_overheat_cooldown_time_late3" "*0.60"
+
+		}
+
+		"optic_cq_hcog_classic"
+		{
+			"zoom_time_in" "0.370000"
+			"zoom_time_out" "0.330000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0.100000"
+			"ads_fov_zoomfrac_end" "0.800000"
+			"viewmodel_offset_zoom_frac_start" "0.100000"
+			"viewmodel_offset_zoom_frac_end" "0.800000"
+			"threat_scope_fadedist_start" "1968"
+			"threat_scope_fadedist_end" "2952"
+			"zoom_fov" "60"
+			"bodygroup1_set" "0"
+			"bodygroup6_set" "1"
+			"ui1_enable" "0"
+			"ui6_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_HCOG_OG"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_HCOG_OG"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"viewmodel_offset_ads" "0 13 -0.15"
+			"dof_zoom_nearDepthStart" "1.000000"
+			"dof_zoom_nearDepthEnd" "8.500000"
+			"zoomed_convar_sensitivity_index" "0"
+
+		}
+
+		"optic_cq_hcog_bruiser"
+		{
+			"zoom_time_in" "0.370000"
+			"zoom_time_out" "0.330000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0.200000"
+			"ads_fov_zoomfrac_end" "0.800000"
+			"viewmodel_offset_zoom_frac_start" "0.200000"
+			"viewmodel_offset_zoom_frac_end" "0.800000"
+			"threat_scope_fadedist_start" "3937"
+			"threat_scope_fadedist_end" "4921"
+			"zoom_fov" "38.590698"
+			"bodygroup1_set" "0"
+			"bodygroup7_set" "1"
+			"ui1_enable" "0"
+			"ui7_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_HCOG"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_HCOG"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"viewmodel_offset_ads" "0 15.5 0"
+			"dof_zoom_nearDepthStart" "1.000000"
+			"dof_zoom_nearDepthEnd" "10.800000"
+			"zoomed_convar_sensitivity_index" "1"
+
+		}
+
+		"optic_cq_holosight"
+		{
+			"zoom_time_in" "0.370000"
+			"zoom_time_out" "0.330000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0.200000"
+			"ads_fov_zoomfrac_end" "0.900000"
+			"viewmodel_offset_zoom_frac_start" "0.200000"
+			"viewmodel_offset_zoom_frac_end" "0.900000"
+			"threat_scope_fadedist_start" "1968"
+			"threat_scope_fadedist_end" "2952"
+			"zoom_fov" "60"
+			"bodygroup1_set" "0"
+			"bodygroup8_set" "1"
+			"ui1_enable" "0"
+			"ui8_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_HOLO"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_HOLO"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"zoom_fov_viewmodel" "20.000000"
+			"viewmodel_offset_ads" "0 27.5 0"
+			"dof_zoom_nearDepthStart" "1.000000"
+			"dof_zoom_nearDepthEnd" "23.000000"
+			"zoomed_convar_sensitivity_index" "0"
+
+		}
+
+		"optic_cq_holosight_variable"
+		{
+			"zoom_time_in" "0.370000"
+			"zoom_time_out" "0.330000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0.200000"
+			"ads_fov_zoomfrac_end" "0.800000"
+			"viewmodel_offset_zoom_frac_start" "0.200000"
+			"viewmodel_offset_zoom_frac_end" "0.800000"
+			"threat_scope_fadedist_start" "3937"
+			"threat_scope_fadedist_end" "4921"
+			"zoom_fov" "60"
+			"zoom_toggle_fov" "38.590698"
+			"zoom_toggle_lerp_time" "0.100000"
+			"zoom_fov_viewmodel" "35"
+			"bodygroup1_set" "0"
+			"bodygroup9_set" "1"
+			"ui1_enable" "0"
+			"ui9_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_HOLOMAG"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_HOLOMAG"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"viewmodel_offset_ads" "0 14.5 0"
+			"dof_zoom_nearDepthStart" "1.000000"
+			"dof_zoom_nearDepthEnd" "7.000000"
+			"zoomed_convar_sensitivity_index" "0"
+			"zoomed_convar_toggle_sensitivity_index" "1"
+
+		}
+
+		"optic_ranged_hcog"
+		{
+			"zoom_time_in" "0.430000"
+			"zoom_time_out" "0.370000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0.250000"
+			"ads_fov_zoomfrac_end" "0.800000"
+			"viewmodel_offset_zoom_frac_start" "0.250000"
+			"viewmodel_offset_zoom_frac_end" "0.800000"
+			"threat_scope_fadedist_start" "4921"
+			"threat_scope_fadedist_end" "9842.500000"
+			"zoom_fov" "26.275600"
+			"zoom_angle_shift_pitch" "0.150000"
+			"zoom_angle_shift_yaw" "0.300000"
+			"zoom_fov_viewmodel" "14"
+			"bodygroup1_set" "0"
+			"bodygroup16_set" "1"
+			"ui1_enable" "0"
+			"ui16_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_ACGS"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_ACGS"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"viewmodel_offset_ads" "0 22 0"
+			"dof_zoom_nearDepthStart" "1.250000"
+			"dof_zoom_nearDepthEnd" "18.000000"
+			"zoomed_convar_sensitivity_index" "2"
+
+		}
+
+		"optic_ranged_aog_variable"
+		{
+			"zoom_time_in" "0.430000"
+			"zoom_time_out" "0.370000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0.200000"
+			"ads_fov_zoomfrac_end" "0.800000"
+			"viewmodel_offset_zoom_frac_start" "0.200000"
+			"viewmodel_offset_zoom_frac_end" "0.800000"
+			"threat_scope_fadedist_start" "4921"
+			"threat_scope_fadedist_end" "9842.500000"
+			"zoom_fov" "38.590698"
+			"zoom_toggle_fov" "19.858299"
+			"zoom_toggle_lerp_time" "0.150000"
+			"zoom_angle_shift_pitch" "0.150000"
+			"zoom_angle_shift_yaw" "0.300000"
+			"bodygroup1_set" "0"
+			"bodygroup17_set" "1"
+			"ui1_enable" "0"
+			"ui17_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_AOG"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_AOG"
+			"zoom_fov_viewmodel" "13.500000"
+			"viewmodel_offset_ads" "0 22.0 0"
+			"dof_zoom_nearDepthStart" "1.000000"
+			"dof_zoom_nearDepthEnd" "16.200001"
+			"zoomed_convar_sensitivity_index" "1"
+			"zoomed_convar_toggle_sensitivity_index" "3"
+
+		}
+
+		"optic_sniper"
+		{
+			"zoom_time_in" "0.480000"
+			"zoom_time_out" "0.420000"
+			"anim_alt_idleAttack" "2"
+			"ads_fov_zoomfrac_start" "0.600000"
+			"ads_fov_zoomfrac_end" "0.850000"
+			"viewmodel_offset_zoom_frac_start" "0.100000"
+			"viewmodel_offset_zoom_frac_end" "0.850000"
+			"threat_scope_fadedist_start" "5905.509766"
+			"threat_scope_fadedist_end" "11811.000000"
+			"zoom_fov" "13.312800"
+			"bodygroup1_set" "0"
+			"bodygroup21_set" "1"
+			"ui1_enable" "0"
+			"ui30_enable" "1"
+			"mod_activity_modifier" "optic"
+			"bodygroup_ads_scope_set" "2"
+			"viewmodel_offset_ads" "0 0 0.005"
+			"dof_zoom_nearDepthStart" "0"
+			"dof_zoom_nearDepthEnd" "0"
+			"zoom_angle_shift_pitch" "0.000000"
+			"zoom_angle_shift_yaw" "0.000000"
+			"aimassist_adspull_weaponclass" "none"
+			"ads_force_firstperson" "1"
+			"zoomed_convar_sensitivity_index" "4"
+
+		}
+
+		"optic_sniper_variable"
+		{
+			"zoom_time_in" "0.510000"
+			"zoom_time_out" "0.450000"
+			"anim_alt_idleAttack" "2"
+			"ads_fov_zoomfrac_start" "0.600000"
+			"ads_fov_zoomfrac_end" "0.850000"
+			"viewmodel_offset_zoom_frac_start" "0.100000"
+			"viewmodel_offset_zoom_frac_end" "0.850000"
+			"threat_scope_fadedist_start" "5905.509766"
+			"threat_scope_fadedist_end" "11811.000000"
+			"zoom_fov" "19.858299"
+			"zoom_toggle_fov" "10.004200"
+			"zoom_toggle_lerp_time" "0.200000"
+			"bodygroup1_set" "0"
+			"bodygroup22_set" "1"
+			"ui1_enable" "0"
+			"ui31_enable" "1"
+			"mod_activity_modifier" "optic"
+			"bodygroup_ads_scope_set" "3"
+			"viewmodel_offset_ads" "0 0 0.005"
+			"dof_zoom_nearDepthStart" "0"
+			"dof_zoom_nearDepthEnd" "0"
+			"zoom_angle_shift_pitch" "0.000000"
+			"zoom_angle_shift_yaw" "0.000000"
+			"aimassist_adspull_weaponclass" "none"
+			"ads_force_firstperson" "1"
+			"zoomed_convar_sensitivity_index" "3"
+			"zoomed_convar_toggle_sensitivity_index" "5"
+
+		}
+
+		"optic_sniper_threat"
+		{
+			"zoom_time_in" "0.530000"
+			"zoom_time_out" "0.470000"
+			"anim_alt_idleAttack" "2"
+			"ads_fov_zoomfrac_start" "0.600000"
+			"ads_fov_zoomfrac_end" "0.750000"
+			"viewmodel_offset_zoom_frac_start" "0.100000"
+			"viewmodel_offset_zoom_frac_end" "0.750000"
+			"zoom_fov" "19.858299"
+			"zoom_toggle_fov" "8.010710"
+			"zoom_toggle_lerp_time" "0.040000"
+			"bodygroup1_set" "0"
+			"bodygroup23_set" "1"
+			"ui1_enable" "0"
+			"ui32_enable" "1"
+			"mod_activity_modifier" "optic"
+			"bodygroup_ads_scope_set" "1"
+			"threat_scope_enabled" "1"
+			"threat_scope_fadedist_start" "5905.509766"
+			"threat_scope_fadedist_end" "11811.000000"
+			"threat_scope_bounds_tagname1" "SCR_TR_SCOPEADS"
+			"threat_scope_bounds_tagname2" "SCR_BL_SCOPEADS"
+			"viewmodel_offset_ads" "-0.004 0.1 0.0085"
+			"dof_zoom_nearDepthStart" "0"
+			"dof_zoom_nearDepthEnd" "0"
+			"zoom_angle_shift_pitch" "0.000000"
+			"zoom_angle_shift_yaw" "0.000000"
+			"aimassist_adspull_weaponclass" "none"
+			"ads_force_firstperson" "1"
+			"zoomed_convar_sensitivity_index" "3"
+			"zoomed_convar_toggle_sensitivity_index" "6"
+
+		}
+	}
+
+	"RUI_CrosshairData"
+	{
+
+		"DefaultArgs"
+		{
+			"adjustedSpread" "weapon_spread"
+			"adsFrac" "player_zoomFrac"
+			"isSprinting" "player_is_sprinting"
+			"isReloading" "weapon_is_reloading"
+			"readyFrac" "progress_ready_to_fire_frac"
+			"teamColor" "crosshair_team_color"
+			"isAmped" "weapon_is_amped"
+			"chargeFrac" "player_chargeFrac_curved"
+			"crosshairMovementX" "crosshair_movement_x"
+			"crosshairMovementY" "crosshair_movement_y"
+
+		}
+
+		"Crosshair_1"
+		{
+			"ui" "ui/crosshair_bow_temp"
+			"base_spread" "0.000000"
+
+			"Args"
+			{
+				"arrowType" "weapon_script_int_0"
+				"ammo" "weapon_ammoPool"
+				"marksmansTempoCountMax" "weapon_script_float_0"
+				"marksmansTempoCount" "weapon_script_int_1"
+				"marksmansTempoLastPerfectTime" "weapon_script_time_1"
+				"marksmansTempoGraceTime" "eWeaponVar.explosion_shake_amplitude"
+				"marksmansTempoGraceTimeInTempo" "eWeaponVar.explosion_shake_frequency"
+				"lastFireTime" "weapon_last_primary_attack_time"
+				"shatterPatternScale" "eWeaponVar.blast_pattern_default_scale"
+				"playerFov" "player_fov"
+
+			}
+		}
+	}
+
+	"UiData1"
+	{
+		"ui" "ui/compound_bow_reticle"
+		"mesh" "models/weapons/attachments/compound_bow_rui_upper"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"centerOffset" "weapon_ads_center_offset"
+			"adjustedChargeFrac" "player_chargeFrac_curved"
+			"crossDist" "distance_to_crosshair_target"
+			"arrowType" "weapon_script_int_0"
+			"ammo" "weapon_ammoPool"
+			"marksmansTempoCountMax" "weapon_script_float_0"
+			"marksmansTempoCountCur" "weapon_script_int_1"
+			"marksmansTempoLastPerfectTime" "weapon_script_time_1"
+			"marksmansTempoGraceTime" "eWeaponVar.explosion_shake_amplitude"
+			"marksmansTempoGraceTimeInTempo" "eWeaponVar.explosion_shake_frequency"
+			"lastFireTime" "weapon_last_primary_attack_time"
+
+		}
+	}
+
+	"RUI_CrosshairData"
+	{
+
+		"DefaultArgs"
+		{
+			"adjustedSpread" "weapon_spread"
+			"adsFrac" "player_zoomFrac"
+			"isSprinting" "player_is_sprinting"
+			"isReloading" "weapon_is_reloading"
+			"teamColor" "crosshair_team_color"
+			"isAmped" "weapon_is_amped"
+			"crosshairMovementX" "crosshair_movement_x"
+			"crosshairMovementY" "crosshair_movement_y"
+
+		}
+
+		"Crosshair_1"
+		{
+			"ui" "ui/crosshair_circle2"
+			"base_spread" "0.000000"
+
+			"Args"
+			{
+				"isFiring" "weapon_is_firing"
+
+			}
+		}
+	}
+
+	"UiData6"
+	{
+		"ui" "ui/hcog_classic_sights"
+		"mesh" "models/weapons/attachments/hcog_classic_sights"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData7"
+	{
+		"ui" "ui/hcog_upper"
+		"mesh" "models/weapons/attachments/hcog2_rui_upper"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData8"
+	{
+		"ui" "ui/holo_sights"
+		"mesh" "models/weapons/attachments/holo_rui_upper"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"clipCount" "weapon_ammoClipCount"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData9"
+	{
+		"ui" "ui/holo_variable_sights"
+		"mesh" "models/weapons/attachments/holo_variable_sights"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"zoomFOV" "weapon_zoom_fov"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData16"
+	{
+		"ui" "ui/hcog_ranged_sights"
+		"mesh" "models/weapons/attachments/acgs_rui_upper"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"zoomFOV" "weapon_zoom_fov"
+			"centerOffset" "weapon_ads_center_offset"
+			"varSightOffsets" "variable_sights_offsets"
+			"sniperZeroDistance" "weapon_sniper_range_dot_distance"
+			"boltZeroDistance" "eWeaponVar.bolt_zero_distance"
+
+		}
+	}
+
+	"UiData17"
+	{
+		"ui" "ui/aog_variable_sights"
+		"mesh" "models/weapons/attachments/aog_variable_sights"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"zoomFOV" "weapon_zoom_fov"
+			"centerOffset" "weapon_ads_center_offset"
+			"varSightOffsets" "variable_sights_offsets"
+			"sniperZeroDistance" "weapon_sniper_range_dot_distance"
+			"boltZeroDistance" "eWeaponVar.bolt_zero_distance"
+
+		}
+	}
+
+	"UiData30"
+	{
+		"ui" "ui/sniper_optic_sights"
+		"mesh" "models/weapons/attachments/sniper_optic_sights"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"crossDist" "distance_to_crosshair_target"
+			"zoomFOV" "weapon_zoom_fov"
+			"varSightOffsets" "variable_sights_offsets"
+			"eyeAngles" "player_eye_angles"
+			"ammo" "weapon_ammo"
+			"clipCount" "weapon_ammoClipCount"
+			"sniperZeroDistance" "weapon_sniper_range_dot_distance"
+			"boltZeroDistance" "eWeaponVar.bolt_zero_distance"
+
+		}
+	}
+
+	"UiData31"
+	{
+		"ui" "ui/sniper_optic_variable_sights"
+		"mesh" "models/weapons/attachments/sniper_optic_sights"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"crossDist" "distance_to_crosshair_target"
+			"zoomFOV" "weapon_zoom_fov"
+			"varSightOffsets" "variable_sights_offsets"
+			"eyeAngles" "player_eye_angles"
+			"ammo" "weapon_ammo"
+			"clipCount" "weapon_ammoClipCount"
+			"sniperZeroDistance" "weapon_sniper_range_dot_distance"
+			"boltZeroDistance" "eWeaponVar.bolt_zero_distance"
+
+		}
+	}
+
+	"UiData32"
+	{
+		"ui" "ui/sniper_threat_optic_sights"
+		"mesh" "models/weapons/attachments/sniper_threat_optic_sights"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"crossDist" "distance_to_crosshair_target"
+			"zoomFOV" "weapon_zoom_fov"
+			"varSightOffsets" "variable_sights_offsets"
+			"eyeAngles" "player_eye_angles"
+			"ammo" "weapon_ammo"
+			"clipCount" "weapon_ammoClipCount"
+			"sniperZeroDistance" "weapon_sniper_range_dot_distance"
+			"boltZeroDistance" "eWeaponVar.bolt_zero_distance"
+
+		}
+	}
+}

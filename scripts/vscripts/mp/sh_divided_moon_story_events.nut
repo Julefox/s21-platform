@@ -1,0 +1,168 @@
+global function DividedMoonStoryEvents_Init
+
+                 
+#if SERVER
+#if DEVELOPER
+global function CreateNodeDebris
+global function TestNodeExplosion
+#endif
+
+const asset NODE_DEBRIS = $"mdl/vistas/Node_X.rmdl"
+const asset SATELLITE_EXPLOSION = $"P_satellite_explosion"
+const asset SATELLITE_BLIP = $"P_satellite_blip"
+const asset SATELLITE_DEBRIS = $"P_satellite_debris"
+#endif
+      
+
+struct
+{
+	                 
+		#if SERVER
+			vector node_x_origin
+			vector node_x_angles
+			array< entity > sat_fx
+ 		#endif
+       
+} file
+
+
+// =================================================================================================================================
+// =================================================================================================================================
+// =================================================================================================================================
+// =================================================================================================================================
+//
+//  #### ##    ## #### ########
+//   ##  ###   ##  ##     ##
+//   ##  ####  ##  ##     ##
+//   ##  ## ## ##  ##     ##
+//   ##  ##  ####  ##     ##
+//   ##  ##   ###  ##     ##
+//  #### ##    ## ####    ##
+//
+// =================================================================================================================================
+// =================================================================================================================================
+// =================================================================================================================================
+// =================================================================================================================================
+
+
+void function DividedMoonStoryEvents_Init()
+{
+	AddCallback_EntitiesDidLoad( EntitiesDidLoad )
+
+	                 
+	#if SERVER
+		PrecacheModel( NODE_DEBRIS )
+		PrecacheEffect( SATELLITE_EXPLOSION )
+		PrecacheParticleSystem( SATELLITE_BLIP )
+		PrecacheParticleSystem( SATELLITE_DEBRIS )
+
+		AddSpawnCallback( "prop_dynamic", OnCommonStoryEventPropCreated )
+		AddCallback_SetPreGameStartTimeCallback( OnWaitingForPlayers )
+		AddCallback_GameStateEnter( eGameState.Playing, SetupNodeDebris  )
+		RegisterSignal("CleanUpExplosion")
+	#endif
+       
+}
+
+void function EntitiesDidLoad()
+{
+	                 
+		#if SERVER
+			FlagSet("stasis_array_toggle")
+		#endif
+
+		#if CLIENT
+			SetupP3Audio()
+		#endif
+       
+}
+
+
+                 
+#if CLIENT
+void function SetupP3Audio()
+{
+	int phase = GetTelTeasePhase()
+	if ( phase == eTeleportPhase.PHASE_3 )
+	{
+		array<entity> alarmEntities = GetEntArrayByScriptName( "StasisArray_AlarmSFX" )
+		foreach ( alarmEntity in alarmEntities )
+			alarmEntity.SetEnabled( true )
+
+		array<entity> statisArrayPOIArr = GetEntArrayByScriptName( "StasisArray_POI" )
+		if ( statisArrayPOIArr.len() == 1 )
+			statisArrayPOIArr[0].SetEnabled( false )
+
+		array<entity> statisLaserArr = GetEntArrayByScriptName( "StasisArray_Laser" )
+		if ( statisLaserArr.len() == 1 )
+			statisLaserArr[0].SetEnabled( false )
+	}
+}
+#endif
+#if SERVER
+void function OnWaitingForPlayers()
+{
+	int phase = GetTelTeasePhase()
+	if ( phase == eTeleportPhase.PHASE_3 )
+		thread TelExplosionThread()
+}
+
+void function TelExplosionThread()
+{
+	EmitSoundAtPosition(TEAM_ANY, <0, 20000, 18000>, "DividedMoon_Mu1_Tease_Explosion", GetPlayerArray()[0] )
+	file.sat_fx.append( StartParticleEffectInWorld_ReturnEntity( GetParticleSystemIndex( SATELLITE_BLIP ), <0, 20000, 18000>, file.node_x_angles ) )
+	wait 2.0
+	file.sat_fx.append( StartParticleEffectInWorld_ReturnEntity( GetParticleSystemIndex( SATELLITE_EXPLOSION ), <0, 20000, 18000>, <0,0,0> ) )
+	FlagClear("stasis_array_toggle")
+}
+
+void function SetupNodeDebris()
+{
+	int phase = GetTelTeasePhase()
+	if ( phase == eTeleportPhase.PHASE_3 )
+	{
+		CreateNodeDebris()
+		foreach ( effect in file.sat_fx )
+		{
+			if ( IsValid ( effect ) )
+				EffectStop( effect )
+		}
+	}
+}
+
+void function OnCommonStoryEventPropCreated( entity ent )
+{
+	switch ( ent.GetScriptName() )
+	{
+		case "node_x":
+			file.node_x_origin = ent.GetOrigin()
+			file.node_x_angles = ent.GetAngles()
+			ent.Destroy()
+			break
+		case "statis_net_screens":
+			if ( GetTelTeasePhase() != eTeleportPhase.PHASE_3 )
+				ent.Destroy()
+			break
+		default:
+			return
+			break
+	}
+}
+
+#if DEVELOPER
+void function TestNodeExplosion( entity player )
+{
+	FlagSet("stasis_array_toggle")
+	player.SetOrigin( <10270.638672, 15261.733398, 2307.609863> )
+	player.SetAngles( <-41.26, 177.89, 0.0> )
+	thread TelExplosionThread()
+}
+#endif
+
+void function CreateNodeDebris()
+{
+	CreatePropScript( NODE_DEBRIS, file.node_x_origin, file.node_x_angles )
+	StartParticleEffectInWorld( GetParticleSystemIndex( $"P_satellite_debris" ), <-20108, 25526, file.node_x_origin.z - 13000>, <0,0,0> )
+}
+#endif
+      

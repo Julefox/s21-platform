@@ -1,0 +1,88 @@
+/*
+	Skit Example - "Local Data"
+
+	To Show:
+		How to easily keep a struct of data local to a skit instance.
+		Akin to how we've used .file traditionally.
+
+	Does:
+		Starts a thread that increments a counter over time. The main skit watches for that counter to get high enough, then ends.
+*/
+
+
+#if SERVER
+global function LaunchTestSkit_LocalData
+
+struct MyVars
+{
+	int counter
+	int goal
+}
+
+table<SkitInstance, MyVars> s_siToVars
+SkitInstance ornull function InitThisSkit()
+{
+	SkitInstance si = Skit_AllocInstance( Runtime, Cleanup )
+	MyVars vars
+	s_siToVars[si] <- vars
+
+	return si
+}
+void function Cleanup( SkitInstance si )
+{
+	delete s_siToVars[si]
+}
+
+void function Runtime( SkitInstance si )
+{
+	MyVars vars = s_siToVars[si]
+	vars.goal = 5
+
+	thread BumpItForever( si )
+
+	for( ;; )
+	{
+		if ( vars.counter >= vars.goal )
+			break
+		WaitFrame()
+	}
+
+	BroadcastTestMsg( format( "Finished, final count: %d/%d", vars.counter, vars.goal ), FILE_NAME() )
+	printf( "Skit is done: %s", FILE_NAME() )
+}
+
+void function BumpItForever( SkitInstance si )
+{
+	SkThread_MarkAsNewSubthread( si )
+
+	for( ;; )
+	{
+		wait 2.5
+		DoTheThing( si )
+	}
+}
+
+void function DoTheThing( SkitInstance si )
+{
+	MyVars vars = s_siToVars[si]
+	vars.counter++
+	BroadcastTestMsg( format( "Counter is now: %d", vars.counter ), FILE_NAME() )
+}
+
+//////////////////////
+
+
+void function LaunchTestSkit_LocalData()
+{
+	SkitInstance ornull siRaw = InitThisSkit()
+	if ( siRaw == null )
+	{
+		Warning( "%s() - Couldn't init skit.", FUNC_NAME() )
+		return
+	}
+
+	expect SkitInstance( siRaw )
+	Skit_LaunchInstance( siRaw )
+}
+
+#endif // #if SERVER

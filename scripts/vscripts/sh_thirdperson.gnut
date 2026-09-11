@@ -1,0 +1,67 @@
+//
+
+#if SERVER || CLIENT
+global function Thirdperson_Init
+#endif
+
+
+
+#if SERVER || CLIENT
+void function Thirdperson_Init()
+{
+	#if CLIENT
+		Toggle3pCamera()
+		RegisterConCommandTriggeredCallback( "+scriptCommand5", Press3pCameraToggle )
+	#endif // CLIENT
+}
+#endif // SERVER || CLIENT
+
+
+#if CLIENT
+int s_cameraMode = -1
+void function SetCameraMode( int mode )
+{
+	switch ( s_cameraMode )
+	{
+		case 0:// right shoulder
+			SetConVarFloatFromPlaylist( "c_thirdpersonshoulderoffset", 17.0 )
+			break
+		case 1:// left shoulder
+			SetConVarFloat( "c_thirdpersonshoulderoffset", -17.0 )
+			break
+	}
+
+	SetConVarFloatFromPlaylist( "c_thirdpersonshoulderheight", 0.0 )
+
+	// S21 client: aimdist is FOV-bucketed; bare c_thirdpersonshoulderaimdist is invalid.
+	SetConVarFloatFromPlaylist( "c_thirdpersonshoulderaimdist_70", 100.0 )
+	SetConVarFloatFromPlaylist( "c_thirdpersonshoulderaimdist_90", 75.0 )
+	SetConVarFloatFromPlaylist( "c_thirdpersonshoulderaimdist_110", 60.0 )
+
+	SetConVarFloatFromPlaylist( "c_thirdpersonshoulderaimdistADS_70", 50.0 )
+	SetConVarFloatFromPlaylist( "c_thirdpersonshoulderaimdistADS_90", 40.0 )
+	SetConVarFloatFromPlaylist( "c_thirdpersonshoulderaimdistADS_110", 35.0 )
+}
+
+void function Toggle3pCamera()
+{
+	s_cameraMode = ((s_cameraMode + 1) %  2)
+	SetCameraMode( s_cameraMode )
+}
+
+void function Press3pCameraToggle( entity player )
+{
+	if ( !GetCurrentPlaylistVarBool( "thirdperson_mode_shoulder_toggle", false ) )
+		return
+	// Duel modes: no shoulder-toggle mid-fight (loads before FS core; string gate)
+	string pl = GetCurrentPlaylistName()
+	if ( pl == "fs_1v1" || pl == "fs_lgduels_1v1" || pl == "fs_vamp_1v1" || pl == "fs_1v1_headshots_only" || pl == "fs_1v1_coaching" )
+		return
+	if ( !IsValid( player ) || !IsAlive( player ) )
+		return
+	if ( player.GetZoomFrac() > 0.1 )
+		return
+
+	Toggle3pCamera()
+}
+#endif // #if CLIENT

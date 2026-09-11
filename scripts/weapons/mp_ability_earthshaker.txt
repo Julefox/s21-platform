@@ -1,0 +1,124 @@
+"WeaponData"
+{
+	"printname" "#WPN_EARTHSHAKER"
+	"shortprintname" "#WPN_EARTHSHAKER_SHORT"
+	"description" "#WPN_EARTHSHAKER_DESC"
+	"longdesc" "#WPN_EARTHSHAKER_LONGDESC"
+	"menu_icon" "rui/pilot_loadout/kit/temp_earthshaker_icon"
+	"hud_icon" "rui/pilot_loadout/kit/temp_earthshaker_icon"
+	"offhand_active_slot" "mainHand"
+	"offhand_default_inventory_slot" "1"
+	"offhand_keep_primary_in_hand" "0"
+	"offhand_holster_primary" "1"
+	"hide_holstered_sidearm_when_active" "1"
+	"offhand_interupts_weapon_anims" "1"
+	"OnWeaponPrimaryAttack" "OnWeaponPrimaryAttack_ability_earthshaker"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_ability_earthshaker"
+	"OnWeaponAttemptOffhandSwitch" "OnWeaponAttemptOffhandSwitch_ability_earthshaker"
+	"viewmodel" "mdl/weapons/empty_handed/ptpov_mirage_holopilot.rmdl"
+	"playermodel" "mdl/weapons/empty_handed/w_empty_handed_mirage.rmdl"
+	"projectilemodel" "mdl/dev/empty_model.rmdl"
+	"bone_merge_world_model" "1"
+	"fire_mode" "offhand"
+	"fire_rate" "1.000000"
+	"zoom_effects" "0"
+	"allow_empty_fire" "0"
+	"damage_type" "none"
+	"fire_anim_rate" "1.000000"
+	"regen_ammo_refill_rate" "1"
+	"regen_ammo_refill_start_delay" "10.000000"
+	"reload_enabled" "0"
+	"allow_empty_click" "0"
+	"empty_reload_only" "0"
+	"aimassist_disable_hipfire" "1"
+	"aimassist_disable_ads" "1"
+	"fire_sound_1_player_1p" "arcwave_fire_1p"
+	"fire_sound_1_player_3p" "arcwave_fire_3p"
+	"ammo_clip_size" "120"
+	"ammo_default_total" "0"
+	"ammo_stockpile_max" "120"
+	"ammo_display" "count"
+	"ammo_min_to_fire" "120"
+	"ammo_per_shot" "120"
+	"ammo_no_remove_from_stockpile" "0"
+	"cooldown_type" "ammo_instant"
+	"fire_rumble" "rumble_pistol_heavy"
+	"ordnance_crosshair_always_on_start_index" "0"
+	"weapon_type_flags" "WPT_ULTIMATE"
+	"OnWeaponRegenBegin" "Ultimate_OnWeaponRegenBegin"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "Survival_UI_Ultimate_Ready"
+	"drops_on_death" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"ultimates_charge_over_time_disabled"
+		{
+			"regen_ammo_refill_rate" "0"
+
+		}
+
+		"copycat_mod"
+		{
+			"weapon_type_flags" "WPT_SURVIVAL"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+	}
+
+	"RUI_CrosshairData"
+	{
+
+		"DefaultArgs"
+		{
+			"crosshairMovementX" "crosshair_movement_x"
+			"crosshairMovementY" "crosshair_movement_y"
+
+		}
+
+		"Crosshair_2"
+		{
+			"ui" "ui/crosshair_tactical"
+
+			"Args"
+			{
+				"regenRate" "eWeaponVar.regen_ammo_refill_rate"
+				"ammoFrac" "progress_weapon_clip_ammo_frac"
+				"dryfireTime" "weapon_latest_dryfire_time"
+
+			}
+		}
+	}
+}

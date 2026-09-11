@@ -1,0 +1,99 @@
+"WeaponData"
+{
+	"printname" ""
+	"shortprintname" ""
+	"description" ""
+	"longdesc" ""
+	"weapon_type_flags" "WPT_TACTICAL"
+	"weaponType" "shoulder"
+	"fire_mode" "offhand"
+	"offhand_active_slot" "altHand"
+	"offhand_activates_on_zoom" "1"
+	"offhand_deploy_requires_input" "1"
+	"althand_allow_mainhand_on_zipline" "1"
+	"menu_icon" "rui/hud/passive_icons/passive_seer"
+	"hud_icon" "rui/hud/passive_icons/passive_seer"
+	"OnWeaponPrimaryAttack" "OnWeaponPrimaryAttack_ability_heartbeat_sensor"
+	"OnWeaponAttemptOffhandSwitch" "OnWeaponAttemptOffhandSwitch_ability_heartbeat_sensor"
+	"OnWeaponActivate" "OnWeaponActivate_ability_heartbeat_sensor"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_ability_heartbeat_sensor"
+	"clear_fx_on_new_view_model" "0"
+	"viewmodel" "mdl/weapons/empty_handed/ptpov_pariah_heartbeat_sensor.rmdl"
+	"playermodel" "mdl/weapons/empty_handed/w_empty_handed_human.rmdl"
+	"ammo_stockpile_max" "4500"
+	"ammo_clip_size" "-1"
+	"ammo_default_total" "4500"
+	"cooldown_type" "vortex_drain"
+	"charge_time" "-1.000000"
+	"charge_cooldown_time" "0"
+	"charge_cooldown_delay" "0"
+	"charge_end_forces_fire" "0"
+	"fire_rate" "20.000000"
+	"holster_time" "0.900000"
+	"deploy_time" "0.500000"
+	"lower_time" "0.900000"
+	"raise_time" "0.500000"
+	"play_offhand_charging_anim" "0"
+	"offhand_blocks_sprint" "1"
+	"allow_empty_fire" "1"
+	"allow_empty_click" "1"
+	"empty_reload_only" "0"
+	"r_trig_custom_mode" "100"
+	"bob_cycle_time_zoomed" "0.400000"
+	"bob_vert_dist_zoomed" "0.027500"
+	"bob_horz_dist_zoomed" "0.065000"
+	"bob_max_speed_zoomed" "155"
+	"bob_yaw_zoomed" "-0.010000"
+	"bob_roll_zoomed" "0.250000"
+	"sway_rotate_attach_zoomed" "SWAY_ROTATE_ZOOMED"
+	"sway_rotate_attach_blend_time_zoomed" "0.200000"
+	"sway_rotate_gain_zoomed" "5"
+	"sway_min_yaw_zoomed" "-0.027500"
+	"sway_max_yaw_zoomed" "0.027500"
+	"sway_turn_left_rotate_yaw_zoomed" "-0.085000"
+	"sway_turn_right_rotate_yaw_zoomed" "0.085000"
+	"sway_min_roll_zoomed" "-1"
+	"sway_max_roll_zoomed" "1"
+	"sway_turn_left_rotate_roll_zoomed" "-1"
+	"sway_turn_right_rotate_roll_zoomed" "1"
+	"sway_move_right_rotate_roll_zoomed" "0.200000"
+	"sway_move_left_rotate_roll_zoomed" "-0.200000"
+	"sway_min_pitch_zoomed" "-0.006500"
+	"sway_max_pitch_zoomed" "0.008000"
+	"sway_turn_up_rotate_pitch_zoomed" "0.070000"
+	"sway_turn_down_rotate_pitch_zoomed" "-0.070000"
+
+	"MP_BASE"
+	{
+		"enable_highlight_networking_on_creation" "<KEEP_DEFAULT>"
+
+	}
+
+	"SP_BASE"
+	{
+		"enable_highlight_networking_on_creation" "1"
+
+	}
+
+	"Mods"
+	{
+
+		"disabled"
+		{
+			"offhand_activates_on_zoom" "0"
+
+		}
+
+		"heirloom_equipped"
+		{
+			"activitymodifier1P" "fist_blades"
+
+		}
+
+		"artifact_equipped"
+		{
+			"activitymodifier1P" "artifact_equipped"
+
+		}
+	}
+}

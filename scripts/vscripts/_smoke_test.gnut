@@ -1,0 +1,15 @@
+// Minimal smoke-test surface for bridge (full S21 harness not required).
+// SmokeTest_IsActive must exist for survival/dev call sites.
+
+global function SmokeTest_Init
+global function SmokeTest_IsActive
+
+void function SmokeTest_Init()
+{
+}
+
+bool function SmokeTest_IsActive()
+{
+	// Full category runner not ported; never treat smoke tests as active.
+	return false
+}

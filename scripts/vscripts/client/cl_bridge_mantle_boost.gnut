@@ -1,0 +1,48 @@
+//=============================================================================
+// Mantle-boost 1P cockpit FX + audio. Native fires CodeCallback_OnPlayerMantleBoosted
+// once per boost (IsFirstTimePredicted).
+//=============================================================================
+
+global function CodeCallback_OnPlayerMantleBoosted
+
+const asset MANTLE_BOOST_SCREEN_FX = $"P_van_tac_launch_screen"
+
+struct
+{
+	int screenFxId = 0
+} file
+
+void function CodeCallback_OnPlayerMantleBoosted( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+
+	// PrecacheParticleSystem returns the existing index if the FX is already resident.
+	if ( file.screenFxId == 0 )
+		file.screenFxId = PrecacheParticleSystem( MANTLE_BOOST_SCREEN_FX )
+
+	thread BridgeMantleBoost_PlayVfx_Thread( player )
+}
+
+void function BridgeMantleBoost_PlayVfx_Thread( entity player )
+{
+	player.EndSignal( "OnDestroy" )
+	player.EndSignal( "OnDeath" )
+
+	int fxHandle = StartParticleEffectOnEntity( player, file.screenFxId, FX_PATTACH_ABSORIGIN_FOLLOW, ATTACHMENTID_INVALID )
+
+	OnThreadEnd(
+		function() : ( fxHandle )
+		{
+			if ( EffectDoesExist( fxHandle ) )
+				EffectStop( fxHandle, false, true )
+		}
+	)
+
+	if ( EffectDoesExist( fxHandle ) )
+		EffectSetIsWithCockpit( fxHandle, true )
+
+	EmitSoundOnEntity( player, "MantleBoost_1p" )
+
+	wait 0.25
+}

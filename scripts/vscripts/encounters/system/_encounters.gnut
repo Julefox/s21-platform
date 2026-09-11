@@ -1,0 +1,94 @@
+global function EncounterSystem_Init
+
+#if SERVER
+global function EncounterSystem_RegisterType
+global function Encounters_LaunchEncounter
+#endif // SERVER
+
+bool isInitialized = false
+
+#if SERVER
+
+global struct EncounterRegistrationInfo
+{
+	void functionref( SkitInstance, array<entity> )	func_runtime
+}
+
+struct EncounterDef
+{
+	void functionref( SkitInstance, array<entity> )	func_runtime
+}
+table<string, EncounterDef> s_defMap
+#endif // SERVER
+
+
+void function InitEncounterTypes()
+{
+                   
+	InitEncounterType_SpectreHitSquad()
+         
+
+                  
+                                 
+                            
+}
+
+void function EncounterSystem_Init()
+{
+	if ( isInitialized )
+	{
+		#if DEVELOPER
+			printf( "Encounter System is already initialized" )
+		#endif
+		return
+	}
+	isInitialized = true
+	InitEncounterTypes()
+}
+
+
+#if SERVER
+
+void function EncounterSystem_RegisterType( string encounterType, EncounterRegistrationInfo info )
+{
+	EncounterDef newDef
+	s_defMap[encounterType] <- newDef
+
+	newDef.func_runtime = info.func_runtime
+}
+
+SkitInstance function Encounters_LaunchEncounter( string encounterType, array<entity> targetPlayers )
+{
+	EncounterDef def = s_defMap[encounterType]
+	SkitInstance si = Skit_AllocInstance(
+		void function( SkitInstance si ) : (def, targetPlayers)
+		{
+			def.func_runtime( si, targetPlayers )
+		}
+		, null
+	)
+	Skit_LaunchInstance( si )
+	return si
+}
+
+/*
+void function ObjectiveSystem_RegisterType( string objectiveType, ObjectiveRegistrationInfo info )
+{
+	ObjectiveDef newDef
+	s_defMap[objectiveType] <- newDef
+
+	Assert( info.title.len() > 0 )
+	Assert( info.func_onGatherPossibleLaunches != null )
+	Assert( info.func_runtime != null )
+
+	newDef.title = info.title
+	newDef.icon = info.icon
+	newDef.func_onGatherPossibleLaunches = info.func_onGatherPossibleLaunches
+	newDef.func_runtime = info.func_runtime
+	newDef.func_onRuntimeFinished = info.func_onRuntimeFinished
+	newDef.func_onObjectiveDelete = info.func_onObjectiveDelete
+}
+
+*/
+
+#endif // SERVER

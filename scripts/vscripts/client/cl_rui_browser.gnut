@@ -1,0 +1,303 @@
+global function CLRuiBrowser_Init
+global function CLRuiBrowser_Toggle
+global function CLRuiBrowser_Enable
+global function CLRuiBrowser_Disable
+
+// Announcement styles show one at a time by design: AnnouncementMessage_DisplayOnHud
+// destroys the previous RUI before making the next. Only the event queue stacks.
+const int RUIBROWSER_KEY_PREV  = KEY_F9
+const int RUIBROWSER_KEY_NEXT  = KEY_F10
+const int RUIBROWSER_KEY_SHOW  = KEY_F11
+const int RUIBROWSER_KEY_STACK = KEY_HOME
+const int RUIBROWSER_KEY_CLEAR = KEY_END
+
+const float RUIBROWSER_DURATION = 6.0
+
+global enum eRuiBrowserKind
+{
+	ANNOUNCEMENT,
+	QUEUE,
+	DIRECT,
+}
+
+struct BrowserEntry
+{
+	string name
+	int    kind
+	int    style     = -1
+	asset  ruiAsset  = $""
+	bool   bigText   = false
+}
+
+struct
+{
+	array<BrowserEntry> entries
+	int  index = 0
+	bool enabled = false
+	array<var> directRuis
+} file
+
+void function CLRuiBrowser_Init()
+{
+	BuildCatalog()
+}
+
+// Entered from the client console as: script_client CLRuiBrowser_Toggle()
+void function CLRuiBrowser_Toggle()
+{
+	if ( file.enabled )
+		CLRuiBrowser_Disable()
+	else
+		CLRuiBrowser_Enable()
+}
+
+void function CLRuiBrowser_Enable()
+{
+	if ( !GetConVarBool( "sv_cheats" ) )
+	{
+		printt( "[RUI-BROWSER] refused -- needs sv_cheats 1" )
+		return
+	}
+
+	if ( file.enabled )
+		return
+
+	RegisterButtonPressedCallback( RUIBROWSER_KEY_PREV,  RuiBrowser_OnPrev )
+	RegisterButtonPressedCallback( RUIBROWSER_KEY_NEXT,  RuiBrowser_OnNext )
+	RegisterButtonPressedCallback( RUIBROWSER_KEY_SHOW,  RuiBrowser_OnShow )
+	RegisterButtonPressedCallback( RUIBROWSER_KEY_STACK, RuiBrowser_OnStack )
+	RegisterButtonPressedCallback( RUIBROWSER_KEY_CLEAR, RuiBrowser_OnClear )
+	file.enabled = true
+
+	printt( "[RUI-BROWSER] ON -- " + string( file.entries.len() ) + " entries. F9 prev, F10 next, F11 re-show, HOME stack, END clear" )
+	RuiBrowser_PrintCatalog()
+}
+
+void function CLRuiBrowser_Disable()
+{
+	if ( !file.enabled )
+		return
+
+	DeregisterButtonPressedCallback( RUIBROWSER_KEY_PREV,  RuiBrowser_OnPrev )
+	DeregisterButtonPressedCallback( RUIBROWSER_KEY_NEXT,  RuiBrowser_OnNext )
+	DeregisterButtonPressedCallback( RUIBROWSER_KEY_SHOW,  RuiBrowser_OnShow )
+	DeregisterButtonPressedCallback( RUIBROWSER_KEY_STACK, RuiBrowser_OnStack )
+	DeregisterButtonPressedCallback( RUIBROWSER_KEY_CLEAR, RuiBrowser_OnClear )
+	file.enabled = false
+
+	RuiBrowser_DestroyDirect()
+	ClearAnnouncements()
+	printt( "[RUI-BROWSER] OFF" )
+}
+
+void function AddAnnouncement( string name, int style )
+{
+	BrowserEntry e
+	e.name  = name
+	e.kind  = eRuiBrowserKind.ANNOUNCEMENT
+	e.style = style
+	file.entries.append( e )
+}
+
+void function AddQueue( string name, asset ruiAsset, bool bigText )
+{
+	BrowserEntry e
+	e.name     = name
+	e.kind     = eRuiBrowserKind.QUEUE
+	e.ruiAsset = ruiAsset
+	e.bigText  = bigText
+	file.entries.append( e )
+}
+
+void function AddDirect( string name, asset ruiAsset )
+{
+	BrowserEntry e
+	e.name     = name
+	e.kind     = eRuiBrowserKind.DIRECT
+	e.ruiAsset = ruiAsset
+	file.entries.append( e )
+}
+
+void function BuildCatalog()
+{
+	AddAnnouncement( "announcement_center",              ANNOUNCEMENT_STYLE_BIG )
+	AddAnnouncement( "announcement_quick_right",         ANNOUNCEMENT_STYLE_QUICK )
+	AddAnnouncement( "announcement_center_sweep",        ANNOUNCEMENT_STYLE_SWEEP )
+	AddAnnouncement( "announcement_results",             ANNOUNCEMENT_STYLE_RESULTS )
+	AddAnnouncement( "announcement_objective",           ANNOUNCEMENT_STYLE_OBJECTIVE )
+	AddAnnouncement( "sur_circle_warning_v2",            ANNOUNCEMENT_STYLE_CIRCLE_WARNING )
+	AddAnnouncement( "kill_leader_noti",                 ANNOUNCEMENT_STYLE_KILL_LEADER )
+	AddAnnouncement( "got_treasurebox_noti",             ANNOUNCEMENT_STYLE_GOT_TREASURE_PACK )
+	AddAnnouncement( "generic_warning",                  ANNOUNCEMENT_STYLE_GENERIC_WARNING )
+	AddAnnouncement( "arenas_round_won",                 ANNOUNCEMENT_STYLE_ROUND_WON )
+	AddAnnouncement( "rating_leader_noti",               ANNOUNCEMENT_STYLE_RATING_LEADER )
+	AddAnnouncement( "tdm_roundwon_noti",                ANNOUNCEMENT_STYLE_TDM_ROUND_WON )
+	AddAnnouncement( "announcement_strike",              ANNOUNCEMENT_STYLE_STRIKE )
+	AddAnnouncement( "announcement_milestone_small",     ANNOUNCEMENT_STYLE_MILESTONE_SMALL )
+	AddAnnouncement( "announcement_strikeout_norespawns", ANNOUNCEMENT_STYLE_FINAL_RING_NO_RESPAWNS )
+	AddAnnouncement( "announcement_hunt",                ANNOUNCEMENT_STYLE_HUNT )
+
+	AddQueue( "pickup_info (queue)",         $"ui/pickup_info.rpak",         false )
+	AddQueue( "centerevent_info (queue)",    $"ui/centerevent_info.rpak",    true )
+	AddQueue( "lockdown_score_info (queue)", $"ui/lockdown_score_info.rpak", false )
+	AddQueue( "control_score_info (queue)",  $"ui/control_score_info.rpak",  false )
+
+	AddDirect( "death_hint_mp",        $"ui/death_hint_mp.rpak" )
+	AddDirect( "custom_hint_display",  $"ui/custom_hint_display.rpak" )
+	AddDirect( "map_zone_intro_title", $"ui/map_zone_intro_title.rpak" )
+	AddDirect( "sp_onscreen_hint",     $"ui/sp_onscreen_hint.rpak" )
+	AddDirect( "gun_game_intro",       $"ui/gun_game_intro.rpak" )
+	AddDirect( "mvp_card_intro_screen", $"ui/mvp_card_intro_screen.rpak" )
+}
+
+void function RuiBrowser_PrintCatalog()
+{
+	foreach ( int i, BrowserEntry e in file.entries )
+		printt( "[RUI-BROWSER] " + string( i ) + ": " + e.name + " kind=" + string( e.kind ) )
+}
+
+void function RuiBrowser_OnPrev( var button )
+{
+	file.index--
+	if ( file.index < 0 )
+		file.index = file.entries.len() - 1
+	RuiBrowser_ShowCurrent()
+}
+
+void function RuiBrowser_OnNext( var button )
+{
+	file.index++
+	if ( file.index >= file.entries.len() )
+		file.index = 0
+	RuiBrowser_ShowCurrent()
+}
+
+void function RuiBrowser_OnShow( var button )
+{
+	RuiBrowser_ShowCurrent()
+}
+
+void function RuiBrowser_OnClear( var button )
+{
+	RuiBrowser_DestroyDirect()
+	ClearAnnouncements()
+	printt( "[RUI-BROWSER] cleared" )
+}
+
+// The event queue is the only family that stacks, so the demo drives that.
+void function RuiBrowser_OnStack( var button )
+{
+	AddScoreStyleQueueMessage( "STACK 1 -- lockdown_score_info", RUIBROWSER_DURATION )
+	AddScoreStyleQueueMessage( "STACK 2 -- lockdown_score_info", RUIBROWSER_DURATION )
+	AddScoreStyleQueueMessage( "STACK 3 -- lockdown_score_info", RUIBROWSER_DURATION )
+	AddGenericQueueMessage( "STACK 4 -- mode default skin", RUIBROWSER_DURATION )
+	printt( "[RUI-BROWSER] queued 4 stacked messages" )
+}
+
+void function RuiBrowser_ShowCurrent()
+{
+	if ( file.entries.len() == 0 )
+		return
+
+	if ( !GetConVarBool( "sv_cheats" ) )
+	{
+		CLRuiBrowser_Disable()
+		return
+	}
+
+	BrowserEntry e = file.entries[ file.index ]
+	string label = string( file.index ) + "/" + string( file.entries.len() - 1 ) + "  " + e.name
+	printt( "[RUI-BROWSER] show " + label )
+
+	switch ( e.kind )
+	{
+		case eRuiBrowserKind.ANNOUNCEMENT:
+			thread ShowAnnouncementEntry( e, label )
+			break
+
+		case eRuiBrowserKind.QUEUE:
+			ShowQueueEntry( e, label )
+			break
+
+		case eRuiBrowserKind.DIRECT:
+			ShowDirectEntry( e, label )
+			break
+	}
+}
+
+void function ShowAnnouncementEntry( BrowserEntry e, string label )
+{
+	ClearAnnouncements()
+
+	AnnouncementData announcement
+	announcement.messageText        = label
+	announcement.subText            = "style " + string( e.style )
+	announcement.titleColor         = <1, 0.6, 0.1>
+	announcement.duration           = RUIBROWSER_DURATION
+	announcement.announcementStyle  = e.style
+	announcement.drawOverScreenFade = true
+	announcement.soundAlias         = ""
+
+	AnnouncementMessage_DisplayOnHud( announcement )
+}
+
+void function ShowQueueEntry( BrowserEntry e, string label )
+{
+	AddSkinnedQueueMessage( label, e.ruiAsset, RUIBROWSER_DURATION, e.bigText )
+}
+
+// Every direct asset takes a different arg set; write the common ones and let
+// the rest fall through, so an asset that lacks one still draws.
+void function ShowDirectEntry( BrowserEntry e, string label )
+{
+	RuiBrowser_DestroyDirect()
+
+	var rui = RuiCreate( e.ruiAsset, clGlobal.topoFullScreen, RUI_DRAW_HUD, RUI_SORT_SCREENFADE + 1 )
+	if ( rui == null )
+		return
+
+	file.directRuis.append( rui )
+
+	RuiBrowser_SetStringSafe( rui, "messageText", label )
+	RuiBrowser_SetStringSafe( rui, "hintText", label )
+	RuiBrowser_SetStringSafe( rui, "titleText", label )
+	RuiBrowser_SetStringSafe( rui, "displayText", label )
+	RuiBrowser_SetStringSafe( rui, "locStringKBM", label )
+	RuiBrowser_SetStringSafe( rui, "messageSubText", "direct RuiCreate" )
+	RuiBrowser_SetStringSafe( rui, "subTextDefault", "direct RuiCreate" )
+	RuiBrowser_SetFloatSafe( rui, "duration", RUIBROWSER_DURATION )
+	RuiBrowser_SetFloatSafe( rui, "bgAlpha", 0.5 )
+	RuiBrowser_SetGameTimeSafe( rui, "startTime", Time() )
+
+	thread DestroyDirectAfter( rui, RUIBROWSER_DURATION )
+}
+
+void function DestroyDirectAfter( var rui, float duration )
+{
+	wait duration
+	if ( file.directRuis.contains( rui ) )
+		file.directRuis.removebyvalue( rui )
+	RuiDestroyIfAlive( rui )
+}
+
+void function RuiBrowser_DestroyDirect()
+{
+	foreach ( var rui in file.directRuis )
+		RuiDestroyIfAlive( rui )
+	file.directRuis.clear()
+}
+
+void function RuiBrowser_SetStringSafe( var rui, string argName, string value )
+{
+	try { RuiSetString( rui, argName, value ) } catch ( eArg ) {}
+}
+
+void function RuiBrowser_SetFloatSafe( var rui, string argName, float value )
+{
+	try { RuiSetFloat( rui, argName, value ) } catch ( eArg ) {}
+}
+
+void function RuiBrowser_SetGameTimeSafe( var rui, string argName, float value )
+{
+	try { RuiSetGameTime( rui, argName, value ) } catch ( eArg ) {}
+}

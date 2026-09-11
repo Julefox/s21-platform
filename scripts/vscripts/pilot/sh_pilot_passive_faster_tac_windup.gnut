@@ -1,0 +1,33 @@
+global function ShPassiveFasterTacWindup_Init
+
+void function ShPassiveFasterTacWindup_Init()
+{
+	AddCallback_OnPassiveChanged( ePassives.PAS_FASTER_TAC_WINDUP, FasterTacWindup_OnPassiveChanged )
+}
+
+void function FasterTacWindup_OnPassiveChanged( entity player, int passive, bool didHave, bool nowHas )
+{
+	#if SERVER
+		array mods = player.GetExtraWeaponMods()
+		if ( nowHas )
+		{
+			if ( !(mods.contains( "ult_active" )) )
+			{
+				PhaseTunnel_SanitizeWeaponMods( player.GetOffhandWeapon( OFFHAND_TACTICAL ) )
+				mods.append( "upgrade_core_fast_deploy" )
+				player.SetExtraWeaponMods( mods )
+			}
+		}
+
+		if( didHave )
+		{
+			if( mods.contains( "upgrade_core_fast_deploy" ) )
+			{
+				PhaseTunnel_SanitizeWeaponMods( player.GetOffhandWeapon( OFFHAND_TACTICAL ) )
+				mods.fastremovebyvalue( "upgrade_core_fast_deploy" )
+				player.SetExtraWeaponMods( mods )
+
+			}
+		}
+	#endif
+}

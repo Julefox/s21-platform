@@ -1,0 +1,146 @@
+// Loud CLIENT stubs for R5V ByRef aliases missing on S21.
+// MakeFunctionRefFromString compiles `<name>()` -- missing globals hard-error.
+
+#if CLIENT
+
+global function ServerCallback_DeleteSpawnedClientSideDynamicLights
+global function ServerCallback_KillReplayHud_Activate
+global function ServerCallback_KillReplayHud_Deactivate
+global function TridentBoost_Visuals
+global function ServerCallback_DestroyEndAnnouncement
+global function ServerCallback_ShowFlowstateDeathRecapNoSpectate
+global function ServerCallback_RefreshDeathBoxHighlight
+global function ServerCallback_RefreshLootbinHighlight
+global function ServerCallback_GameModeAnnouncement
+// SCB_AbortCurrentDialogue lives in sh_sp_dialogue.gnut (stock)
+global function ServerCallback_CTF_HideCustomUI
+global function FS_CreateIntroScreen
+global function FSIntro_ForceEnd
+global function ServerCallback_CTF_CheckUpdatePlayerLegend
+global function ForceScoreboardFocus
+global function UpdateDpadHud_Copy
+global function ServerCallback_Scenarios_MatchEndAnnouncement
+global function Tracker_StatRequestFailed
+global function FS_ForceCompass
+global function FS_DestroyCompass
+global function ServerCallback_ShowWinningSquadSequence
+global function ServerCallback_Ash_OnPlayerDash
+global function ServerCallback_Ash_OnPlayerLanded
+global function ServerCallback_TitanCockpitBoot
+
+void function ServerCallback_DeleteSpawnedClientSideDynamicLights()
+{
+	printt( "[BYREF-STUB] ServerCallback_DeleteSpawnedClientSideDynamicLights" )
+}
+
+void function ServerCallback_KillReplayHud_Activate()
+{
+	printt( "[BYREF-STUB] ServerCallback_KillReplayHud_Activate" )
+}
+
+void function ServerCallback_KillReplayHud_Deactivate()
+{
+	printt( "[BYREF-STUB] ServerCallback_KillReplayHud_Deactivate" )
+}
+
+void function TridentBoost_Visuals()
+{
+	printt( "[BYREF-STUB] TridentBoost_Visuals" )
+}
+
+void function ServerCallback_DestroyEndAnnouncement()
+{
+	printt( "[BYREF-STUB] ServerCallback_DestroyEndAnnouncement" )
+}
+
+void function ServerCallback_ShowFlowstateDeathRecapNoSpectate()
+{
+	printt( "[BYREF-STUB] ServerCallback_ShowFlowstateDeathRecapNoSpectate" )
+}
+
+void function ServerCallback_RefreshDeathBoxHighlight()
+{
+	printt( "[BYREF-STUB] ServerCallback_RefreshDeathBoxHighlight" )
+}
+
+void function ServerCallback_RefreshLootbinHighlight()
+{
+	printt( "[BYREF-STUB] ServerCallback_RefreshLootbinHighlight" )
+}
+
+void function ServerCallback_GameModeAnnouncement()
+{
+	printt( "[BYREF-STUB] ServerCallback_GameModeAnnouncement" )
+}
+
+void function ServerCallback_CTF_HideCustomUI()
+{
+	printt( "[BYREF-STUB] ServerCallback_CTF_HideCustomUI" )
+}
+
+void function FS_CreateIntroScreen()
+{
+	printt( "[BYREF-STUB] FS_CreateIntroScreen" )
+}
+
+void function FSIntro_ForceEnd()
+{
+	printt( "[BYREF-STUB] FSIntro_ForceEnd" )
+}
+
+void function ServerCallback_CTF_CheckUpdatePlayerLegend()
+{
+	printt( "[BYREF-STUB] ServerCallback_CTF_CheckUpdatePlayerLegend" )
+}
+
+void function ForceScoreboardFocus()
+{
+	printt( "[BYREF-STUB] ForceScoreboardFocus" )
+}
+
+void function UpdateDpadHud_Copy()
+{
+	printt( "[BYREF-STUB] UpdateDpadHud_Copy" )
+}
+
+void function ServerCallback_Scenarios_MatchEndAnnouncement()
+{
+	printt( "[BYREF-STUB] ServerCallback_Scenarios_MatchEndAnnouncement" )
+}
+
+void function Tracker_StatRequestFailed()
+{
+	printt( "[BYREF-STUB] Tracker_StatRequestFailed" )
+}
+
+void function FS_ForceCompass()
+{
+	printt( "[BYREF-STUB] FS_ForceCompass" )
+}
+
+void function FS_DestroyCompass()
+{
+	printt( "[BYREF-STUB] FS_DestroyCompass" )
+}
+
+void function ServerCallback_ShowWinningSquadSequence()
+{
+	printt( "[BYREF-STUB] ServerCallback_ShowWinningSquadSequence" )
+}
+
+void function ServerCallback_Ash_OnPlayerDash()
+{
+	printt( "[BYREF-STUB] ServerCallback_Ash_OnPlayerDash" )
+}
+
+void function ServerCallback_Ash_OnPlayerLanded()
+{
+	printt( "[BYREF-STUB] ServerCallback_Ash_OnPlayerLanded" )
+}
+
+void function ServerCallback_TitanCockpitBoot()
+{
+	printt( "[BYREF-STUB] ServerCallback_TitanCockpitBoot" )
+}
+
+#endif // CLIENT

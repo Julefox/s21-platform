@@ -1,0 +1,182 @@
+global function NPCGarbageCollection_InitForGameMode
+
+global function GarbageCollection_MarkNPC
+global function GarbageCollection_ClearMarkFromNPC
+global function GarbageCollection_IsNPCMarked
+global function GarbageCollection_GetMarkedNPCs
+global function AddNPCCallback_OnGarbageCollected
+
+const float ROAMER_DESPAWN_PLAYER_DIST = 2500.0
+
+bool isInitialized = false
+
+void function NPCGarbageCollectionThread()
+{
+	while ( true )
+	{
+#if DEVELOPER
+		float preFrameTime = Time()
+#endif // DEV
+
+		NPCGarbageCollection_Frame()
+
+#if DEVELOPER
+		float postFrameTime = Time()
+		Assert( preFrameTime == postFrameTime, format( "AmbientSpawnManagerFrame() stalled for %.2f seconds. Should have no waits.", (postFrameTime - preFrameTime) ) )
+#endif // DEV
+
+		WaitFrame()
+	}
+}
+
+void function GarbageCollectNPC( entity npc )
+{
+	Assert( GarbageCollection_IsNPCMarked( npc ) )
+
+#if DEVELOPER
+	if ( NPCDebugOverlayIsActive() )
+	{
+		const vector COLOR_ROAMER_DESPAWN = <255, 128, 0>
+		vector markPos = CalcHullCenterForOrigin( npc.GetOrigin(), GetNpcHullType( npc ) )
+		//DebugDrawMark( markPos, 40, COLOR_ROAMER_DESPAWN, true, 10.0 )
+	}
+	printf( "%s() - '%s'.", FUNC_NAME(), string( npc ) )
+#endif // DEV
+
+	if ( npc.ai.skitId >= 0 )
+	{
+		SkitInstance ornull si = Sk_GetSkit( npc.ai.skitId )
+		if ( si == null )
+		{
+			Warning( "%s() -- Get skit for id %d returned null!", FUNC_NAME(), npc.ai.skitId )
+		}
+		else
+		{
+			expect SkitInstance( si )
+			Assert( npc.ai.skitId == si.skitId )
+			if ( si.func_onNPCGarbageCollected != null )
+				si.func_onNPCGarbageCollected( si, npc )
+
+			foreach ( callback in npc.ai.onNPCGarbageCollectedCallbacks )
+				callback( npc )
+
+			if ( npc.ai.skitId == si.skitId )	// in case it changed in the callbacks
+				SkNPC_RemoveNPCFromSkit( npc )
+		}
+	}
+
+	if ( !IsAlive( npc ) )
+		return
+
+	Assert( GarbageCollection_IsNPCMarked( npc ) )
+	GarbageCollection_ClearMarkFromNPC( npc )
+	npc.Die( svGlobal.worldspawn, svGlobal.worldspawn, { scriptType = DF_INSTANT, damageSourceId = damagedef_despawn } )
+	npc.Destroy()
+}
+
+array<entity> s_collectionArray
+int s_roamerDespawnIndex = 0
+void function NPCGarbageCollection_Frame()
+{
+	const float ROAMER_DESPAWN_PLAYER_DIST_SQR = (ROAMER_DESPAWN_PLAYER_DIST * ROAMER_DESPAWN_PLAYER_DIST)
+
+	if ( s_collectionArray.len() <= 0 )
+		return
+
+	if ( s_roamerDespawnIndex >= s_collectionArray.len() )
+		s_roamerDespawnIndex = 0
+
+	entity npc = s_collectionArray[s_roamerDespawnIndex]
+	++s_roamerDespawnIndex
+
+	Assert( GarbageCollection_IsNPCMarked( npc ) )
+
+	// TODO: if fighting players, don't clean up
+
+	// TODO: if in same zone as players, don't clean up
+
+	array<entity> players = GetPlayerArray()
+	foreach ( entity player in players )
+	{
+		float dist2DSqr = Distance2DSqr( player.GetOrigin(), npc.GetOrigin() )
+		if ( dist2DSqr < ROAMER_DESPAWN_PLAYER_DIST_SQR )
+			return
+	}
+
+	foreach ( entity player in players )
+	{
+		if ( PlayerCanSee( player, npc, true, 90 ) )
+			return
+	}
+
+	GarbageCollectNPC( npc )
+}
+
+array<entity> function GarbageCollection_GetMarkedNPCs()
+{
+	return s_collectionArray
+}
+
+void function NPCGarbageCollection_InitForGameMode()
+{
+	if ( isInitialized )
+	{
+		#if DEVELOPER
+			printf( "NPC Garbage Collection is already initialized" )
+		#endif
+		return
+	}
+	isInitialized = true
+
+	if ( Freelance_IsHubLevel() )
+		return
+
+	AddCallback_GameStateEnter( eGameState.Playing, OnGameStateEnterPlaying )
+	AddCallback_OnNPCKilled( OnNPCKilled )
+}
+
+void function OnGameStateEnterPlaying()
+{
+	thread NPCGarbageCollectionThread()
+}
+
+void function OnNPCKilled( entity victim, entity attacker, var damageInfo )
+{
+	if ( GarbageCollection_IsNPCMarked( victim ) )
+		GarbageCollection_ClearMarkFromNPC( victim )
+}
+
+void function OnGCMarkDestroyed( entity npc )
+{
+	Assert( GarbageCollection_IsNPCMarked( npc ) )
+	GarbageCollection_ClearMarkFromNPC( npc )
+}
+
+void function GarbageCollection_MarkNPC( entity npc )
+{
+	Assert( npc.IsNPC() )
+	Assert( IsAlive( npc ) )
+	Assert( !GarbageCollection_IsNPCMarked( npc ) )
+	npc.ai.isMarkedForGarbageCollection = true
+	s_collectionArray.append( npc )
+	AddEntityDestroyedCallback( npc, OnGCMarkDestroyed )
+}
+
+void function GarbageCollection_ClearMarkFromNPC( entity npc )
+{
+	Assert( GarbageCollection_IsNPCMarked( npc ) )
+	RemoveEntityDestroyedCallback( npc, OnGCMarkDestroyed )
+	s_collectionArray.removebyvalue( npc )
+	npc.ai.isMarkedForGarbageCollection = false
+}
+
+bool function GarbageCollection_IsNPCMarked( entity npc )
+{
+	return npc.ai.isMarkedForGarbageCollection
+}
+
+void function AddNPCCallback_OnGarbageCollected( entity ent, void functionref( entity ent ) func )
+{
+	Assert( !ent.ai.onNPCGarbageCollectedCallbacks.contains( func ), format( "Callback already added: %s", string( func ) ) )
+	ent.ai.onNPCGarbageCollectedCallbacks.append( func )
+}

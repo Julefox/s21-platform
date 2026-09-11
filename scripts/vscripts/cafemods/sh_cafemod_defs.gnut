@@ -1,0 +1,198 @@
+// Shared CafeMod slot table. Append only at end so DevMenu bitfields stay stable.
+// SERVER registry, CLIENT/UI labels, and cafemod sync all key off these indices.
+
+global function CafeMod_GetCount
+global function CafeMod_GetTotalCount
+global function CafeMod_GetId
+global function CafeMod_GetName
+global function CafeMod_FindIndex
+global function CafeMod_BitForIndex
+global function CafeMod_IsBitSet
+global function CafeMod_DefineDynamic
+global function ModList_Get
+
+// GetInstalledMods returns one "|" delimited record per mod. A container
+// returned through a table or var type reaches script as an int, so the
+// fields travel as text and are rebuilt by ModList_Get.
+global struct InstalledMod
+{
+	string id
+	string name
+	string version
+	string author
+	string realm
+	string state
+	bool enabled
+	bool hasScripts
+	int order
+}
+
+// Slot 0 = mitosis (Caustic barrel infinite replicate)
+global const int CAFEMOD_IDX_MITOSIS = 0
+// Slot 1 = maggie_mitosis (Wrecking Ball spawns child ball every bounce)
+global const int CAFEMOD_IDX_MAGGIE_MITOSIS = 1
+// Slot 2 = big_balls (Wrecking Ball 5x model scale)
+global const int CAFEMOD_IDX_BIG_BALLS = 2
+// Slot 3 = fall_dmg (custom fall damage)
+global const int CAFEMOD_IDX_FALL_DMG = 3
+// Slot 4 = bangalore_gas (smoke -> gas cloud)
+global const int CAFEMOD_IDX_BANGALORE_GAS = 4
+// Slot 5 = fake_obits (fake kill feed spam, CLIENT)
+global const int CAFEMOD_IDX_FAKE_OBITS = 5
+// Slot 6 = items_weapon (spawn model/loot/jumppad/maggie from gun fire)
+global const int CAFEMOD_IDX_ITEMS_WEAPON = 6
+
+global const int CAFEMOD_MAX = 32
+
+struct
+{
+	table<int, string> dynamicIds
+	table<int, string> dynamicNames
+	int dynamicHigh = -1
+} file
+
+int function CafeMod_GetCount()
+{
+	return 7
+}
+
+int function CafeMod_GetTotalCount()
+{
+	int staticCount = CafeMod_GetCount()
+	if ( file.dynamicHigh < staticCount )
+		return staticCount
+	return file.dynamicHigh + 1
+}
+
+void function CafeMod_DefineDynamic( int idx, string id, string name )
+{
+	int staticCount = CafeMod_GetCount()
+	if ( idx < staticCount || idx >= CAFEMOD_MAX )
+	{
+		printt( format( "[CafeMod] DefineDynamic ignored idx=%d", idx ) )
+		return
+	}
+
+	if ( id == "" )
+	{
+		printt( format( "[CafeMod] DefineDynamic ignored empty id at idx=%d", idx ) )
+		return
+	}
+
+	string key = id.tolower()
+	if ( idx in file.dynamicIds )
+	{
+		file.dynamicIds[idx] = key
+		file.dynamicNames[idx] = name
+	}
+	else
+	{
+		file.dynamicIds[idx] <- key
+		file.dynamicNames[idx] <- name
+	}
+
+	if ( idx > file.dynamicHigh )
+		file.dynamicHigh = idx
+}
+
+string function CafeMod_GetId( int index )
+{
+	switch ( index )
+	{
+		case CAFEMOD_IDX_MITOSIS:
+			return "mitosis"
+		case CAFEMOD_IDX_MAGGIE_MITOSIS:
+			return "maggie_mitosis"
+		case CAFEMOD_IDX_BIG_BALLS:
+			return "big_balls"
+		case CAFEMOD_IDX_FALL_DMG:
+			return "fall_dmg"
+		case CAFEMOD_IDX_BANGALORE_GAS:
+			return "bangalore_gas"
+		case CAFEMOD_IDX_FAKE_OBITS:
+			return "fake_obits"
+		case CAFEMOD_IDX_ITEMS_WEAPON:
+			return "items_weapon"
+	}
+
+	if ( index in file.dynamicIds )
+		return file.dynamicIds[index]
+	return ""
+}
+
+string function CafeMod_GetName( int index )
+{
+	switch ( index )
+	{
+		case CAFEMOD_IDX_MITOSIS:
+			return "Caustic Mitosis"
+		case CAFEMOD_IDX_MAGGIE_MITOSIS:
+			return "Maggie Mitosis"
+		case CAFEMOD_IDX_BIG_BALLS:
+			return "Big Balls"
+		case CAFEMOD_IDX_FALL_DMG:
+			return "Fall Damage"
+		case CAFEMOD_IDX_BANGALORE_GAS:
+			return "Bangalore Gas Smoke"
+		case CAFEMOD_IDX_FAKE_OBITS:
+			return "Fake Kill Feed"
+		case CAFEMOD_IDX_ITEMS_WEAPON:
+			return "Items Weapon"
+	}
+
+	if ( index in file.dynamicNames )
+		return file.dynamicNames[index]
+	return ""
+}
+
+int function CafeMod_FindIndex( string id )
+{
+	string key = id.tolower()
+	int count = CafeMod_GetTotalCount()
+	for ( int i = 0; i < count; i++ )
+	{
+		if ( CafeMod_GetId( i ) == key )
+			return i
+	}
+	return -1
+}
+
+int function CafeMod_BitForIndex( int index )
+{
+	if ( index < 0 || index >= CAFEMOD_MAX )
+		return 0
+	return 1 << index
+}
+
+bool function CafeMod_IsBitSet( int bitfield, int index )
+{
+	return ( bitfield & CafeMod_BitForIndex( index ) ) != 0
+}
+
+array<InstalledMod> function ModList_Get()
+{
+	array<InstalledMod> mods
+
+	foreach ( string rec in GetInstalledMods() )
+	{
+		array<string> f = split( rec, "|" )
+		if ( f.len() < 9 )
+			continue
+
+		InstalledMod mod
+		mod.id         = f[0]
+		mod.name       = f[1]
+		mod.version    = f[2]
+		mod.author     = f[3]
+		mod.realm      = f[4]
+		mod.state      = f[5]
+		mod.enabled    = f[6] == "1"
+		mod.hasScripts = f[7] == "1"
+		mod.order      = f[8].tointeger()
+
+		if ( mod.id != "" )
+			mods.append( mod )
+	}
+
+	return mods
+}

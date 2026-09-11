@@ -1,0 +1,374 @@
+"WeaponData"
+{
+	"printname" "#WPN_ZIPLINE"
+	"shortprintname" "#WPN_ZIPLINE"
+	"description" "#WPN_ZIPLINE_DESC"
+	"longdesc" "#WPN_ZIPLINE_LONGDESC"
+	"weaponClass" "human"
+	"pickup_hold_prompt" "Hold [USE] [WEAPONNAME]"
+	"pickup_press_prompt" "[USE] [WEAPONNAME]"
+	"minimap_reveal_distance" "32000"
+	"fire_mode" "offhand"
+	"offhand_cancelled_by_melee" "1"
+	"is_toss_weapon" "1"
+	"play_fire_weapon_sound_on_toss" "1"
+	"offhand_default_inventory_slot" "1"
+	"offhand_hold_enabled" "0"
+	"offhand_interupts_weapon_anims" "1"
+	"offhand_raise_is_interrupt_resumable" "1"
+	"offhand_toss_activates_on_attack" "1"
+	"offhand_switch_on_attack" "0"
+	"trophy_system_ignores" "always"
+	"OnWeaponToss" "OnWeaponPrimaryAttack_weapon_zipline"
+	"OnWeaponPrimaryAttack" "OnWeaponPrimaryAttack_weapon_zipline"
+	"OnWeaponNpcPrimaryAttack" "OnWeaponNpcPrimaryAttack_weapon_zipline"
+	"OnProjectileCollision" "OnProjectileCollision_weapon_zipline"
+	"OnCreateClientOnlyModel" "OnCreateClientOnlyModel_weapon_zipline"
+	"OnWeaponRaise" "OnWeaponRaise_weapon_zipline"
+	"OnWeaponRegenEnd" "OnWeaponRegenEndGeneric"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_weapon_zipline"
+	"grenade_arc_indicator_effect" ""
+	"grenade_arc_impact_indicator_effect" ""
+	"grenade_arc_indicator_show_from_hip" "1"
+	"grenade_arc_indicator_bounce_count" "1"
+	"zipline_indicator_arc_blocked_effect" ""
+	"zipline_indicator_line_effect" "P_wpn_zipline_previs"
+	"zipline_indicator_impact_ground_effect" ""
+	"zipline_indicator_impact_wall_effect" ""
+	"zipline_indicator_impact_blocked_effect" ""
+	"zipline_station_model_ground" "mdl/props/pathfinder_zipline/pathfinder_zipline.rmdl"
+	"zipline_station_model_wall" "mdl/props/pathfinder_zipline/pathfinder_zipline.rmdl"
+	"zipline_station_model_ledge" "mdl/props/pathfinder_zipline/pathfinder_zipline.rmdl"
+	"zipline_station_attachment_ground" "ATTACH_TOP_ROPE"
+	"zipline_station_attachment_wall" "ATTACH_TOP_ROPE"
+	"zipline_station_attachment_ledge" "ATTACH_TOP_ROPE"
+	"zipline_station_animation_begin" "prop_pathfinder_zipline_release"
+	"zipline_station_animation_ground" "prop_pathfinder_zipline_expand_up"
+	"zipline_station_animation_wall" "prop_pathfinder_zipline_expand_side"
+	"zipline_station_animation_ledge" "prop_pathfinder_zipline_expand_sideup"
+	"zipline_grenade" "1"
+	"zipline_grenade_auto_detach_distance" "100"
+	"zipline_grenade_snap_distance" "250"
+	"zipline_grenade_snap_angle" "10"
+	"projectile_launch_speed" "2600"
+	"projectile_gravity_scale" "0"
+	"projectile_first_person_offset_fraction" "0"
+	"projectile_launch_pitch_offset" "0"
+	"zipline_distance_min" "700"
+	"zipline_distance_max" "8000"
+	"grenade_fuse_time" "10.000000"
+	"start_fuse_on_launch" "0"
+	"stat_damage" "60"
+	"stat_range" "25"
+	"stat_accuracy" "25"
+	"stat_rof" "50"
+	"viewmodel" "mdl/weapons/pathfinder_zipline/ptpov_pathfinder_zipline_held.rmdl"
+	"playermodel" "mdl/weapons/empty_handed/w_empty_handed_human.rmdl"
+	"projectilemodel" "mdl/Weapons/pathfinder_zipline/w_pathfinder_zipline.rmdl"
+	"projectile_trail_effect_0_1p" "P_zipline_projectile_trail"
+	"projectile_trail_effect_0_3p" "P_zipline_projectile_trail"
+	"projectile_trail_attachment" "FX_PROJECTILE_END"
+	"vortex_absorb_effect" "wpn_vortex_projectile_frag_FP"
+	"vortex_absorb_effect_third_person" "wpn_vortex_projectile_frag"
+	"vortex_absorb_sound" "Vortex_Shield_AbsorbBulletLarge"
+	"vortex_absorb_sound_1p_vs_3p" "Vortex_Shield_AbsorbBulletLarge_1P_VS_3P"
+	"vortex_drain" "0.000000"
+	"projectile_adjust_to_gun_barrel" "1"
+	"fire_sound_1_player_1p" "weapon_zipline_gun_fire_1p"
+	"fire_sound_1_player_3p" "weapon_zipline_gun_fire_3p"
+	"fire_sound_2_player_1p" "Weapon_bulletCasing.Single"
+	"fire_sound_2_player_3p" "Weapon_bulletCasing.Single"
+	"sound_zoom_in" "Weapon_MGL_ADS_In"
+	"sound_zoom_out" "Weapon_MGL_ADS_Out"
+	"fx_muzzle_flash_view" "P_wpn_muzzleflash_mgl_FP_FULL"
+	"fx_muzzle_flash_world" "P_wpn_muzzleflash_mgl_FULL"
+	"fx_muzzle_flash_attach" "ATTACH_ZIPLINE_FRONT"
+	"charge_time" "0.000000"
+	"charge_cooldown_time" "1.000000"
+	"charge_cooldown_delay" "0.000000"
+	"charge_end_forces_fire" "1"
+	"charge_require_input" "1"
+	"charge_remain_full_when_fired" "1"
+	"impact_effect_table" "default_nosound_nowhizby"
+	"damage_type" "burn"
+	"damage_near_distance" "100"
+	"damage_far_distance" "15000"
+	"damage_near_value" "0"
+	"damage_far_value" "0"
+	"damage_near_value_titanarmor" "0"
+	"damage_far_value_titanarmor" "0"
+	"explosion_damage" "120"
+	"explosion_damage_heavy_armor" "1000"
+	"explosion_inner_radius" "256"
+	"explosionradius" "384"
+	"impulse_force" "3000"
+	"npc_damage_near_distance" "100"
+	"npc_damage_far_distance" "1500"
+	"npc_damage_near_value" "0"
+	"npc_damage_far_value" "0"
+	"npc_damage_near_value_titanarmor" "0"
+	"npc_damage_far_value_titanarmor" "0"
+	"critical_hit" "0"
+	"ammo_clip_size" "180"
+	"ammo_default_total" "0"
+	"ammo_display" "count"
+	"ammo_min_to_fire" "180"
+	"ammo_per_shot" "180"
+	"ammo_stockpile_max" "0"
+	"regen_ammo_refill_rate" "1"
+	"regen_ammo_refill_start_delay" "0.100000"
+	"ammo_no_remove_from_stockpile" "0"
+	"fire_duration" "0.500000"
+	"zoom_time_in" "0.200000"
+	"zoom_time_out" "0.200000"
+	"zoom_fov" "26.275600"
+	"reload_time" "4.750000"
+	"reload_time_late1" "3.750000"
+	"reload_time_late2" "2.950000"
+	"reload_time_late3" "2.214000"
+	"reload_time_late4" "1.107000"
+	"reloadempty_time" "4.750000"
+	"reloadempty_time_late1" "3.750000"
+	"reloadempty_time_late2" "2.950000"
+	"reloadempty_time_late3" "2.214000"
+	"reloadempty_time_late4" "1.107000"
+	"vortex_refire_behavior" "grenade"
+	"allow_empty_fire" "0"
+	"reload_enabled" "0"
+	"allow_empty_click" "1"
+	"empty_reload_only" "0"
+	"trigger_snipercam" "1"
+	"allow_headshots" "0"
+	"grenade_bounce_vel_frac_shallow" "0.470000"
+	"grenade_bounce_vel_frac_sharp" "0.280000"
+	"grenade_bounce_vel_frac_along_normal" "0.500000"
+	"grenade_bounce_randomness" "0.200000"
+	"grenade_bounce_extra_vertical_randomness" "0.200000"
+	"grenade_roll_vel_frac_per_second" "0.100000"
+	"primary_fire_does_not_block_sprint" "1"
+	"aimassist_disable_hipfire" "0"
+	"aimassist_disable_ads" "0"
+	"aimassist_disable_hipfire_humansonly" "1"
+	"aimassist_disable_ads_humansonly" "1"
+	"spread_stand_hip" "0.000000"
+	"spread_stand_hip_run" "0.000000"
+	"spread_stand_ads" "0.000000"
+	"spread_stand_hip_sprint" "0.000000"
+	"spread_crouch_hip" "0.000000"
+	"spread_crouch_ads" "0.000000"
+	"spread_air_hip" "0.000000"
+	"spread_air_ads" "0.000000"
+	"ammo_suck_behavior" "primary_weapons"
+	"viewkick_spring" "launcher"
+	"viewkick_pitch_base" "-0.300000"
+	"viewkick_pitch_random" "0.100000"
+	"viewkick_pitch_softScale" "1.200000"
+	"viewkick_pitch_hardScale" "6.750000"
+	"viewkick_yaw_base" "0.000000"
+	"viewkick_yaw_random" "0.150000"
+	"viewkick_yaw_softScale" "1.300000"
+	"viewkick_yaw_hardScale" "1.000000"
+	"viewkick_roll_base" "0.000000"
+	"viewkick_roll_randomMin" "0.500000"
+	"viewkick_roll_randomMax" "0.700000"
+	"viewkick_roll_softScale" "0.200000"
+	"viewkick_roll_hardScale" "1.700000"
+	"viewkick_hipfire_weaponFraction" "0.800000"
+	"viewkick_hipfire_weaponFraction_vmScale" "1.000000"
+	"viewkick_ads_weaponFraction" "0.300000"
+	"viewkick_ads_weaponFraction_vmScale" "0.500000"
+	"viewkick_perm_pitch_base" "0.000000"
+	"viewkick_perm_pitch_random" "0.300000"
+	"viewkick_perm_yaw_base" "0.000000"
+	"viewkick_perm_yaw_random" "0.200000"
+	"viewpunch_multiplier" "1.250000"
+	"fire_rumble" "rumble_antititan"
+	"npc_min_range" "0"
+	"npc_max_range" "3000"
+	"npc_min_burst" "1"
+	"npc_max_burst" "1"
+	"npc_rest_time_between_bursts_min" "0.500000"
+	"npc_rest_time_between_bursts_max" "1"
+	"sprintcycle_time" "0.550000"
+	"menu_icon" "r2_ui/menus/loadout_icons/anti_titan/at_mgl"
+	"hud_icon" "rui/hud/ultimate_icons/ultimate_pathfinder"
+	"red_crosshair_range" "1500"
+	"weapon_type_flags" "WPT_ULTIMATE"
+	"OnWeaponRegenBegin" "Ultimate_OnWeaponRegenBegin"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "Survival_UI_Ultimate_Ready"
+	"drops_on_death" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"survival_finite_ordnance"
+		{
+
+		}
+
+		"beacon_1"
+		{
+			"ammo_clip_size" "170"
+			"ammo_min_to_fire" "170"
+			"ammo_per_shot" "170"
+
+		}
+
+		"beacon_2"
+		{
+			"ammo_clip_size" "160"
+			"ammo_min_to_fire" "160"
+			"ammo_per_shot" "160"
+
+		}
+
+		"beacon_3"
+		{
+			"ammo_clip_size" "150"
+			"ammo_min_to_fire" "150"
+			"ammo_per_shot" "150"
+
+		}
+
+		"beacon_4"
+		{
+			"ammo_clip_size" "140"
+			"ammo_min_to_fire" "140"
+			"ammo_per_shot" "140"
+
+		}
+
+		"beacon_5"
+		{
+			"ammo_clip_size" "130"
+			"ammo_min_to_fire" "130"
+			"ammo_per_shot" "130"
+
+		}
+
+		"beacon_6"
+		{
+			"ammo_clip_size" "120"
+			"ammo_min_to_fire" "120"
+			"ammo_per_shot" "120"
+
+		}
+
+		"cooldown_reduction_1"
+		{
+			"ammo_clip_size" "170"
+			"ammo_min_to_fire" "170"
+			"ammo_per_shot" "170"
+
+		}
+
+		"cooldown_reduction_2"
+		{
+			"ammo_clip_size" "160"
+			"ammo_min_to_fire" "160"
+			"ammo_per_shot" "160"
+
+		}
+
+		"cooldown_reduction_3"
+		{
+			"ammo_clip_size" "150"
+			"ammo_min_to_fire" "150"
+			"ammo_per_shot" "150"
+
+		}
+
+		"cooldown_reduction_4"
+		{
+			"ammo_clip_size" "140"
+			"ammo_min_to_fire" "140"
+			"ammo_per_shot" "140"
+
+		}
+
+		"cooldown_reduction_5"
+		{
+			"ammo_clip_size" "130"
+			"ammo_min_to_fire" "130"
+			"ammo_per_shot" "130"
+
+		}
+
+		"cooldown_reduction_6"
+		{
+			"ammo_clip_size" "120"
+			"ammo_min_to_fire" "120"
+			"ammo_per_shot" "120"
+
+		}
+
+		"cooldown_reduction_7"
+		{
+			"ammo_clip_size" "75"
+			"ammo_min_to_fire" "75"
+			"ammo_per_shot" "75"
+
+		}
+
+		"cooldown_reduction_8"
+		{
+			"ammo_clip_size" "60"
+			"ammo_min_to_fire" "60"
+			"ammo_per_shot" "60"
+
+		}
+
+		"upgrade_ult_one"
+		{
+			"ammo_per_shot" "*.5"
+			"ammo_min_to_fire" "*.5"
+			"zipline_distance_max" "4000"
+
+		}
+
+		"ultimates_charge_over_time_disabled"
+		{
+			"regen_ammo_refill_rate" "0"
+
+		}
+
+		"copycat_mod"
+		{
+			"weapon_type_flags" "WPT_SURVIVAL"
+
+		}
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+	}
+}

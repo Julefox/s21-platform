@@ -1,0 +1,1040 @@
+default: 
+{
+	id: 0
+	density: 2000
+	elasticity: 0.25
+	friction: 0.8
+	dampening: 0
+	step: "Default"
+	impact_table_hard: "physobject_default"
+	impact_table_soft: "physobject_default"
+	audiohardnessfactor: 1
+	impactHardThreshold: 0.5
+	gamematerial: "M"
+	jumpfactor: 1
+	maxspeedfactor: 1
+	climbable: 0
+	triggersound: ""
+}
+metal_titan: 
+{
+	id: 5
+	density: 2700
+	elasticity: 0.1
+	friction: 0.8
+	step: "SolidMetal"
+	impacthard: "Phys_Imp_Gib_Titan_Hard_Default"
+	impactsoft: "Phys_Imp_Gib_Titan_Soft_Default"
+	audioHardMinVelocity: 250
+	gamematerial: "E"
+}
+solidmetal: 
+{
+	id: 6
+	density: 2700
+	elasticity: 0.1
+	friction: 0.8
+	step: "SolidMetal"
+	audioHardMinVelocity: 250
+	gamematerial: "M"
+}
+metal: 
+{
+	id: 22
+	base: "solidmetal"
+	elasticity: 0.25
+	thickness: 0.1
+}
+metal_box: 
+{
+	id: 38
+	base: "solidmetal"
+	thickness: 0.1
+}
+metalpanel: 
+{
+	id: 41
+	base: "metal"
+	thickness: 0.1
+	density: 2700
+	elasticity: 0.2
+	friction: 0.8
+	gamematerial: "M"
+}
+metalgrate: 
+{
+	id: 7
+	thickness: 0.5
+	density: 1600
+	elasticity: 0.25
+	friction: 0.8
+	step: "MetalGrate"
+	gamematerial: "G"
+}
+metalvent: 
+{
+	id: 8
+	base: "metal_box"
+	thickness: 0.04
+	density: 2700
+	elasticity: 0.1
+	friction: 0.8
+	step: "MetalGrate"
+	gamematerial: "V"
+}
+dirt: 
+{
+	id: 9
+	density: 1600
+	elasticity: 0.01
+	friction: 0.8
+	step: "Dirt"
+	audiohardnessfactor: 0.25
+	gamematerial: "D"
+}
+dirt_red: 
+{
+	id: 127
+	base: "dirt"
+}
+tile: 
+{
+	id: 10
+	thickness: 0.5
+	density: 2700
+	elasticity: 0.3
+	friction: 0.8
+	step: "Tile"
+	gamematerial: "T"
+}
+xo_shield: 
+{
+	id: 11
+	density: 2000
+	elasticity: 0.25
+	friction: 0.8
+	dampening: 0
+	step: "xo_shield"
+	audiohardnessfactor: 1
+	impactHardThreshold: 0.5
+	gamematerial: "X"
+	jumpfactor: 1
+	maxspeedfactor: 1
+	climbable: 0
+}
+wood: 
+{
+	id: 12
+	density: 700
+	elasticity: 0.1
+	friction: 0.8
+	step: "wood"
+	break: "Wood.Break"
+	audiohardnessfactor: 0.25
+	gamematerial: "W"
+}
+wood_solid: 
+{
+	id: 13
+	base: "wood"
+	break: "Wood_Solid.Break"
+}
+water: 
+{
+	id: 14
+	density: 1000
+	elasticity: 0.1
+	friction: 0.8
+	step: "Water"
+	audiohardnessfactor: 0
+	gamematerial: "S"
+}
+concrete: 
+{
+	id: 15
+	density: 2400
+	elasticity: 0.2
+	friction: 0.8
+	step: "Concrete"
+	gamematerial: "C"
+}
+glass: 
+{
+	id: 16
+	thickness: 0.5
+	density: 2700
+	elasticity: 0.2
+	friction: 0.5
+	step: "SolidGlass"
+	break: "Glass.Break"
+	audiohardnessfactor: 1
+	gamematerial: "Y"
+}
+glass_breakable: 
+{
+	id: 17
+	thickness: 0.5
+	density: 2700
+	elasticity: 0.2
+	friction: 0.5
+	step: "SolidGlass"
+	break: "Glass.Break"
+	audiohardnessfactor: 1
+	gamematerial: "U"
+}
+flesh: 
+{
+	id: 18
+	density: 980
+	impacthard: "Phys_Imp_Bodyfall_Human_Hard_Default"
+	impactsoft: "Phys_Imp_Bodyfall_Human_Soft_Default"
+	break: "Flesh.Break"
+	audiohardnessfactor: 0.25
+	audioHardMinVelocity: 100
+	gamematerial: "F"
+}
+armorflesh: 
+{
+	id: 19
+	base: "flesh"
+	audiohardnessfactor: 1
+	gamematerial: "M"
+}
+sand: 
+{
+	id: 20
+	base: "dirt"
+	step: "Sand"
+	gamematerial: "Z"
+}
+sand_red: 
+{
+	id: 123
+	base: "sand"
+}
+sand_black: 
+{
+	id: 124
+	base: "sand"
+}
+sand_white: 
+{
+	id: 125
+	base: "sand"
+}
+mud: 
+{
+	id: 21
+	base: "dirt"
+	friction: 0.8
+	dampening: 6
+	step: "Mud"
+	audiohardnessfactor: 0
+	gamematerial: "K"
+}
+grass: 
+{
+	id: 23
+	base: "dirt"
+	step: "Grass"
+	gamematerial: "J"
+}
+brokenglass: 
+{
+	id: 24
+	base: "glass"
+	step: "BrokenGlass"
+}
+gravel: 
+{
+	id: 25
+	base: "concrete"
+	friction: 0.8
+	step: "Dirt"
+}
+bloodyflesh: 
+{
+	id: 26
+	base: "flesh"
+	impacthard: "Phys_Imp_Gib_Human_Hard_Default"
+	impactsoft: "Phys_Imp_Gib_Human_Soft_Default"
+	gamematerial: "B"
+}
+shellcasing_small: 
+{
+	id: 27
+	base: "metal_box"
+	friction: 0.3
+	elasticity: 0.99
+}
+shellcasing_large: 
+{
+	id: 28
+	base: "metal_box"
+	friction: 0.3
+	elasticity: 0.99
+}
+weapon: 
+{
+	id: 29
+	base: "metal"
+	impacthard: "weapon.ImpactHard"
+	impactsoft: "weapon.ImpactSoft"
+}
+computer: 
+{
+	id: 30
+	base: "solidmetal"
+	elasticity: 0.25
+	thickness: 0.1
+}
+canister: 
+{
+	id: 31
+	base: "metalpanel"
+}
+metal_barrel: 
+{
+	id: 32
+	base: "metal_box"
+	impacthard: "Metal_Barrel_ImpactHard"
+	impactsoft: "Metal_Barrel_ImpactSoft"
+	audioHardMinVelocity: 350
+}
+glassbottle: 
+{
+	id: 33
+	base: "glass"
+	friction: 0.4
+	elasticity: 0.3
+	density: 700
+	step: "SolidGlass"
+}
+pottery: 
+{
+	id: 34
+	base: "glassbottle"
+	friction: 0.4
+	elasticity: 0.3
+}
+grenade: 
+{
+	id: 35
+	base: "metalpanel"
+	friction: 10000
+	elasticity: 0.0001
+	dampening: 1000
+	audiohardnessfactor: 1
+	impacthard: "Phys_Imp_FragGrenade_Hard_Default"
+	impactsoft: "Phys_Imp_FragGrenade_Soft_Default"
+}
+grenade_triple_threat: 
+{
+	id: 36
+	base: "metalpanel"
+	friction: 10000
+	elasticity: 0.0001
+	dampening: 1000
+	audiohardnessfactor: 1
+	impacthard: "Wpn_TripleThreat_Grenade.ImpactHard"
+	impactsoft: "Wpn_TripleThreat_Grenade.ImpactHard"
+}
+bouncygrenade: 
+{
+	id: 37
+	base: "metalpanel"
+	friction: 0
+	elasticity: 1
+	dampening: 1000
+	density: 0
+	jumpfactor: 1
+	audiohardnessfactor: 1
+	impacthard: "Phys_Imp_FragGrenade_Hard_Default"
+	impactsoft: "Phys_Imp_FragGrenade_Soft_Default"
+}
+metal_bouncy: 
+{
+	id: 39
+	base: "solidmetal"
+	elasticity: 1000
+	friction: 0
+	density: 10000
+}
+slipperymetal: 
+{
+	id: 40
+	base: "metal"
+	friction: 0.1
+	elasticity: 0.15
+}
+slipperyslime: 
+{
+	id: 42
+	base: "dirt"
+	friction: 0.1
+	jumpfactor: 0.7
+	audiohardnessfactor: 0
+}
+wood_lowdensity: 
+{
+	id: 43
+	base: "wood"
+	density: 300
+}
+wood_box: 
+{
+	id: 44
+	base: "wood"
+	break: "Wood_Box.Break"
+}
+wood_crate: 
+{
+	id: 45
+	base: "wood"
+	break: "Wood_Crate.Break"
+}
+wood_plank: 
+{
+	id: 46
+	base: "wood_box"
+}
+wood_furniture: 
+{
+	id: 47
+	base: "wood_box"
+}
+wood_panel: 
+{
+	id: 48
+	base: "wood_crate"
+	thickness: 1
+	break: "Wood_Panel.Break"
+}
+slime: 
+{
+	id: 49
+	density: 2000
+	elasticity: 0.1
+	friction: 0.9
+	dampening: 200
+	step: "slime"
+	gamematerial: "N"
+	audiohardnessfactor: 0
+}
+quicksand: 
+{
+	id: 50
+	base: "sand"
+	density: 600
+	elasticity: 2
+	audiohardnessfactor: 0
+}
+rock: 
+{
+	id: 51
+	base: "concrete"
+	gamematerial: "C"
+}
+lava_rock: 
+{
+	id: 116
+	base: "dirt"
+	density: 2400
+	elasticity: 0.2
+	friction: 0.8
+	step: "Concrete"
+}
+lava_rock_hot: 
+{
+	id: 117
+	base: "lava_rock"
+	gamematerial: 2
+}
+lava_flow: 
+{
+	id: 118
+	density: 2400
+	elasticity: 0.2
+	friction: 0.8
+	step: "Concrete"
+	gamematerial: 1
+}
+vehicle: 
+{
+	id: 119
+	base: "metal_titan"
+	impact_table_hard: "hover_vehicle_impact_hard"
+	impact_table_soft: "hover_vehicle_impact_light"
+	audioHardMinVelocity: 300
+	impactHardThreshold: 0.2
+}
+porcelain: 
+{
+	id: 52
+	base: "concrete"
+}
+boulder: 
+{
+	id: 53
+	base: "concrete"
+}
+asphalt: 
+{
+	id: 54
+	base: "rock"
+	friction: 0.8
+	step: "Concrete"
+}
+brick: 
+{
+	id: 55
+	base: "concrete"
+}
+concrete_block: 
+{
+	id: 56
+	base: "concrete"
+}
+chainlink: 
+{
+	id: 57
+	thickness: 0.5
+	density: 1600
+	elasticity: 0.25
+	friction: 0.8
+	step: "MetalGrate"
+	gamematerial: "G"
+	triggersound: "Canyonlands_Generic_Emit_Rustle_Chainlink"
+}
+chain: 
+{
+	id: 58
+	base: "chainlink"
+	gamematerial: "G"
+}
+alienflesh: 
+{
+	id: 59
+	density: 980
+	audiohardnessfactor: 0.25
+	audioHardMinVelocity: 500
+	gamematerial: "H"
+}
+alienplant: 
+{
+	id: 64
+	density: 980
+	audiohardnessfactor: 0.25
+	audioHardMinVelocity: 500
+}
+Caustic_Trap: 
+{
+	id: 60
+	base: "default"
+}
+snow: 
+{
+	id: 61
+	density: 800
+	elasticity: 0.01
+	friction: 0.8
+	audiohardnessfactor: 0.25
+	step: "Sand"
+	gamematerial: "Q"
+}
+spiderflesh: 
+{
+	id: 126
+	base: "alienflesh"
+	gamematerial: 3
+}
+ice: 
+{
+	id: 62
+	density: 917
+	friction: 0.7
+	elasticity: 0.1
+	step: "Sand"
+	gamematerial: "R"
+}
+carpet: 
+{
+	id: 63
+	base: "dirt"
+	density: 500
+	thickness: 0.1
+	elasticity: 0.01
+	friction: 0.8
+	audiohardnessfactor: 0.25
+}
+plaster: 
+{
+	id: 65
+	base: "concrete"
+	audiohardnessfactor: 0.5
+	step: "wood"
+	break: "Cardboard.Break"
+}
+cardboard: 
+{
+	id: 66
+	base: "dirt"
+	density: 500
+	thickness: 0.25
+	audiohardnessfactor: 0.25
+	break: "Cardboard.Break"
+}
+plastic_barrel: 
+{
+	id: 67
+	density: 500
+	thickness: 0.25
+	elasticity: 0.01
+	friction: 0.8
+	audiohardnessfactor: 0.25
+	impacthard: "Plastic_Barrel.ImpactHard"
+	impactsoft: "Plastic_Barrel.ImpactSoft"
+	break: "Plastic_Barrel.Break"
+	gamematerial: "L"
+}
+plastic_box: 
+{
+	id: 68
+	density: 500
+	elasticity: 0.9
+	friction: 0.8
+	thickness: 0.25
+	audiohardnessfactor: 0.25
+	gamematerial: "L"
+}
+plastic: 
+{
+	id: 69
+	base: "plastic_box"
+}
+item: 
+{
+	id: 70
+	base: "plastic_box"
+	density: 600
+}
+floatingstandable: 
+{
+	id: 71
+	base: "dirt"
+	density: 800
+	visible_bakery: false
+}
+rubber: 
+{
+	id: 72
+	base: "plastic"
+	elasticity: 0.2
+	friction: 0.8
+	step: "Default"
+	audiohardnessfactor: 0.2
+}
+rubbertire: 
+{
+	id: 73
+	base: "rubber"
+	friction: 1
+}
+jeeptire: 
+{
+	id: 74
+	base: "rubber"
+	impacthard: "Rubber_Tire.ImpactHard"
+	impactsoft: "Rubber_Tire.ImpactSoft"
+	friction: 1.337
+	visible_bakery: false
+}
+slidingrubbertire: 
+{
+	id: 75
+	base: "rubber"
+	friction: 0.2
+	visible_bakery: false
+}
+brakingrubbertire: 
+{
+	id: 76
+	base: "rubber"
+	friction: 0.6
+	visible_bakery: false
+}
+slidingrubbertire_front: 
+{
+	id: 77
+	base: "rubber"
+	friction: 0.2
+	visible_bakery: false
+}
+slidingrubbertire_rear: 
+{
+	id: 78
+	base: "rubber"
+	friction: 0.2
+	visible_bakery: false
+}
+floating_metal_barrel: 
+{
+	id: 79
+	base: "metal_barrel"
+	density: 500
+}
+plastic_barrel_buoyant: 
+{
+	id: 80
+	base: "plastic_barrel"
+	density: 150
+}
+roller: 
+{
+	id: 81
+	base: "metalpanel"
+	friction: 0.7
+	elasticity: 0.3
+	impactHardThreshold: 0
+	audioHardMinVelocity: 200
+	impact_table_hard: "physobject_Lootball_Hard"
+	impact_table_soft: "physobject_Lootball_Soft"
+}
+popcan: 
+{
+	id: 82
+	base: "metal_box"
+	friction: 0.3
+	elasticity: 0.99
+	density: 700
+}
+paintcan: 
+{
+	id: 83
+	base: "popcan"
+	friction: 0.3
+	elasticity: 0.99
+}
+paper: 
+{
+	id: 84
+	base: "cardboard"
+}
+papercup: 
+{
+	id: 85
+	base: "paper"
+	friction: 0.8
+	elasticity: 0.1
+}
+ceiling_tile: 
+{
+	id: 86
+	base: "concrete"
+	break: "ceiling_tile.Break"
+}
+default_silent: 
+{
+	id: 87
+	gamematerial: "A"
+	visible_bakery: false
+}
+vehicle_barrier: 
+{
+	id: 120
+	base: "default_silent"
+	gamematerial: 3
+	visible_bakery: true
+}
+player: 
+{
+	id: 88
+	density: 1000
+	friction: 0.5
+	elasticity: 0.001
+	audiohardnessfactor: 0
+	visible_bakery: false
+}
+player_control_clip: 
+{
+	id: 89
+	gamematerial: "I"
+	visible_bakery: false
+}
+foliage: 
+{
+	id: 90
+	base: "wood_solid"
+	step: "Brush"
+	density: 700
+	elasticity: 0.1
+	friction: 0.8
+	gamematerial: "O"
+	triggersound: "Canyonlands_Generic_Emit_Rustle_BrightGreenBush"
+}
+Underground_Cube: 
+{
+	id: 91
+	base: "metal"
+	visible_bakery: false
+}
+Turret_Gib: 
+{
+	id: 92
+	base: "metal"
+	visible_bakery: false
+}
+metal_spectre: 
+{
+	id: 93
+	base: "solidmetal"
+	elasticity: 0.25
+	thickness: 0.1
+	audiohardnessfactor: 0.25
+	audioHardMinVelocity: 100
+	impacthard: "Phys_Imp_Bodyfall_Spectre_Hard_Default"
+	impactsoft: "Phys_Imp_Bodyfall_Spectre_Soft_Default"
+	gamematerial: "P"
+}
+arc_grenade: 
+{
+	id: 94
+	base: "metalpanel"
+	friction: 10000
+	elasticity: 0.0001
+	dampening: 1000
+	audiohardnessfactor: 1
+	impacthard: "ArcGrenade.ImpactHard"
+	impactsoft: "ArcGrenade.ImpactSoft"
+}
+upholstery: 
+{
+	id: 95
+	base: "plastic_box"
+}
+flyerflesh: 
+{
+	id: 96
+	base: "alienflesh"
+	impacthard: "Flyer_Bodyfall_Hard_Default"
+	impactsoft: "Flyer_Bodyfall_Soft_Default"
+}
+ammo_box: 
+{
+	id: 97
+	impact_table_hard: "physobject_ammo_hard"
+	impact_table_soft: "physobject_ammo_soft"
+	audioHardMinVelocity: 200
+	impactHardThreshold: 0
+}
+Helmet: 
+{
+	id: 98
+	impact_table_hard: "physobject_Helmet_hard"
+	impact_table_soft: "physobject_Helmet_soft"
+	audioHardMinVelocity: 200
+}
+Large_Backpack: 
+{
+	id: 99
+	impact_table_hard: "physobject_Large_Backpack_hard"
+	impact_table_soft: "physobject_Large_Backpack_soft"
+	audioHardMinVelocity: 200
+}
+Small_Backpack: 
+{
+	id: 100
+	impact_table_hard: "physobject_Small_Backpack_hard"
+	impact_table_soft: "physobject_Small_Backpack_soft"
+	audioHardMinVelocity: 200
+}
+Large_Medkit: 
+{
+	id: 101
+	impact_table_hard: "physobject_Large_Medkit_hard"
+	impact_table_soft: "physobject_Large_Medkit_soft"
+	audioHardMinVelocity: 200
+}
+Small_Medkit: 
+{
+	id: 102
+	impact_table_hard: "physobject_Small_Medkit_hard"
+	impact_table_soft: "physobject_Small_Medkit_soft"
+	audioHardMinVelocity: 200
+}
+Att_Scope: 
+{
+	id: 103
+	impact_table_hard: "physobject_Att_Scope_hard"
+	impact_table_soft: "physobject_Att_Scope_soft"
+	audioHardMinVelocity: 200
+}
+Att_Sup: 
+{
+	id: 104
+	impact_table_hard: "physobject_Att_Sup_hard"
+	impact_table_soft: "physobject_Att_Sup_soft"
+	audioHardMinVelocity: 200
+}
+Wpn_AR: 
+{
+	id: 105
+	impact_table_hard: "physobject_Wpn_AR_hard"
+	impact_table_soft: "physobject_Wpn_AR_soft"
+	audioHardMinVelocity: 200
+}
+Wpn_Sniper: 
+{
+	id: 106
+	impact_table_hard: "physobject_Wpn_Sniper_hard"
+	impact_table_soft: "physobject_Wpn_Sniper_soft"
+	audioHardMinVelocity: 200
+}
+Wpn_SMG: 
+{
+	id: 107
+	impact_table_hard: "physobject_Wpn_SMG_hard"
+	impact_table_soft: "physobject_Wpn_SMG_soft"
+	audioHardMinVelocity: 200
+}
+Wpn_Pistol: 
+{
+	id: 108
+	impact_table_hard: "physobject_Wpn_Pistol_hard"
+	impact_table_soft: "physobject_Wpn_Pistol_soft"
+	audioHardMinVelocity: 200
+}
+Wpn_Shotgun: 
+{
+	id: 109
+	impact_table_hard: "physobject_Wpn_Shotgun_hard"
+	impact_table_soft: "physobject_Wpn_Shotgun_soft"
+	audioHardMinVelocity: 200
+}
+Vest: 
+{
+	id: 110
+	impact_table_hard: "physobject_Vest_hard"
+	impact_table_soft: "physobject_Vest_soft"
+	audioHardMinVelocity: 200
+}
+Mags: 
+{
+	id: 111
+	impact_table_hard: "physobject_Mags_hard"
+	impact_table_soft: "physobject_Mags_soft"
+	audioHardMinVelocity: 200
+}
+Cyn_Medkit: 
+{
+	id: 112
+	impact_table_hard: "physobject_Cyn_Medkit"
+	impact_table_soft: "physobject_Cyn_Medkit"
+	audioHardMinVelocity: 200
+}
+Frag: 
+{
+	id: 113
+	impact_table_hard: "physobject_Frag"
+	impact_table_soft: "physobject_Frag"
+	audioHardMinVelocity: 200
+}
+ArcBlade: 
+{
+	id: 114
+	impact_table_hard: "physobject_ArcBlade"
+	impact_table_soft: "physobject_ArcBlade"
+	audioHardMinVelocity: 200
+}
+BatteryShield: 
+{
+	id: 115
+	impact_table_hard: "physobject_BatteryShield"
+	impact_table_soft: "physobject_BatteryShield"
+	audioHardMinVelocity: 200
+}
+reflective: 
+{
+	id: 1
+	base: "metalpanel"
+	visible_bakery: false
+}
+WeightedCube_Bounce: 
+{
+	id: 2
+	base: "metal_box"
+	impacthard: "WeightedCube.JumpPowerActivateLong"
+	impactsoft: "WeightedCube.JumpPowerActivateShort"
+	visible_bakery: false
+}
+PaintBomb: 
+{
+	id: 3
+	base: "metal"
+	visible_bakery: false
+}
+sphere2: 
+{
+	id: 4
+	base: "metal"
+	elasticity: 1.2
+	dampening: 0.25
+	friction: 0.5
+	density: 1000
+	visible_bakery: false
+}
+void_ring: 
+{
+	id: 121
+	impact_table_hard: "physobject_VoidRing"
+	impact_table_soft: "physobject_VoidRing"
+}
+BeaconCapsule: 
+{
+	id: 122
+	impact_table_hard: "physobject_Beacon_Capsule"
+	impact_table_soft: "physobject_Beacon_Capsule"
+}
+Att_LaserSight: 
+{
+	id: 128
+	impact_table_hard: "physobject_Att_Laser_hard"
+	impact_table_soft: "physobject_Att_Laser_soft"
+}
+Wpn_Knife: 
+{
+	id: 129
+	impact_table_hard: "physobject_throwingknife"
+	impact_table_soft: "physobject_throwingknife"
+}
+ferrofluid: 
+{
+	id: 130
+	density: 980
+	audiohardnessfactor: 0.25
+	audioHardMinVelocity: 500
+	gamematerial: 4
+}
+flesh_dummie: 
+{
+	id: 131
+	base: "metal"
+}
+EvacTower: 
+{
+	id: 132
+	impact_table_hard: "physobject_Evac_Tower"
+	impact_table_soft: "physobject_Evac_Tower"
+}
+Digital_Water: 
+{
+	id: 133
+	base: "glass"
+	gamematerial: 5
+}
+ShieldCore: 
+{
+	id: 134
+	impact_table_hard: "physobject_ShieldCore"
+	impact_table_soft: "physobject_ShieldCore"
+}

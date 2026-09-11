@@ -1,0 +1,637 @@
+// Flowstate LocalMsg / LocalSplashMsg -- S21 bridge port.
+// Server pushes token IDs or freeform text; client shows announcement or score splash RUI.
+// Splash uses the Lockdown score-info queue (works in any gamemode).
+
+global function INIT_Flowstate_Localization_Strings
+global function Flowstate_FetchToken
+global function GetLocalizedStringsCount
+
+#if SERVER
+	global function Flowstate_FetchTokenID
+	global function LocalMsg
+	global function LocalEventMsg
+	global function LocalEventMsgDelayed
+	global function LocalSplashMsg
+	global function LocalSplashMsgAll
+	global function LocalSplashMsgTeam
+	global function LocalSplashMsgDelayed
+	global function LocalizedTokenExists
+	global function IBMM_Notify
+	global function CreatePanelText_Localized
+	global function RemovePanelText
+#endif
+
+#if CLIENT
+	global function FS_ShowLocalMsg_AppendChar
+	global function FS_DisplayLocalizedToken
+	global function FS_DisplaySplashMessage
+	global function Flowstate_AddCustomScoreEventMessage
+	global function FS_PanelAppendChar
+	global function FS_CreateTextInfoPanelWithID_Localized
+
+	// Consumed by cl_utility Dev_CreateTextInfoPanelWithID (must load before cl_utility)
+	global string dev_infoPanelTitleString = ""
+	global string dev_infoPanelTextString = ""
+#endif
+
+global enum eMsgUI
+{
+	DEFAULT, 			// 0 -- generic_warning (FR rangemaster style)
+	EVENT, 				// 1 -- score splash (lockdown style)
+	CIRCLE_WARNING, 	// 2
+	BIG, 				// 3
+	QUICK, 				// 4
+	SWEEP, 				// 5
+	RESULTS, 			// 6
+	OBJECTIVE, 			// 7
+	ELITE, 				// 8
+	WAVE, 				// 9
+	SPLASH, 			// 10 -- same as EVENT (score splash queue)
+	WARNING, 			// 11 -- same as DEFAULT
+}
+
+const int FS_LOCALMSG_MAX_TOKEN = 256
+const int FS_LOCALMSG_MAX_CHARS = 2990
+const int FS_LOCALMSG_CHAR_MAX = 255
+const float FS_SPLASH_DEFAULT_DURATION = 4.0
+
+struct
+{
+	// Token ID -> "#KEY" for LocalMsg remotes only. Display text lives in
+	// platform/localization (localize_disk). No script English fallback.
+	table<int, string> FS_LocalizedStrings = {}
+	int iTokenCount = 0
+
+	#if SERVER
+		table<string, int> FS_LocalizedStringMap = {}
+	#endif
+
+	#if CLIENT
+		string fs_variableString = ""
+		string fs_variableSubString = ""
+		string fs_panelVarString = ""
+		string fs_panelVarSubString = ""
+	#endif
+} file
+
+// Order is fixed -- append only. Keys must exist in platform/localization.
+// refs: what callers pass to LocalMsg / LocalEventMsg (#TOKEN form).
+void function INIT_Flowstate_Localization_Strings()
+{
+	array<string> refs =
+	[
+		"#FS_NULL",
+		"#NO_ANIMS",
+		"#FS_NO_ANIMS",
+		"#NO_SLOTS",
+		"#FS_NO_SLOTS",
+		"#RECORDINGANIM_CUSTOM",
+		"#FS_RECORDINGANIM_CUSTOM",
+		"#SPACE",
+		"#FS_SPACE",
+		"#MOVEMENT_IS_SAVED",
+		"#FS_MOVEMENT_SAVED",
+		"#ANIM_NOT_FOUND",
+		"#FS_ANIM_NOT_FOUND",
+		"#ANIM_REMOVED_SLOT",
+		"#FS_ANIM_REMOVED_SLOT",
+		"#PLAYING_ANIM",
+		"#FS_PLAYING_ANIM",
+		"#RECORDER_ENDALL",
+		"#FS_RECORDER_ENDALL",
+		"#ADMIN_RECORDER_ENDALL",
+		"#FS_ADMIN_RECORDER_ENDALL",
+		"#OVER_BUDGET",
+		"#FS_OVER_BUDGET",
+		"#PLAYBACK_LIMIT",
+		"#FS_PLAYBACK_LIMIT",
+		"#CMD",
+		"#FS_CMD",
+		"#PLAYING_RANDOM",
+		"#FS_PLAYING_RANDOM",
+		"#PLAYING_RANDOM_DESC",
+		"#FS_PLAYING_RANDOM_DESC",
+		"#REMOVING_ALL_ANIMS",
+		"#FS_REMOVING_ALL_ANIMS",
+		"#PLAYING_ALL_ANIMS",
+		"#FS_PLAYING_ALL_ANIMS",
+		"#DisabledTDMWeps",
+		"#FS_DisabledTDMWeps",
+		"#FS_MOVEMENT_RECORDER",
+		// Freeroam / dev splash tokens (append only)
+		"#FS_INFINITE_AMMO_ON",
+		"#FS_INFINITE_AMMO_OFF",
+		"#FS_GODMODE_ON",
+		"#FS_GODMODE_OFF",
+		"#FS_NOCLIP_ON",
+		"#FS_NOCLIP_OFF",
+		"#FS_THIRDPERSON_ON",
+		"#FS_THIRDPERSON_OFF",
+		// Freeplay aim trainer (append only)
+		"#FS_AUTORELOAD_HIT_ON",
+		"#FS_AUTORELOAD_HIT_OFF",
+		"#FS_AUTORELOAD_KILL_ON",
+		"#FS_AUTORELOAD_KILL_OFF",
+		"#FS_AIMTRAINER_CHALLENGE_STARTED",
+		"#FS_AIMTRAINER_MODE_ON",
+		"#FS_AIMTRAINER_DYNSTATS_ON",
+		"#FS_AIMTRAINER_DYNSTATS_OFF",
+		"#FS_AIMTRAINER_TIMER_LABEL",
+		// AFK / ping (append only)
+		"#FS_AFK_ALERT",
+		"#FS_AFK_REST_MSG",
+		"#FS_AFK_KICK_MSG",
+		"#FS_AFK_KICK",
+		"#FS_WAIT_TIME_CC",
+		"#FS_MKB",
+		"#FS_CONTROLLER",
+		"#FS_InputLocked",
+		"#FS_CouldNotLock",
+		"#FS_AnyInput",
+		// DevMenu Auto Respawn (append only)
+		"#FS_AUTO_RESPAWN_ON",
+		"#FS_AUTO_RESPAWN_OFF",
+		// DevMenu Infinite Abilities (append only)
+		"#FS_INFINITE_ABILITIES_ON",
+		"#FS_INFINITE_ABILITIES_OFF",
+
+		// fs_1v1 / matchmaking / remaining FS call sites (append only)
+		"#FS_AIMTRAINER_MODE_OFF",
+		"#FS_ALL_WEPS_SAVED",
+		"#FS_AUTORELOAD_SHOT_OFF",
+		"#FS_AUTORELOAD_SHOT_ON",
+		"#FS_AbilityBlacklisted",
+		"#FS_CHALLENGE_STARTED",
+		"#FS_CHALLENGE_WAITING_FOR",
+		"#FS_CUSTOM_WEAPON_CHAL_ONLY",
+		"#FS_CantChalSelf",
+		"#FS_ChalAccepted",
+		"#FS_ChalEnded",
+		"#FS_ChalQuit",
+		"#FS_ChalRequest",
+		"#FS_ChalRevoked",
+		"#FS_ChalSent",
+		"#FS_ChalStarted",
+		"#FS_Challenge_usage",
+		"#FS_Challenge_usage_2",
+		"#FS_ChallengersCleared",
+		"#FS_Challenges",
+		"#FS_Challenges_Disabled",
+		"#FS_CustomWepChalOnly",
+		"#FS_DisabledLegends",
+		"#FS_FAILED",
+		"#FS_FAILEDSAVE",
+		"#FS_GameNotPlaying",
+		"#FS_IBMM_Time_Changed",
+		"#FS_IBMM_Time_Failed",
+		"#FS_INPUT_CHANGED",
+		"#FS_INPUT_CHANGED_SUBSTR",
+		"#FS_IN_QUEUE",
+		"#FS_InChallenge",
+		"#FS_InChallenge_SUBSTR",
+		"#FS_InvalidLegend",
+		"#FS_InvalidPlayer",
+		"#FS_JOIN_QUEUE",
+		"#FS_JumpToStopSpec",
+		"#FS_MATCHING",
+		"#FS_MATCHING_ANY",
+		"#FS_MATCHING_FOR",
+		"#FS_MATCHMAKING_COUNTDOWN",
+		"#FS_MATCH_FOUND",
+		"#FS_MustBeInRest",
+		"#FS_MustBeInRest_SUBSTR",
+		"#FS_NEW_REQUEST",
+		"#FS_NO_PLAYERS_TO_SPEC",
+		"#FS_NoChal",
+		"#FS_NoChalFromPlayer",
+		"#FS_NoChalFromPlayer_SUBSTR",
+		"#FS_NoChalToEnd",
+		"#FS_NoChallengesToRemove",
+		"#FS_NoOutgoingChal",
+		"#FS_NotAllowedWaiting",
+		"#FS_NotInChal",
+		"#FS_NotInFight",
+		"#FS_OpponentDisconnect",
+		"#FS_OutgoingChal",
+		"#FS_PlayerInChal",
+		"#FS_PlayerNotInChallenges",
+		"#FS_PlayerQuit",
+		"#FS_PlayingAs",
+		"#FS_RESTCOOLDOWN",
+		"#FS_RESTING",
+		"#FS_RESTING_PANEL",
+		"#FS_ROUND_END_PANEL",
+		"#FS_ROUND_END_SPLASH",
+		"#FS_ROUND_END_TITLE",
+		"#FS_RemovedChallenger",
+		"#FS_RestGrace",
+		"#FS_RevokedFromPlayers",
+		"#FS_RevokedX",
+		"#FS_SUCCESS",
+		"#FS_SendingToRestAfter",
+		"#FS_SpawnCycDisabled",
+		"#FS_SpawnCycEnabled",
+		"#FS_SpawnSwapDisabled",
+		"#FS_SpawnSwapEnabled",
+		"#FS_TgiveCooldown",
+		"#FS_TryRestAgainIn",
+		"#FS_UnknownCommand",
+		"#FS_Usage",
+		"#FS_WAITING_PANEL",
+		"#FS_WEAPONSAVED",
+		"#FS_WEAPONS_RESET",
+		"#FS_WepBlacklisted",
+		"#FS_WepNotAllowed",
+		"#FS_YouAreResting",
+		"#FS_ChalBusy",
+		"#FS_ChalCooldown",
+		"#FS_ChalDeclined",
+		"#FS_ChalDisabled",
+		"#FS_ChalExpired",
+		"#FS_ChalInboxFull",
+		"#FS_ChalOffer",
+		"#FS_ChalPending",
+		"#FS_ChalNotAccepting",
+	]
+
+	Assert( refs.len() <= FS_LOCALMSG_MAX_TOKEN )
+
+	file.iTokenCount = refs.len()
+	for ( int i = 0; i < refs.len(); i++ )
+	{
+		file.FS_LocalizedStrings[ i ] <- refs[ i ]
+		#if SERVER
+			file.FS_LocalizedStringMap[ refs[ i ] ] <- i
+		#endif
+	}
+
+	#if DEVELOPER
+		printt( "FS LocalMsg: registered " + string( file.iTokenCount ) + " tokens (disk loc)" )
+	#endif
+}
+
+int function GetLocalizedStringsCount()
+{
+	return file.iTokenCount
+}
+
+string function Flowstate_FetchToken( int tokenID )
+{
+	// ID 0 is the "no token" sentinel the server sends for an empty ref; slot 0
+	// holds #FS_NULL, which must never reach the display path.
+	if ( tokenID == 0 )
+		return ""
+
+	if ( tokenID in file.FS_LocalizedStrings )
+		return file.FS_LocalizedStrings[ tokenID ]
+	return ""
+}
+
+#if SERVER
+int function Flowstate_FetchTokenID( string ref )
+{
+	if ( ref == "" )
+		return 0
+
+	if ( ref in file.FS_LocalizedStringMap )
+		return file.FS_LocalizedStringMap[ ref ]
+
+	Warning( "LocalMsg: unregistered token '%s'", ref )
+	return 0
+}
+
+bool function LocalizedTokenExists( string ref )
+{
+	return ( ref in file.FS_LocalizedStringMap )
+}
+
+void function FS_LocalMsg_StreamVar( entity player, int textType, string sendMessage )
+{
+	int msgLen = sendMessage.len()
+	for ( int k = 0; k < msgLen; k++ )
+	{
+		int ch = expect int( sendMessage[ k ] )
+		if ( ch < 0 )
+			ch = 0
+		if ( ch > FS_LOCALMSG_CHAR_MAX )
+			ch = FS_LOCALMSG_CHAR_MAX
+		Remote_CallFunction_NonReplay( player, "FS_ShowLocalMsg_AppendChar", textType, ch )
+	}
+}
+
+void function LocalMsg( entity player, string ref, string subref = "", int uiType = eMsgUI.DEFAULT, float duration = 5.0, string varString = "", string varSubstring = "", string sound = "" )
+{
+	if ( !IsValid( player ) )
+		return
+	if ( !player.IsPlayer() || player.IsBot() )
+		return
+
+	int dataLen = varString.len() + varSubstring.len()
+	if ( dataLen > FS_LOCALMSG_MAX_CHARS )
+	{
+		Warning( "LocalMsg: var data too long (%d)", dataLen )
+		return
+	}
+
+	if ( dataLen > 0 )
+	{
+		FS_LocalMsg_StreamVar( player, 0, varString )
+		FS_LocalMsg_StreamVar( player, 1, varSubstring )
+	}
+
+	int tokenID = Flowstate_FetchTokenID( ref )
+	int subTokenID = 0
+	if ( subref != "" )
+		subTokenID = Flowstate_FetchTokenID( subref )
+
+	Remote_CallFunction_NonReplay( player, "FS_DisplayLocalizedToken", tokenID, subTokenID, uiType, duration )
+
+	if ( sound != "" )
+		thread EmitSoundOnEntityOnlyToPlayer( player, player, sound )
+}
+
+// The VS bar's lock badge and device icons carry the whole answer now.
+void function IBMM_Notify( entity player, string ibmmLockTypeToken, int enemyPlayerInputType, float duration = 5.0 )
+{
+}
+
+// World-space notification panel (rest room / matching / challenge).
+void function CreatePanelText_Localized( entity player, string ref, string subRef, string varString, string varSubstring, vector origin, vector angles, float textScale, int panelID = 0 )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() || player.IsBot() || !player.p.isConnected )
+		return
+
+	int dataLen = varString.len() + varSubstring.len()
+	if ( dataLen >= 599 )
+	{
+		Warning( "CreatePanelText_Localized: var data too long (%d)", dataLen )
+		return
+	}
+
+	if ( dataLen > 0 )
+	{
+		for ( int textType = 0; textType < 2; textType++ )
+		{
+			string sendMessage = textType == 0 ? varString : varSubstring
+			int msgLen = sendMessage.len()
+			for ( int i = 0; i < msgLen; i++ )
+			{
+				int ch = expect int( sendMessage[ i ] )
+				if ( ch < 0 )
+					ch = 0
+				if ( ch > FS_LOCALMSG_CHAR_MAX )
+					ch = FS_LOCALMSG_CHAR_MAX
+				Remote_CallFunction_NonReplay( player, "FS_PanelAppendChar", textType, ch )
+			}
+		}
+	}
+
+	int tokenID = 0
+	int subTokenID = 0
+	if ( ref != "" )
+		tokenID = Flowstate_FetchTokenID( ref )
+	if ( subRef != "" )
+		subTokenID = Flowstate_FetchTokenID( subRef )
+
+	Remote_CallFunction_NonReplay( player, "FS_CreateTextInfoPanelWithID_Localized", tokenID, subTokenID, origin, angles, textScale, panelID )
+}
+
+void function RemovePanelText( entity player, int id )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() || player.IsBot() )
+		return
+	Remote_CallFunction_NonReplay( player, "Dev_DestroyTextInfoPanelWithID", id )
+}
+
+// Token-based score splash (LocalMsg + eMsgUI.EVENT / SPLASH).
+void function LocalEventMsg( entity player, string ref, string varString = "", float duration = 5 )
+{
+	LocalMsg( player, ref, "", eMsgUI.EVENT, duration, varString )
+}
+
+void function LocalEventMsgDelayed( float eventdelay, entity player, string ref, string varString = "", float duration = 5 )
+{
+	thread
+	(
+		void function() : ( eventdelay, player, ref, varString, duration )
+		{
+			wait eventdelay
+			if ( IsValid( player ) )
+				LocalEventMsg( player, ref, varString, duration )
+		}
+	)()
+}
+
+// Freeform score splash -- any string, no token table required.
+// Example: LocalSplashMsg( player, "Infinite Ammo Enabled" )
+void function LocalSplashMsg( entity player, string text, float duration = FS_SPLASH_DEFAULT_DURATION, string sound = "" )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() || player.IsBot() )
+		return
+
+	if ( text == "" || text == " " )
+		return
+
+	if ( text.len() > FS_LOCALMSG_MAX_CHARS )
+	{
+		Warning( "LocalSplashMsg: text too long (%d)", text.len() )
+		return
+	}
+
+	FS_LocalMsg_StreamVar( player, 0, text )
+	Remote_CallFunction_NonReplay( player, "FS_DisplaySplashMessage", duration )
+
+	if ( sound != "" )
+		thread EmitSoundOnEntityOnlyToPlayer( player, player, sound )
+}
+
+void function LocalSplashMsgAll( string text, float duration = FS_SPLASH_DEFAULT_DURATION, string sound = "" )
+{
+	foreach ( entity player in GetPlayerArray() )
+		LocalSplashMsg( player, text, duration, sound )
+}
+
+void function LocalSplashMsgTeam( int team, string text, float duration = FS_SPLASH_DEFAULT_DURATION, string sound = "" )
+{
+	foreach ( entity player in GetPlayerArrayOfTeam( team ) )
+		LocalSplashMsg( player, text, duration, sound )
+}
+
+void function LocalSplashMsgDelayed( float eventdelay, entity player, string text, float duration = FS_SPLASH_DEFAULT_DURATION, string sound = "" )
+{
+	thread
+	(
+		void function() : ( eventdelay, player, text, duration, sound )
+		{
+			wait eventdelay
+			if ( IsValid( player ) )
+				LocalSplashMsg( player, text, duration, sound )
+		}
+	)()
+}
+#endif // SERVER
+
+#if CLIENT
+void function FS_ShowLocalMsg_AppendChar( int textType, int charCode )
+{
+	string piece = format( "%c", charCode )
+	if ( textType == 0 )
+		file.fs_variableString += piece
+	else
+		file.fs_variableSubString += piece
+}
+
+void function FS_PanelAppendChar( int textType, int charCode )
+{
+	string piece = format( "%c", charCode )
+	if ( textType == 0 )
+		file.fs_panelVarString += piece
+	else
+		file.fs_panelVarSubString += piece
+}
+
+// World panel create: resolve tokens + streamed vars, feed Dev_CreateTextInfoPanelWithID.
+void function FS_CreateTextInfoPanelWithID_Localized( int token, int subToken, vector origin, vector angles, float textScale, int panelID )
+{
+	string title = FS_ResolveDisplayString( token, file.fs_panelVarString )
+	string body = FS_ResolveDisplayString( subToken, file.fs_panelVarSubString )
+
+	file.fs_panelVarString = ""
+	file.fs_panelVarSubString = ""
+
+	// cl_utility.gnut globals consumed by Dev_CreateTextInfoPanelWithID
+	dev_infoPanelTitleString = title
+	dev_infoPanelTextString = body
+
+	Dev_CreateTextInfoPanelWithID( origin, angles, false, textScale, panelID )
+}
+
+// Display text: Localize(token) from platform/localization only (no script fallback).
+string function FS_ResolveDisplayString( int tokenID, string variablePart )
+{
+	string localToken = Flowstate_FetchToken( tokenID )
+	if ( localToken == "" )
+		return variablePart
+
+	string base = Localize( localToken )
+	// Missing disk entry: Localize may return the raw #KEY -- surface that so loc gaps are visible.
+	if ( base == "" )
+		base = localToken
+
+	// Support one %s (or append when none).
+	if ( variablePart != "" && base.find( "%s" ) != -1 )
+		return format( base, variablePart )
+
+	if ( variablePart != "" )
+		return base + " " + variablePart
+
+	return base
+}
+
+void function FS_DisplayLocalizedToken( int token, int subtoken, int uiType, float duration )
+{
+	string S = file.fs_variableString
+	string SubS = file.fs_variableSubString
+
+	// Optional: variable payload may itself be a #token.
+	if ( S.len() > 1 && S.find( "#" ) == 0 )
+		S = Localize( S )
+	if ( SubS.len() > 1 && SubS.find( "#" ) == 0 )
+		SubS = Localize( SubS )
+
+	string Msg = FS_ResolveDisplayString( token, S )
+	string SubMsg = FS_ResolveDisplayString( subtoken, SubS )
+
+	file.fs_variableString = ""
+	file.fs_variableSubString = ""
+
+	if ( uiType == eMsgUI.EVENT || uiType == eMsgUI.SPLASH )
+	{
+		Flowstate_AddCustomScoreEventMessage( Msg, duration )
+		return
+	}
+
+	FS_LocalMsg_DisplayAnnouncement( Msg, SubMsg, duration, uiType )
+}
+
+// Freeform path: consume streamed text and show score splash.
+void function FS_DisplaySplashMessage( float duration )
+{
+	string text = file.fs_variableString
+	file.fs_variableString = ""
+	file.fs_variableSubString = ""
+
+	Flowstate_AddCustomScoreEventMessage( text, duration )
+}
+
+void function FS_LocalMsg_DisplayAnnouncement( string str1, string str2, float duration, int uiType )
+{
+	entity player = GetLocalClientPlayer()
+	if ( !IsValid( player ) )
+		return
+
+	AnnouncementData announcement = Announcement_Create( str1 )
+	Announcement_SetHideOnDeath( announcement, false )
+	Announcement_SetDuration( announcement, duration )
+	Announcement_SetPurge( announcement, true )
+
+	int style = ANNOUNCEMENT_STYLE_GENERIC_WARNING
+	switch ( uiType )
+	{
+		case eMsgUI.CIRCLE_WARNING:
+			style = ANNOUNCEMENT_STYLE_CIRCLE_WARNING
+			break
+		case eMsgUI.BIG:
+			style = ANNOUNCEMENT_STYLE_BIG
+			break
+		case eMsgUI.QUICK:
+			style = ANNOUNCEMENT_STYLE_QUICK
+			break
+		case eMsgUI.SWEEP:
+		case eMsgUI.WAVE:
+			style = ANNOUNCEMENT_STYLE_SWEEP
+			break
+		case eMsgUI.RESULTS:
+			style = ANNOUNCEMENT_STYLE_RESULTS
+			break
+		case eMsgUI.OBJECTIVE:
+			style = ANNOUNCEMENT_STYLE_OBJECTIVE
+			break
+		case eMsgUI.ELITE:
+			style = ANNOUNCEMENT_STYLE_ELITE
+			break
+		case eMsgUI.WARNING:
+		case eMsgUI.DEFAULT:
+		default:
+			style = ANNOUNCEMENT_STYLE_GENERIC_WARNING
+			break
+	}
+
+	if ( style == ANNOUNCEMENT_STYLE_GENERIC_WARNING )
+	{
+		Announcement_SetHeaderText( announcement, " " )
+		if ( str2 == "" )
+			Announcement_SetSubText( announcement, " " )
+		else
+			Announcement_SetSubText( announcement, str2 )
+		Announcement_SetTitleColor( announcement, <1, 1, 1> )
+		Announcement_SetVerticalOffset( announcement, 140 )
+	}
+	else
+	{
+		Announcement_SetSubText( announcement, str2 )
+	}
+
+	Announcement_SetStyle( announcement, style )
+	AnnouncementFromClass( player, announcement )
+}
+
+// Score splash (Lockdown look). Queues; multiple messages stack.
+void function Flowstate_AddCustomScoreEventMessage( string eventText, float duration )
+{
+	if ( eventText == " " || eventText == "" )
+		return
+
+	AddScoreStyleQueueMessage( eventText, duration )
+}
+#endif // CLIENT

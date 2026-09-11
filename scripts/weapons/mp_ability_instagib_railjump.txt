@@ -1,0 +1,93 @@
+"WeaponData"
+{
+	"printname" "Railjump"
+	"shortprintname" "Railjump"
+	"description" "Look down and jump."
+	"longdesc" "Predicted knockback jump."
+	"menu_icon" "rui/hud/tactical_icons/tactical_octane"
+	"hud_icon" "rui/hud/tactical_icons/tactical_octane"
+	"weapon_type_flags" "WPT_TACTICAL"
+	"weaponClass" "human"
+	"weaponType" "tactical"
+	"menu_category" "ordnance"
+	"dev_menu_type" "offhand"
+	"fire_mode" "offhandInstant"
+	"offhand_default_inventory_slot" "1"
+	"offhand_keep_primary_in_hand" "1"
+	"offhand_holster_primary" "0"
+	"fast_swap_to" "1"
+	"does_not_interrupt_cloak" "1"
+	"zoom_effects" "0"
+	"OnWeaponAttemptOffhandSwitch" "OnWeaponAttemptOffhandSwitch_InstagibRailjump"
+	"OnWeaponPrimaryAttack" "OnWeaponPrimaryAttack_InstagibRailjump"
+	"OnWeaponRegenEnd" "OnWeaponRegenEndGeneric"
+	"viewmodel" "mdl/weapons/empty_handed/ptpov_emptyhand.rmdl"
+	"playermodel" "mdl/weapons/empty_handed/w_empty_handed_human.rmdl"
+	"projectilemodel" "mdl/dev/empty_model.rmdl"
+	"damage_type" "none"
+	"explosion_damage_heavy_armor" "0"
+	"damage_near_distance" "0"
+	"damage_far_distance" "0"
+	"damage_near_value" "0"
+	"damage_far_value" "0"
+	"impulse_force" "0"
+	"fire_rate" "1000.000000"
+	"fire_duration" "0.001000"
+	"holster_time" "0.010000"
+	"deploy_time" "0.010000"
+	"lower_time" "0.010000"
+	"raise_time" "0.010000"
+	"allow_empty_fire" "0"
+	"reload_enabled" "0"
+	"empty_reload_only" "0"
+	"allow_empty_click" "0"
+	"allow_headshots" "0"
+	"primary_fire_does_not_block_sprint" "1"
+	"aimassist_disable_hipfire" "1"
+	"aimassist_disable_ads" "1"
+	"cooldown_type" "ammo"
+	"ammo_display" "bar"
+	"ammo_clip_size" "1"
+	"ammo_default_total" "1"
+	"ammo_min_to_fire" "1"
+	"ammo_per_shot" "1"
+	"ammo_stockpile_max" "1"
+	"regen_ammo_refill_rate" "1"
+	"regen_ammo_refill_start_delay" "0.000000"
+	"no_ammo_used_on_primary_attack" "0"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_weapon_ready" "survival_ui_tactical_ready"
+	"update_player_last_fire_time" "0"
+	"offhand_match_player_skin" "1"
+	"ordnance_crosshair_always_on_start_index" "0"
+	"active_crosshair_count" "0"
+
+	"Mods"
+	{
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+		}
+	}
+}

@@ -1,0 +1,31 @@
+global function ShPassiveTacCooldownExtra_Init
+
+global const string TAC_COOLDOWN_REDUCTION_MOD = "upgrade_core_tac_cooldown_reduction"
+const string TAC_COOLDOWN_REDUCTION_EXTRA_MOD = "upgrade_core_tac_cooldown_reduction_extra"
+
+
+void function ShPassiveTacCooldownExtra_Init()
+{
+	AddCallback_OnPassiveChanged( ePassives.PAS_TAC_COOLDOWN_REDUCTION_EXTRA, TacCooldownExtra_OnPassiveChanged )
+}
+
+void function TacCooldownExtra_OnPassiveChanged( entity player, int passive, bool didHave, bool nowHas )
+{
+	#if SERVER
+	if ( nowHas )
+	{
+		if( player.HasPassive( ePassives.PAS_TAC_COOLDOWN_REDUCTION ) )
+		{
+			array mods = player.GetExtraWeaponMods()
+			mods.append( TAC_COOLDOWN_REDUCTION_EXTRA_MOD )
+			mods.fastremovebyvalue( TAC_COOLDOWN_REDUCTION_MOD )
+			player.SetExtraWeaponMods( mods )
+		}
+		else
+		{
+			GiveExtraWeaponMod( player, TAC_COOLDOWN_REDUCTION_MOD )
+		}
+		Remote_CallFunction_NonReplay( player, "ServerCallback_UpdateOffhandRuis" )
+	}
+	#endif
+}

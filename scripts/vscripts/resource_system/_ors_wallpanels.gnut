@@ -1,0 +1,111 @@
+global function ORSPrecache_WallButtons
+
+#if SERVER
+global function WallButton_CreateForSpawner
+global function WallButton_Deactivate
+global function WallButton_Reactivate
+#endif // SERVER
+
+global const string SIG_ON_DEACTIVATE = "OnDeactivate"
+global const string SIG_ON_ACTIVATE = "OnActivate"
+
+const asset MODEL_WALLBUTTON = $"mdl/props/global_access_panel_button/global_access_panel_button_wall.rmdl"
+const int SKIN_WALLBUTTON_ON = 0
+const int SKIN_WALLBUTTON_OFF = 1
+
+void function ORSPrecache_WallButtons()
+{
+	#if SERVER || CLIENT
+	PrecacheModel( MODEL_WALLBUTTON )
+	#endif // SERVER || CLIENT
+}
+
+
+#if SERVER
+
+struct WallButtonSpawnInfo
+{
+	vector origin
+	vector angles
+
+	string prompt = "%&use% Press"
+	asset model = MODEL_WALLBUTTON
+}
+
+WallButtonSpawnInfo function WallButton_BuildSpawnInfoFromRes( WallButtonSpawner res )
+{
+	WallButtonSpawnInfo info
+	info.origin = res.core.spawnOrigin
+	info.angles = res.core.spawnAngles
+	return info
+}
+
+entity function WallButton_Create( WallButtonSpawnInfo info )
+{
+	entity button = CreatePropDynamic( info.model, info.origin, info.angles )
+	button.SetTouchTriggers( false )
+
+	button.SetUsable()
+	WallButton_SetPrompt( button, info.prompt )
+	button.AddUsableValue( USABLE_BY_OWNER | USABLE_BY_PILOTS | USABLE_BY_ENEMIES )
+
+	/*
+	vector offset = <0,0,0>
+	switch( model )
+	{
+		case MODEL_CONSOLEBUTTON:
+			offset = <0,0,12>
+			break
+		case MODEL_WALLBUTTON:
+			offset = <0,0,5>
+			break
+	}
+	*/
+
+	//thread CreateWaypoint_UseObject( button, "#PVE_WAYPOINT_BUTTON", $"rui/hud/common/overhead_icon_pilot_arrow", offset )
+
+	return button
+}
+
+void function WallButton_CreateForSpawner( WallButtonSpawner res )
+{
+	Assert( !IsValid( res.panel ) )
+	WallButtonSpawnInfo info = WallButton_BuildSpawnInfoFromRes( res )
+	res.panel = WallButton_Create( info )
+}
+
+void function WallButton_Deactivate( entity button )
+{
+	button.Signal( SIG_ON_DEACTIVATE )
+	button.UnsetUsable()
+	button.SetSkin( SKIN_WALLBUTTON_OFF )
+}
+
+void function WallButton_Reactivate( entity button )
+{
+	button.Signal( SIG_ON_ACTIVATE )
+	button.SetUsable()
+	button.SetSkin( SKIN_WALLBUTTON_ON )
+}
+
+void function WallButton_SetPrompt( entity button, string prompt )
+{
+	button.SetUsePrompts( prompt, prompt )
+}
+
+#endif // #if SERVER
+
+
+/*
+ORS_WallButtonSpawn( res )
+
+WallButton_BuildSpawnInfoFromRes( res )
+WallButton_Create( info )
+WallButton_Deactivate( button )
+WallButton_Reactivate( button )
+
+// scr_flagToggle
+WallButton_Thread_ToggleFlagOnUse( si, button, flag )  // "Set this flag when switch is activated (green), clear this flag when switch is deactivated (red)."
+WallButton_SetPrompt( string prompt )
+*/
+////////////////////////////////////////

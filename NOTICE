@@ -1,0 +1,46 @@
+s21-platform NOTICE
+==================
+
+This repository mixes material under three different terms. Read this file
+before redistributing any part of it.
+
+
+1. OUR WORK, AGPL-3.0
+---------------------
+
+The R5Flowstate additions to this tree are licensed under the GNU Affero
+General Public License, version 3, as set out in LICENSE. That covers the game
+modes, menus, UI, bridge glue, datatable and cfg work authored for this
+project.
+
+
+2. RESPAWN AND EA MATERIAL, NOT OURS TO LICENSE
+----------------------------------------------
+
+Large parts of this tree derive from Apex Legends and are the property of
+Respawn Entertainment and Electronic Arts. That includes, without limitation:
+
+  - the original Squirrel script structure, function names and call shapes
+  - asset, model, entity, weapon, effect and sound names
+  - the shipped localization strings under localization/, in every language
+  - datatable and keyvalue schemas the engine defines
+
+None of it is licensed to you by us, and the AGPL grant in section 1 does not
+extend to it. It is present because the platform cannot run without naming
+what the engine already contains. This project is unaffiliated with, and not
+endorsed by, Respawn Entertainment or Electronic Arts.
+
+
+3. THIRD-PARTY FONTS
+--------------------
+
+resource/FusionPixel.ttf
+  Fusion Pixel 10px Monospaced. Copyright (c) 2022 TakWolf
+  (https://takwolf.com), with Reserved Font Name "Fusion Pixel".
+  Licensed under the SIL Open Font License, Version 1.1.
+  https://openfontlicense.org
+
+resource/ProggyClean.ttf
+  ProggyCleanTT by Tristan Grimmer, 2004. Redistributed under the permissive
+  terms published at https://proggyfonts.net: free to use and redistribute,
+  with the copyright notice retained.

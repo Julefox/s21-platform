@@ -1,0 +1,28 @@
+// fs_instagib registration: name + shared/server/client inits.
+
+global function FS_Instagib_RegisterMode
+
+void function FS_Instagib_RegisterMode()
+{
+	int modeId = RegisterGamemode( "fs_instagib" )
+	if ( modeId == eGameModes.invalid )
+	{
+		printt( "[FS-IG] RegisterMode FAILED" )
+		return
+	}
+
+	#if SERVER || CLIENT
+		GameMode_AddSharedInitByName( "fs_instagib", FS_Instagib_SharedInit )
+		GameMode_AddSharedInitByName( "fs_instagib", Sh_GamemodeInstagib_Init )
+	#endif
+
+	#if SERVER
+		GameMode_AddServerInitByName( "fs_instagib", _GamemodeInstagib_Init )
+	#endif
+
+	#if CLIENT
+		GameMode_AddClientInitByName( "fs_instagib", Cl_GamemodeInstagib_Init )
+	#endif
+
+	printt( "[FS-IG] RegisterMode id=" + string( modeId ) + " inits wired" )
+}

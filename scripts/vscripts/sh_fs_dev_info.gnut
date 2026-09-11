@@ -1,0 +1,11 @@
+#if CLIENT
+global function R5F_GetProductVersion
+
+string function R5F_GetProductVersion()
+{
+	string ver = GetConVarString( "r5f_display_version" )
+	if ( ver.len() == 0 )
+		return "1.0.0 RC 3"
+	return ver
+}
+#endif

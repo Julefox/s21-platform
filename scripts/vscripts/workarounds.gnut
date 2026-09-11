@@ -1,0 +1,1107 @@
+// ============================================================================
+// workarounds.gnut — dual-role (s21-scripts)
+// SERVER: S3 bridge stubs. CLIENT/UI: stock AssetAppend helpers only.
+// ============================================================================
+
+// All global function decls for this file MUST come before any function body
+// (Squirrel: "Global declarations must be before all other functions").
+#if SERVER || CLIENT || UI
+global function WORKAROUND_AssetAppend
+#endif
+
+#if SERVER || CLIENT
+// S3 native missing on bridge; SERVER has real stick logic stub, CLIENT no-op.
+global function PlantSuperStickyGrenade
+#endif
+
+#if SERVER
+global function WORKAROUND_AnimAssetToAnimString
+global function WORKAROUND_PreventScriptErrors
+#endif
+
+#if CLIENT || UI
+global function WORKAROUND_AnimAssetToAnimString
+global function WORKAROUND_PreventScriptErrors
+// DevMenu ImGui natives absent on S21; no-op stubs so script DevMenu still links.
+global function DevMenu_Alias_DEV
+global function DevMenu_Rm_DEV
+#endif
+
+#if SERVER
+
+// ============================================================================
+// MERGED workarounds.gnut (s21-scripts workspace)
+// TT_*: #if SERVER only. AssetAppend dual-sig SERVER vs CLIENT||UI.
+// ============================================================================
+
+// ============================================================================
+// workarounds.gnut - Stub functions for features not present in this build
+// Organized by system/feature within each preprocessor block
+// ============================================================================
+
+// ============================================================================
+// GLOBAL SCOPE - Constants, Enums, Structs (all VMs)
+// ============================================================================
+// === Constants ===
+global const asset FIRINGRANGE_ITEM_RESPAWN_PARTICLE = $"P_impact_shieldbreaker_sparks"
+global const int PLAYER_MELEE_STATE_KICK_ATTACK = 1
+global const int PLAYER_MELEE_STATE_SLAM_ATTACK = 2
+// UI already has a real definition for these; only SERVER/CLIENT need them.
+// Trigger types are bit flags and travel to the client, so these must be the
+// client's values -- as zeroes they silently dropped out of every
+// SetIgnorePredictedTriggerTypes mask they appeared in.
+#if SERVER
+global const int TT_GRAVITY_LIFT = 4
+global const int TT_BLACKHOLE = 8
+global const int TT_GRAVITY_CANNON = 32
+#endif
+// The melee states this engine registers are HUMAN_-prefixed, so these names do
+// not collide and nothing corrects a wrong value. Must match what the client
+// predicts: 3 is EXECUTION_PREDICTED, 4 is EXECUTION.
+global const int PLAYER_MELEE_STATE_EXECUTION = 4
+global const int CODE_REDEMPTION_RESULT_SUCCESS = 0
+global const int playedApexFalse = 0
+
+// Asset download status constants (used by image_pak_load.nut)
+global const int ASSET_DOWNLOAD_STATUS_UP_TO_DATE = 0
+global const int ASSET_DOWNLOAD_STATUS_FAILED = 1
+global const int ASSET_DOWNLOAD_STATUS_PENDING = 2
+
+// === Enums ===
+
+// Playlist opinion enum for character filtering
+global enum eItemFlavorPlaylistOpinion
+{
+	UNLOCKED = 0,
+	LOCKED = 1
+}
+
+global enum eServerVisibility
+{
+	OFFLINE,
+	HIDDEN,
+	PUBLIC
+}
+
+global const int UM_RESULT_HIGH_LATENCY = 1
+global const int UM_RESULT_FAILURE = 2
+
+// === GRX/Store Constants ===
+global const int GRX_OFFERITEMTYPE_DEFAULT = 0
+global const int GRX_OFFERITEMTYPE_BONUS = 1
+
+// ============================================================================
+// GLOBAL SCOPE - Function Declarations (all VMs)
+// ============================================================================
+
+// === Character/Playlist ===
+global function GetItemFlavorPlaylistOpinion
+
+// === Item Flavor ===
+global function IsValidItemFlavorNetworkIndex_DEPRECATED
+
+// === Utilities ===
+global function replace
+// WORKAROUND_AssetAppend: file-scope dual (top of file)
+global function SetAllianceTeamsScore
+// IsRevTakeover: real impl in sh_utility_all (playlist "rev_takeover") — do not stub.
+global function GetAllianceTeamsScore
+global function ForceScriptError
+// === Gamestate ===
+global function GetPlayerArrayIncludingSpectators
+// === Shadow Army Gamemode ===
+global function GameRules_IsTeamIndexValid
+// === Freelance Systems ===
+
+global function Ranked_GetCurrentPeriodGUIDString
+global function Ranked_ConstructSingleRankBadgeForStatsCard
+global function Ranked_ConstructDoubleRankBadgeForStatsCard
+global function Ranked_ConstructDoubleRankBadgeForStatsCardRankedV2
+global function CircleCullScriptName
+global function CircleCullClassName
+// === Freelance/PVE Systems ===
+global function UseMixtapePodiumBanner
+// VectorWithinBounds — home is sh_utility_all.gnut (shared CLIENT+SERVER)
+global function GiveBasicSurvivalItems
+// SPL_GetRandomEndRingPosition_Slow / SPL_GetClosestPosition -- real impl in sh_safepositionlist.nut
+// BroadcastCommsActionToTeam — now in sh_quickchat.gnut
+// PutEntityInSomewhatSafeSpot -- SDK native on dedi
+// CalcWorldToLocalOrigin_Entity -- SDK native on dedi; engine-native on S21 client
+global function DropPod_OnUse
+global function isFreefallEnabled
+// PlayerIsInCombat — now in sh_quickchat.gnut
+global function DeregisterNavMesh_EntityMemory
+global function RegisterNavMesh_EntityMemory
+global function OnProjectileCollision_weapon_deployable_crypto
+global function FakePhysicsThrow_NewTest
+global function ReturnCarePackagesNewArray
+global function SurvivalCommentary_HostAnnounce
+global function GetRoundCommentaryBucket
+global function SurvivalCommentary_KilledPlayerAnnounce
+global function SetChampion
+global function Flowstate_CheckForLv4MagazinesAndRefillAmmo
+global function FS_GetWeaponsThatUseThisAmmo
+global function HoverVehicle_WakeVehiclesIntersectingEntity
+// EmitSoundOnEntityExceptToPlayers -- SDK native on dedi
+global function ShuffleVectorArray
+global function DebugDrawScreenText
+global function DebugDrawScreenTextWithColor
+
+// === Platform/Hardware ===
+global function GetHardwareFromName
+global function GetNameFromHardware
+// GetMergedPlatformIdForPlayer — real impl in sh_utility_all (globalize_all)
+global function IsDirectX12Beta
+global function IsTakeHomeBuild
+// === Social/Party ===
+global function CanPromptUserToSpectatePartyInGame
+global function CanPromptUserToJoinPartyInFiringRange
+global function LocalizePresenceState
+
+// === Lobby/Audio ===
+
+
+// === Challenges ===
+global function RefreshChallenges
+
+global function PIN_EmoteUse
+global function RuiIsAlive
+#if SERVER
+global function Obituary_Print_Control_Ping
+global function Obituary_Print_Control_ObjectivePing
+#endif
+global function GetPlayerNameByEntIndex
+global function ContextAction_IsBeingRevived
+global function ContextAction_IsInVehicle
+global function ContextAction_IsReviving
+global function IsValidStickerInstance
+global function DestroyStickerInstance
+global function RequestLoadStickerPak
+global function SetEntMaterialToSticker
+global function AddStickerDecalToEntity
+global function IsStickerInstancePlaced
+#if SERVER || CLIENT
+global function GetPlayerHardware
+#endif
+#if SERVER
+#endif
+
+// Sticker enums/functions live in mp/sh_stickers.nut.
+
+global function TryPingBlockingFunction
+global function Survival_SetPilotHudVisible
+global function ServerCallback_DestroyEndAnnouncement
+global function ServerCallback_RefreshDeathBoxHighlight
+global function ServerCallback_RefreshLootbinHighlight
+global function UpdateDpadHud_Copy
+global function ServerCallback_Scenarios_MatchEndAnnouncement
+global function FS_ForceCompass
+global function FS_DestroyCompass
+global function ServerCallback_ShowWinningSquadSequence
+global function ServerCallback_SkydiveTrailStart
+global function ServerCallback_SkydiveTrailEnd
+global function ServerCallback_Survival_PathfinderSurveyNotifications
+global function ServerCallback_Survival_CreateBeaconWorldIcon
+global function ServerCallback_PromptWelcome
+global function GetZiplinePingEntity
+global function GetZiplinePingPosition
+global function HasZiplinePingInRange
+global function IsPlayerDecoy
+global function IsRopeZipline
+global function IsZiprail
+global function Player_IsSkywardFollowing
+global function Player_IsSkywardLaunching
+// IsTeamInAlliance is an ENGINE native (S21). Bridge provides it from
+// alliance_compat — do NOT redeclare here (compile: already exists in code).
+#if SERVER
+// These are CLIENT natives — only need stubs on SERVER
+global function Highlight_PopPingedState
+global function Highlight_PushPingedState
+global function WaypointFocusTracking_Deregister
+global function WaypointFocusTracking_Register
+global function WaypointFocusTracking_SetDisabled
+global function WaypointFocusTracking_TrackPos
+#endif
+
+global function StopAllSoundsOnEntity
+global function SendPlayerMatchResult
+global function ArrayRandomizeSeeded
+global function ArrayGetRandomSeeded
+// ============================================================================
+// #if UI - Struct Definitions & Declarations
+// ============================================================================
+
+// ============================================================================
+// #if CLIENT - Declarations
+// ============================================================================
+
+// ============================================================================
+// #if SERVER || CLIENT - Declarations
+// ============================================================================
+// === Natives missing on dedicated server ===
+global function PrecacheScriptString
+// FiringRangeHasDynamicStats — home is sh_utility_all.gnut (shared CLIENT+SERVER)
+
+#if SERVER
+global function TogglePlayerVoiceAndTextMute
+#endif
+
+#if SERVER || CLIENT
+// === Game Mode Features ===
+global function PIN_FiringRange_Settings
+global function PIN_FiringRange_SessionDuration
+global function PIN_FiringRange_DynamicStats_TimeBetweenResets
+global function PIN_FiringRange_Loot_Pickup_Source
+global function PIN_FiringRangeChallengeCompleted
+// PIN_Record_CustomizeRangeSettings, PIN_Record_CustomizeRangeSettings_ForMenuClose,
+// PIN_CCB_Record_DynamicStats_TimeBetweenResets — declared and implemented in firing_range.gnut
+global function IsInvalidButMemberVarsStillValid
+
+// === Crossplay ===
+
+// === Weapon Stubs ===
+
+// === Gamemode Stubs ===
+global function PIN_ItemGrantedByScript
+// GetTriggersByClassesInRealms -- native in server.dll (precache_natives_dedi)
+// IsNessie: real impl in _utility_shared — do not stub.
+// PlantSuperStickyGrenade: global decl at file top (SERVER||CLIENT)
+global function Player_DetonateSatchels
+global function AllowPlayersToTalkToThemselves
+global function EvaluateSoundSelector
+global function IsBountyHuntEnabled
+
+// === Spawn Safety ===
+// CanPutPlayerInSafeSpot -- SDK native on dedi
+
+// === Melee/Combat ===
+global function SetObjectCanBeMeleed
+
+// === Ranked/Rumble ===
+global function IsServerNetworkAlertTriggered
+
+// === Persistence ===
+// SafeGetPersistentVarAsInt lives in sh_persistent_data (SERVER+CLIENT). workarounds body is SERVER-only until #else.
+#if SERVER
+#endif
+
+// === Audio ===
+global function EmitUIMusic
+
+// === GRX/Store ===
+global function GRX_SetEventCurrency
+global function GRX_GetItemTier
+
+// === Persistence/Lobby ===
+global function PersistenceGetVarHandle
+global function HasCallback_OnPartyMemberRemoved
+
+#endif
+
+// ============================================================================
+// #if CLIENT || UI - Declarations & Implementations
+// ============================================================================
+
+// Declarations visible in ALL VMs - implementations per-VM below
+
+// Ranked badge functions needed in CLIENT and UI
+
+global function GetPlaylistModCount
+global function GetPlaylistModName
+global function EffectSetEmitSound
+
+// ============================================================================
+// #if UI - Declarations (large UI block)
+// ============================================================================
+
+global function PCPlat_IsSteam
+
+// ============================================================================
+// #if CLIENT || UI - Implementations
+// ============================================================================
+
+// After all global decls (Squirrel: no function body before globals).
+asset function WORKAROUND_AssetAppend( string s1, string s2 )
+{
+	return $""
+}
+
+bool function PCPlat_IsSteam()
+{
+	return true
+}
+
+int function GetPlaylistModCount()
+{
+	return 0  // No playlist mods in this environment
+}
+
+string function GetPlaylistModName( int index )
+{
+	return ""  // No playlist mods in this environment
+}
+
+void function EffectSetEmitSound( int effectHandle, string soundName )
+{
+	// Not available in this environment
+}
+
+// ============================================================================
+// #if UI - Implementations
+// ============================================================================
+
+// ============================================================================
+// #if CLIENT - Implementations
+// ============================================================================
+
+bool function RuiIsAlive( var rui ) { return rui != null }
+// SetUnitFrameConsumableData -- real implementation in unitframes/cl_unitframes.gnut
+string function GetPlayerNameByEntIndex( int entIdx ) { return "" }
+
+
+bool function ContextAction_IsBeingRevived( entity player ) { return false }
+bool function ContextAction_IsInVehicle( entity player ) { return false }
+bool function ContextAction_IsReviving( entity player ) { return false }
+
+bool function IsValidStickerInstance( int instance )
+{
+	Warning( "STUB: IsValidStickerInstance" )
+	return false
+}
+
+void function DestroyStickerInstance( int instance )
+{
+	Warning( "STUB: DestroyStickerInstance" )
+}
+
+void function RequestLoadStickerPak( asset stickerAsset )
+{
+	Warning( "STUB: RequestLoadStickerPak" )
+}
+
+int function SetEntMaterialToSticker( asset stickerMat, entity ent )
+{
+	Warning( "STUB: SetEntMaterialToSticker" )
+	return -1
+}
+
+int function AddStickerDecalToEntity( entity ent, asset stickerMat, string attachment, float scale )
+{
+	Warning( "STUB: AddStickerDecalToEntity" )
+	return -1
+}
+
+bool function IsStickerInstancePlaced( int instance )
+{
+	Warning( "STUB: IsStickerInstancePlaced" )
+	return false
+}
+
+#if SERVER || CLIENT
+string function GetPlayerHardware()
+{
+	return "PC"
+}
+#endif
+
+#if SERVER
+
+#endif
+
+bool function TryPingBlockingFunction( entity player, string context )
+{
+	Warning( "STUB: TryPingBlockingFunction\n" )
+	return false
+}
+
+void function Survival_SetPilotHudVisible( bool visible )
+{
+	Warning( "STUB: Survival_SetPilotHudVisible\n" )
+}
+
+void function ServerCallback_DestroyEndAnnouncement()
+{
+	Warning( "STUB: ServerCallback_DestroyEndAnnouncement\n" )
+}
+
+
+void function ServerCallback_RefreshDeathBoxHighlight()
+{
+	Warning( "STUB: ServerCallback_RefreshDeathBoxHighlight\n" )
+}
+
+void function ServerCallback_RefreshLootbinHighlight()
+{
+	Warning( "STUB: ServerCallback_RefreshLootbinHighlight\n" )
+}
+
+void function UpdateDpadHud_Copy()
+{
+	Warning( "STUB: UpdateDpadHud_Copy\n" )
+}
+
+void function ServerCallback_Scenarios_MatchEndAnnouncement()
+{
+	Warning( "STUB: ServerCallback_Scenarios_MatchEndAnnouncement\n" )
+}
+
+void function FS_ForceCompass()
+{
+	Warning( "STUB: FS_ForceCompass\n" )
+}
+
+void function FS_DestroyCompass()
+{
+	Warning( "STUB: FS_DestroyCompass\n" )
+}
+
+void function ServerCallback_ShowWinningSquadSequence()
+{
+	Warning( "STUB: ServerCallback_ShowWinningSquadSequence\n" )
+}
+
+void function ServerCallback_SkydiveTrailStart( entity player )
+{
+	Warning( "STUB: ServerCallback_SkydiveTrailStart\n" )
+}
+
+void function ServerCallback_SkydiveTrailEnd( entity player )
+{
+	Warning( "STUB: ServerCallback_SkydiveTrailEnd\n" )
+}
+
+void function ServerCallback_Survival_PathfinderSurveyNotifications( entity player, int notifType )
+{
+	Warning( "STUB: ServerCallback_Survival_PathfinderSurveyNotifications\n" )
+}
+
+void function ServerCallback_Survival_CreateBeaconWorldIcon( entity beacon, entity player )
+{
+	Warning( "STUB: ServerCallback_Survival_CreateBeaconWorldIcon\n" )
+}
+
+void function ServerCallback_PromptWelcome()
+{
+	Warning( "STUB: ServerCallback_PromptWelcome\n" )
+}
+
+entity function GetZiplinePingEntity( entity player, entity hitEnt, vector hitPos ) { return null }
+vector function GetZiplinePingPosition( entity player, entity hitEnt, vector hitPos ) { return hitPos }
+bool function HasZiplinePingInRange( entity player, entity hitEnt, vector hitPos ) { return false }
+bool function IsPlayerDecoy( entity ent ) { return false }
+bool function IsRopeZipline( entity ent ) { return false }
+bool function IsZiprail( entity ent ) { return false }
+bool function Player_IsSkywardFollowing( entity player ) { return false }
+bool function Player_IsSkywardLaunching( entity player ) { return false }
+
+// IsTeamInAlliance — engine native (bridge: alliance_compat). No script body.
+// Remote_CallFunction_NonReplay — native
+#if SERVER
+// CLIENT natives — stubs only needed on SERVER
+void function Highlight_PopPingedState( entity ent ) {}
+void function Highlight_PushPingedState( entity ent ) {}
+void function WaypointFocusTracking_Deregister( entity wp ) {}
+void function WaypointFocusTracking_Register( entity wp, entity ent = null ) {}
+void function WaypointFocusTracking_SetDisabled( entity wp, bool disabled ) {}
+void function WaypointFocusTracking_TrackPos( entity wp, vector pos ) {}
+#endif
+// ============================================================================
+// #if SERVER || CLIENT - Implementations
+// ============================================================================
+#if SERVER
+void function TogglePlayerVoiceAndTextMute( entity player )
+{
+	Warning( "WORKAROUND: TogglePlayerVoiceAndTextMute() called - not implemented" )
+}
+#endif
+
+#if SERVER || CLIENT
+// stubs - PIN Telemetry (no telemetry in r5reloaded)
+void function PIN_FiringRange_Settings( entity player, int contextID, bool dynStatsOn, bool dynTimerOn, bool infReloadsOn, bool hitMarksOn, bool show3rdPerson, bool legendUpgradesEnabled, bool friendlyFireOn, int targetSpeed, ... )
+{
+	Warning( "WORKAROUND: PIN_FiringRange_Settings() called - not implemented" )
+}
+
+void function PIN_FiringRange_SessionDuration( entity player, float duration )
+{
+	Warning( "WORKAROUND: PIN_FiringRange_SessionDuration() called - not implemented" )
+}
+
+void function PIN_FiringRange_DynamicStats_TimeBetweenResets( entity player, int timeDelta )
+{
+	Warning( "WORKAROUND: PIN_FiringRange_DynamicStats_TimeBetweenResets() called - not implemented" )
+}
+
+void function PIN_FiringRange_Loot_Pickup_Source( entity player, string ref, int lootSrc, string lootSrcStr, vector origin )
+{
+	Warning( "WORKAROUND: PIN_FiringRange_Loot_Pickup_Source() called - not implemented" )
+}
+
+void function PIN_FiringRangeChallengeCompleted( entity player, ... )
+{
+	Warning( "WORKAROUND: PIN_FiringRangeChallengeCompleted() called - not implemented" )
+}
+
+// PIN_Record_CustomizeRangeSettings*, PIN_CCB_Record_DynamicStats_TimeBetweenResets
+// implemented in firing_range.gnut
+
+// stubs - Golden Horse / Titan Sword (not present on this build)
+#if SERVER
+#endif
+
+// === Crossplay ===
+
+// stub - no crossplay
+
+// === Spawn Safety ===
+
+void function PIN_ItemGrantedByScript( entity player, ... ) { Warning("STUB: PIN_ItemGrantedByScript") }
+
+bool function PlantSuperStickyGrenade( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox ) { Warning("STUB: PlantSuperStickyGrenade"); return false }
+void function Player_DetonateSatchels( entity player ) { Warning("STUB: Player_DetonateSatchels") }
+bool function AllowPlayersToTalkToThemselves() { return false }
+int function EvaluateSoundSelector( string alias ) { Warning("STUB: EvaluateSoundSelector"); return 0 }
+// UpgradeSelectionMenu_TryClose -- now in sh_upgrade_selection_menu.nut
+bool function IsBountyHuntEnabled() { return false }
+
+// === Melee/Combat ===
+
+void function SetObjectCanBeMeleed( entity ent, bool value )
+{
+}
+
+// stub
+// stub
+bool function IsServerNetworkAlertTriggered()
+{
+	Warning( "WORKAROUND: IsServerNetworkAlertTriggered() called - not implemented" )
+	return false
+}
+
+// Debug print wrapper
+
+
+// === Persistence ===
+
+#if SERVER
+
+#endif
+
+// === Audio ===
+
+void function EmitUIMusic( string musicName )
+{
+	Warning( "WORKAROUND: EmitUIMusic() called - not implemented" )
+}
+
+// === GRX/Store ===
+
+void function GRX_SetEventCurrency( string grxAlias )
+{
+}
+
+int function GRX_GetItemTier( ... )
+{
+	Warning( "WORKAROUND: GRX_GetItemTier() called - not implemented" )
+	return 0
+}
+
+// === Persistence/Lobby ===
+
+int function PersistenceGetVarHandle( string key )
+{
+	return -1
+}
+
+bool function HasCallback_OnPartyMemberRemoved( void functionref() callbackFunc )
+{
+	return false
+}
+
+// === Platform/Hardware (SERVER || CLIENT implementations for global-scope declarations) ===
+
+int function GetHardwareFromName( string name )
+{
+	switch ( name )
+	{
+		case "PC":
+			return HARDWARE_PC
+		case "PC_STEAM":
+			return HARDWARE_PC_STEAM
+		case "PS4":
+			return HARDWARE_PS4
+		case "PS5":
+			return HARDWARE_PS5
+		case "X1":
+			return HARDWARE_XBOXONE
+		case "XB5":
+			return HARDWARE_XB5
+		case "NX":
+			return HARDWARE_NX
+	}
+	return HARDWARE_PC
+}
+
+bool function CanPromptUserToSpectatePartyInGame()
+{
+	return false
+}
+
+bool function CanPromptUserToJoinPartyInFiringRange()
+{
+	return false
+}
+
+string function LocalizePresenceState( ... )
+{
+	return ""
+}
+
+string function GetNameFromHardware( int hardware )
+{
+	switch ( hardware )
+	{
+		case HARDWARE_PC:
+			return "PC"
+		case HARDWARE_PC_STEAM:
+			return "PC_STEAM"
+		case HARDWARE_PS4:
+			return "PS4"
+		case HARDWARE_PS5:
+			return "PS5"
+		case HARDWARE_XBOXONE:
+			return "X1"
+		case HARDWARE_XB5:
+			return "XB5"
+		case HARDWARE_NX:
+			return "NX"
+	}
+	return "PC"
+}
+
+bool function IsDirectX12Beta()
+{
+	Warning( "WORKAROUND: IsDirectX12Beta() called - not implemented" )
+	return false
+}
+
+
+bool function IsTakeHomeBuild()
+{
+	return true
+}
+
+// === Gifting ===
+
+// === Lobby/Misc ===
+
+void function RefreshChallenges()
+{
+	Warning( "WORKAROUND: RefreshChallenges() called - not implemented" )
+}
+
+// === Entity validity helpers (stub on dedi) ===
+
+bool function IsInvalidButMemberVarsStillValid( entity ent )
+{
+	return false // not supported on this engine half
+}
+
+// === Facing utilities (stubs) ===
+
+
+#endif
+
+// ============================================================================
+// GLOBAL SCOPE - Implementations (all VMs)
+// ============================================================================
+
+// === Natives missing on dedicated server ===
+void function PrecacheScriptString( string scriptString )
+{
+	// No-op: S3 engine doesn't need explicit script string precaching
+}
+
+// === Character/Playlist ===
+
+// Return UNLOCKED for all characters - no playlist restrictions
+int function GetItemFlavorPlaylistOpinion( string humanReadableRef )
+{
+	return eItemFlavorPlaylistOpinion.UNLOCKED
+}
+
+// === Item Flavor ===
+
+bool function IsValidItemFlavorNetworkIndex_DEPRECATED( int index, int validation = 0 )
+{
+	return false // deprecated
+}
+
+// === Utilities ===
+
+// Debug screen text stubs
+void function DebugDrawScreenText( float x, float y, string text )
+{
+	// No-op - debug function
+}
+
+void function DebugDrawScreenTextWithColor( float x, float y, string text, vector color )
+{
+	// No-op - debug function
+}
+
+
+string function replace( string original, string search, string replacement )
+{
+	string result = ""
+	int searchLen = search.len()
+	int i = 0
+	while ( i < original.len() )
+	{
+		if ( i + searchLen <= original.len() && original.slice( i, i + searchLen ) == search )
+		{
+			result += replacement
+			i += searchLen
+		}
+		else
+		{
+			result += original.slice( i, i + 1 )
+			i++
+		}
+	}
+	return result
+}
+
+string function Ranked_GetCurrentPeriodGUIDString()
+{
+	return "SAID00969954275"
+}
+
+// WORKAROUND_AssetAppend body: file-scope dual (top of file)
+
+// === Freelance Systems ===
+
+// === Freelance/PVE Systems ===
+
+
+bool function UseMixtapePodiumBanner()
+{
+	return ( GetCurrentPlaylistVarString( "gamemode_logo", "BATTLE_ROYALE" ) == "MIXTAPE" )
+}
+
+void function GiveBasicSurvivalItems( entity player )
+{
+	Warning( "STUB: GiveBasicSurvivalItems" )
+}
+
+// BroadcastCommsActionToTeam — now in sh_quickchat.gnut
+
+
+bool function DropPod_OnUse( entity airdrop, entity player, int useFlags )
+{
+	Warning( "STUB: DropPod_OnUse" )
+	return false
+}
+
+bool function isFreefallEnabled()
+{
+	return true
+}
+
+// PlayerIsInCombat — now in sh_quickchat.gnut
+
+void function DeregisterNavMesh_EntityMemory( entity ent )
+{
+	Warning( "STUB: DeregisterNavMesh_EntityMemory" )
+}
+
+void function RegisterNavMesh_EntityMemory( entity ent, int hullType )
+{
+	Warning( "STUB: RegisterNavMesh_EntityMemory" )
+}
+
+#if SERVER
+void function OnProjectileCollision_weapon_deployable_crypto( entity projectile, vector pos, vector normal, entity hitEnt, int hitBox, bool isCritical )
+#else
+void function OnProjectileCollision_weapon_deployable_crypto( entity projectile, vector pos, vector normal, entity hitEnt, int hitBox, bool isCritical, bool isPassthrough )
+#endif
+{
+	#if SERVER
+	OnProjectileCollision_weapon_deployable( projectile, pos, normal, hitEnt, hitBox, isCritical )
+	#endif
+}
+
+void function FakePhysicsThrow_NewTest( entity victim, entity obj1, entity obj2, vector vel )
+{
+	Warning( "STUB: FakePhysicsThrow_NewTest" )
+}
+
+array<entity> function ReturnCarePackagesNewArray()
+{
+	Warning( "STUB: ReturnCarePackagesNewArray" )
+	array<entity> result
+	return result
+}
+
+void function SurvivalCommentary_HostAnnounce( int bucket, float delay = 0.0 )
+{
+	Warning( "STUB: SurvivalCommentary_HostAnnounce" )
+}
+
+int function GetRoundCommentaryBucket( int roundNumber )
+{
+	Warning( "STUB: GetRoundCommentaryBucket" )
+	return 0
+}
+
+void function SurvivalCommentary_KilledPlayerAnnounce( int bucket, entity player, float delay, string alias1, string alias2 )
+{
+	Warning( "STUB: SurvivalCommentary_KilledPlayerAnnounce" )
+}
+
+void function SetChampion( entity player )
+{
+	Warning( "STUB: SetChampion" )
+}
+
+void function Flowstate_CheckForLv4MagazinesAndRefillAmmo( entity player )
+{
+	Warning( "STUB: Flowstate_CheckForLv4MagazinesAndRefillAmmo" )
+}
+
+array<entity> function FS_GetWeaponsThatUseThisAmmo( entity player, string ammoRef )
+{
+	Warning( "STUB: FS_GetWeaponsThatUseThisAmmo" )
+	array<entity> result
+	return result
+}
+
+void function HoverVehicle_WakeVehiclesIntersectingEntity( entity ent )
+{
+	Warning( "STUB: HoverVehicle_WakeVehiclesIntersectingEntity" )
+}
+
+void function PIN_EmoteUse( entity player, string emoteRef, vector pos, string action, ... ) { Warning( "STUB: PIN_EmoteUse" ) }
+
+
+// Highlight_SetGameModeEnemyHighlight — now in sh_highlight.gnut
+
+void function StopAllSoundsOnEntity( entity ent )
+{
+	Warning( "STUB: StopAllSoundsOnEntity" )
+}
+
+
+void function SendPlayerMatchResult( entity player )
+{
+	Warning( "STUB: SendPlayerMatchResult" )
+}
+
+
+// Get a random element from an array using a seeded RNG
+var function ArrayGetRandomSeeded( array arr, int seed )
+{
+	var rngSeed = CreateRandomSeed( seed )
+	int idx = RandomIntRangeSeeded( rngSeed, 0, arr.len() )
+	return arr[idx]
+}
+
+void function ArrayRandomizeSeeded( array arr, int seed )
+{
+	var rngSeed = CreateRandomSeed( seed )
+	for ( int i = arr.len() - 1; i > 0; i-- )
+	{
+		int j = RandomIntRangeInclusiveSeeded( rngSeed, 0, i )
+		var temp = arr[i]
+		arr[i] = arr[j]
+		arr[j] = temp
+	}
+}
+
+
+array<vector> function ShuffleVectorArray( array<vector> arr )
+{
+	array<vector> result = clone arr
+	for ( int i = result.len() - 1; i > 0; i-- )
+	{
+		int j = RandomInt( i + 1 )
+		vector temp = result[i]
+		result[i] = result[j]
+		result[j] = temp
+	}
+	return result
+}
+
+// Custom loadout/spectating/character assignment implementations
+void function TakeLoadoutRelatedWeapons( entity player )
+{
+#if SERVER
+	ItemFlavor character = LoadoutSlot_GetItemFlavor( ToEHI( player ), Loadout_Character() )
+
+	if(IsValid(player.GetOffhandWeapon( OFFHAND_SLOT_FOR_CONSUMABLES )))
+		player.TakeOffhandWeapon( OFFHAND_SLOT_FOR_CONSUMABLES )
+
+	if(IsValid(player.GetNormalWeapon( WEAPON_INVENTORY_SLOT_PRIMARY_2 )))
+		player.TakeNormalWeaponByIndexNow( WEAPON_INVENTORY_SLOT_PRIMARY_2 )
+
+	if(IsValid(player.GetOffhandWeapon( OFFHAND_MELEE )))
+		player.TakeOffhandWeapon( OFFHAND_MELEE )
+
+	if(IsValid(player.GetOffhandWeapon( OFFHAND_TACTICAL )))
+		player.TakeOffhandWeapon( OFFHAND_TACTICAL )
+	if(IsValid(player.GetOffhandWeapon( OFFHAND_ULTIMATE )))
+		player.TakeOffhandWeapon( OFFHAND_ULTIMATE )
+
+	TakeAllPassives( player )
+#endif
+}
+
+void function PlayerStopSpectating( entity player )
+{
+	#if SERVER
+	player.SetPlayerNetInt( "spectatorTargetCount", 0 )
+	player.SetSpecReplayDelay( 0 )
+	player.StopObserverMode()
+	#endif
+}
+
+bool function GameRules_IsTeamIndexValid( int teamIndex ) { return teamIndex >= 0 && teamIndex < GetCurrentPlaylistVarInt( "max_teams", 20 ) + 2 }
+array<entity> function GetPlayerArrayIncludingSpectators() { return GetPlayerArray() }
+void function ForceScriptError( string message ) { ScriptError( message ) }
+// S21 GetAllianceTeamsScore = C_Team::GetScore( first team in alliance ).
+// S3 has no alliance-score native; dual-write rep-team GameRules score so client
+// HUD and FreeDM_AddTeamScore share one number over the existing team-score wire.
+int function GetAllianceTeamsScore( int alliance )
+{
+#if SERVER || CLIENT
+	if ( alliance < 0 )
+		return 0
+
+	if ( AllianceProximity_IsUsingAlliances() )
+	{
+		int repTeam = AllianceProximity_GetRepresentativeTeamForAlliance( alliance )
+		if ( repTeam > TEAM_INVALID )
+			return GameRules_GetTeamScore( repTeam )
+	}
+#endif
+	return 0
+}
+
+void function SetAllianceTeamsScore( int alliance, int score )
+{
+#if SERVER
+	if ( alliance < 0 )
+		return
+
+	if ( !AllianceProximity_IsUsingAlliances() )
+		return
+
+	int repTeam = AllianceProximity_GetRepresentativeTeamForAlliance( alliance )
+	if ( repTeam <= TEAM_INVALID )
+	{
+		array< int > teams = AllianceProximity_GetTeamsInAlliance( alliance )
+		if ( teams.len() < 1 )
+			return
+		repTeam = teams[0]
+	}
+
+	GameRules_SetTeamScore( repTeam, score )
+#endif
+}
+void function CircleCullClassName( string className ) {}
+void function CircleCullScriptName( string scriptName ) {}
+
+bool function WORKAROUND_PreventScriptErrors( void functionref() func )
+{
+	bool success = false
+	try
+	{
+		func()
+	success = true
+	}
+	catch( e )
+	{
+		//
+	}
+	return success
+}
+
+string function WORKAROUND_AnimAssetToAnimString( asset animAsset )
+{
+	return split( string(animAsset), "/" ).top().slice( 0, -5 )
+}
+
+// SERVER-only thin no-ops: real impl is clui_ranked.nut (CLIENT/UI).
+// sh_player_stats_cards is dual-loaded; keep symbols defined on SERVER without Warning spam.
+#if SERVER
+void function Ranked_ConstructSingleRankBadgeForStatsCard( var badgeRui, entity player, string rankedPeriodRef )
+{
+}
+
+void function Ranked_ConstructDoubleRankBadgeForStatsCard( var firstSplitBadgeRui, var secondSplitBadgeRui, entity player, string rankedPeriodRef )
+{
+}
+
+void function Ranked_ConstructDoubleRankBadgeForStatsCardRankedV2( var firstSplitBadgeRui, var secondSplitBadgeRui, entity player, string rankedPeriodRef )
+{
+}
+#endif
+
+// SERVER thin no-ops — real print path is client/cl_obituary.gnut (CLIENT).
+#if SERVER
+void function Obituary_Print_Control_Ping( string localizedPrint, bool isAlliancePing = false, vector altColor1 = <255,255,255>, vector altColor2 = <255,255,255>, vector altColor3 = <255,255,255>, vector backgroundColor = <255,255,255>, float backgroundAlpha = 0.0, int obitFlags = 0 )
+{
+}
+
+void function Obituary_Print_Control_ObjectivePing( entity subjectEnt, string localizedPrint, vector altColor1 = <255,255,255>, vector altColor2 = <255,255,255>, vector altColor3 = <255,255,255>, vector backgroundColor = <255,255,255>, float backgroundAlpha = 0.0, int obitFlags = 0 )
+{
+}
+#endif
+
+#else
+
+// CLIENT/UI stock helpers only (from s21-client workarounds).
+// global function decls for these are at top of file (before any bodies).
+// Full bridge stubs live under #if SERVER.
+
+asset function WORKAROUND_AssetAppend( asset a, string suffix )
+{
+	return GetAssetFromString( string(a) + suffix )
+}
+
+// CLIENT: no S3 plant native; collision handlers that still call it must no-op.
+bool function PlantSuperStickyGrenade( entity projectile, vector pos, vector normal, entity hitEnt, int hitbox )
+{
+	return false
+}
+
+string function WORKAROUND_AnimAssetToAnimString( asset animAsset )
+{
+	return split( string(animAsset), "/" ).top().slice( 0, -5 )
+}
+
+bool function WORKAROUND_PreventScriptErrors( void functionref() func )
+{
+	bool success = false
+	try
+	{
+		func()
+		success = true
+	}
+	catch ( e )
+	{
+	}
+	return success
+}
+
+// DevMenu_Alias/Rm not present on this build; empty stubs.
+void function DevMenu_Alias_DEV( string menuPath, string command )
+{
+}
+
+void function DevMenu_Rm_DEV( string menuPath )
+{
+}
+
+
+#endif // SERVER vs CLIENT||UI

@@ -1,0 +1,241 @@
+
+
+global function ShSkydiveEmoteProjector_LevelInit
+
+#if SERVER
+global function ClientCallback_ThrowProjector
+global function SkydiveEmoteProjector_CancelProjector
+#endif
+
+#if CLIENT
+global function SkydiveEmoteProjector_ActivateEmoteProjector
+#endif
+
+const int SKYDIVE_EMOTE_GUID_INDEX = 0
+
+#if CLIENT || SERVER
+const asset SKYDIVE_EMOTE_BASE = $"mdl/props/holo_drone/holo_drone_v.rmdl"
+const asset SKYDIVE_EMOTE_ACTIVATE_FX = $"P_drone_holospray_activate"
+const asset SKYDIVE_EMOTE_EXHAUST_FX_01 = $"P_drone_holospray_exhaust_01"
+#endif
+
+#if SERVER
+const string ANIM_SKYDIVE_EMOTE_PROJECTOR_THROW = "skydive_holodrone_throw"
+const string ANIM_SKYDIVE_EMOTE_PROJECTOR_RETRIEVE = "skydive_holodrone_retrieve"
+const string ANIM_SKYDIVE_EMOTE_PROJECTOR_CANCEL = "prop_holodrone_cancel"
+const string ANIM_SKYDIVE_EMOTE_PROJECTOR_IDLE = "prop_holodrone_idle"
+
+const string DRONE_ATTACHMENT_NAME = "PROP"
+
+const vector SKYDIVE_EMOTE_OFFSET = <50, 0, 50>
+
+const string SFX_SKYDIVE_EMOTE_PROJECTOR_THROW = "SkydiveHolospray_Generic_Throw"
+const string SFX_SKYDIVE_EMOTE_PROJECTOR_RETRIEVE = "SkydiveHolospray_Generic_Retrieve"
+const string SFX_SKYDIVE_EMOTE_PROJECTOR_CANCEL = "SkydiveHolospray_Generic_FlyAway"
+const string SFX_SKYDIVE_EMOTE_PROJECTOR_IDLE = "SkydiveHolospray_Generic_LP"
+
+const float SKYDIVE_EMOTE_LIFETIME = 50
+
+struct
+{
+	table< entity, entity > playerToHolosprayDrone
+} file
+
+#endif
+
+void function ShSkydiveEmoteProjector_LevelInit()
+{
+	Remote_RegisterServerFunction( "ClientCallback_ThrowProjector" )
+
+	#if CLIENT || SERVER
+		PrecacheModel( SKYDIVE_EMOTE_BASE )
+		PrecacheParticleSystem( SKYDIVE_EMOTE_ACTIVATE_FX )
+		PrecacheParticleSystem( SKYDIVE_EMOTE_EXHAUST_FX_01 )
+	#endif
+
+	#if SERVER
+		Survival_AddCallback_PlayerSkydiveAnticipateBegin( SkydiveEmoteProjector_PlayerFreefallEnd )
+		Survival_AddCallback_PlayerFreefallEnd( SkydiveEmoteProjector_PlayerFreefallEnd )
+		RegisterSignal( "HoloSpray_Cancel" )
+	#endif
+}
+
+#if SERVER
+void function SkydiveEmoteProjector_PlayerFreefallEnd( entity player )
+{
+	if ( IsValid( player ) )
+	{
+		player.Signal( "HoloSpray_Cancel" )
+		thread DestroyEmoteProjector_Thread( player, false )
+	}
+}
+#endif
+
+#if SERVER
+void function SkydiveEmoteProjector_CancelProjector( entity player )
+{
+	if ( IsValid( player ) )
+	{
+		player.Signal( "HoloSpray_Cancel" )
+		thread DestroyEmoteProjector_Thread( player, true )
+	}
+}
+#endif
+
+#if SERVER
+void function ClientCallback_ThrowProjector( entity player )
+{
+	player.Signal( "HoloSpray_Cancel" )
+	thread ThrowProjector_Thread( player )
+}
+#endif
+
+#if SERVER
+void function ThrowProjector_Thread( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+
+	player.EndSignal( "HoloSpray_Cancel" )
+
+	Freefall_CancelSkydiveEmote( player )
+	thread DestroyEmoteProjector_Thread( player, true )
+
+	EmitSoundOnEntity( player, SFX_SKYDIVE_EMOTE_PROJECTOR_THROW )
+	player.Anim_PlayOnly( ANIM_SKYDIVE_EMOTE_PROJECTOR_THROW )
+
+	if( !IsValid( player.GetParent() ) )
+		player.Anim_DisableUpdatePosition()
+
+	player.Anim_EnablePrediction()
+
+	wait player.GetSequenceDuration( ANIM_SKYDIVE_EMOTE_PROJECTOR_THROW )
+
+	if ( !IsValid( player ) )
+		return
+
+	entity weapon = player.GetOffhandWeapon( HOLO_PROJECTOR_INDEX )
+	if ( !IsValid( weapon ) )
+		return
+
+	if ( weapon.GetWeaponClassName() != HOLO_PROJECTOR_WEAPON_NAME )
+		return
+
+	entity prop = CreateEmoteProjectorAtPoint( weapon.w.emoteIndex, player )
+
+	if ( !IsValid( prop ) )
+		return
+
+	ItemFlavor flav = GetItemFlavorByGUID( weapon.w.emoteIndex )
+	//PIN_SkydiveHolosprayUse( player, ItemFlavor_GetHumanReadableRefForPIN_Slow( flav ), prop.GetOrigin(), player.GetOrigin() )
+
+	EmitSoundOnEntity( prop, SFX_SKYDIVE_EMOTE_PROJECTOR_IDLE )
+	thread PlayAnimOnly( prop, ANIM_SKYDIVE_EMOTE_PROJECTOR_IDLE )
+
+	file.playerToHolosprayDrone[ player ] <- prop
+}
+#endif
+
+
+#if SERVER
+entity function CreateEmoteProjectorAtPoint( int emoteIndex, entity owner )
+{
+	if ( !IsValid( owner ) )
+		return null
+
+	ItemFlavor ornull flav = GetItemFlavorOrNullByGUID( emoteIndex )
+
+	if ( flav == null )
+		return null
+
+	expect ItemFlavor( flav )
+
+	entity prop = CreatePropScript( SKYDIVE_EMOTE_BASE, owner.GetOrigin(), owner.GetAngles() )
+	prop.SetOwner( owner )
+	prop.SetParent( owner )
+	prop.SetLocalOrigin( SKYDIVE_EMOTE_OFFSET )
+	prop.kv.rendercolor = CharacterQuip_GetEffectColor2( flav ) * 255
+
+	thread TrapDestroyOnRoundEnd( owner, prop )
+
+	entity prop2 = CreatePlayerWaypoint( eWaypoint.SKYDIVE_EMOTE_ICON )
+	prop2.Hide()
+	prop2.SetOrigin( prop.GetOrigin() )
+	prop2.SetWaypointInt( SKYDIVE_EMOTE_GUID_INDEX, emoteIndex )
+	prop2.SetWaypointString( 0, owner.GetPlayerName() )
+	prop2.SetOwner( owner )
+	prop2.SetParent( prop, DRONE_ATTACHMENT_NAME )
+	SetTeam( prop2, owner.GetTeam() )
+	prop2.wp.waypointCreatedTime = Time()
+
+	thread SkydiveEmoteLifetime_Thread( owner )
+
+	return prop
+}
+#endif
+
+#if SERVER
+void function DestroyEmoteProjector_Thread( entity player, bool isCanceled )
+{
+	if ( !IsValid( player ) || !( player in file.playerToHolosprayDrone ) || !IsValid( file.playerToHolosprayDrone[player] ) )
+		return
+
+	entity prop = file.playerToHolosprayDrone[ player ]
+	file.playerToHolosprayDrone[ player ] <- null
+
+	StopSoundOnEntity( prop, SFX_SKYDIVE_EMOTE_PROJECTOR_IDLE )
+
+	if ( isCanceled )
+	{
+		EmitSoundOnEntity( prop, SFX_SKYDIVE_EMOTE_PROJECTOR_CANCEL )
+		waitthread PlayAnimOnly( prop, ANIM_SKYDIVE_EMOTE_PROJECTOR_CANCEL )
+	}
+
+	prop.Destroy()
+
+	if ( !isCanceled )
+	{
+		EmitSoundOnEntity( player, SFX_SKYDIVE_EMOTE_PROJECTOR_RETRIEVE )
+		player.Anim_PlayOnly( ANIM_SKYDIVE_EMOTE_PROJECTOR_RETRIEVE )
+
+		if( !IsValid( player.GetParent() ) )
+			player.Anim_DisableUpdatePosition()
+
+		player.Anim_EnablePrediction()
+
+		wait player.GetSequenceDuration( ANIM_SKYDIVE_EMOTE_PROJECTOR_RETRIEVE )
+	}
+}
+#endif
+
+#if SERVER
+void function SkydiveEmoteLifetime_Thread( entity owner )
+{
+	if ( !IsValid( owner ) )
+		return
+
+	owner.EndSignal( "OnDestroy" )
+
+	OnThreadEnd(
+		function () : ( owner )
+		{
+			if ( IsValid( owner ) )
+			{
+				owner.Signal( "HoloSpray_Cancel" )
+				thread DestroyEmoteProjector_Thread( owner, false )
+			}
+		}
+	)
+
+	wait SKYDIVE_EMOTE_LIFETIME
+}
+#endif
+
+#if CLIENT
+void function SkydiveEmoteProjector_ActivateEmoteProjector( entity player, ItemFlavor quip )
+{
+	Remote_ServerCallFunction( "ClientCallback_ThrowProjector" )
+}
+#endif
+
+

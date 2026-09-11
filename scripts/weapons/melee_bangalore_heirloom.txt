@@ -1,0 +1,124 @@
+"WeaponData"
+{
+	"printname" "Melee"
+	"shortprintname" "Melee"
+	"description" "Description needed"
+	"longdesc" "Description needed"
+	"menu_icon" "rui/hud/common/melee_icon"
+	"hud_icon" "rui/hud/common/melee_icon"
+	"viewmodel" "mdl/dev/empty_model.rmdl"
+	"playermodel" "mdl/dev/empty_model.rmdl"
+	"holstermodel" "mdl/dev/empty_model.rmdl"
+	"OnWeaponActivate" "OnWeaponActivate_melee_bangalore_heirloom"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_melee_bangalore_heirloom"
+	"is_heirloom" "1"
+	"impact_effect_table" "melee_gurkha"
+	"activitymodifier3P" "kukri"
+	"weapon_type_flags" "WPT_MELEE"
+	"weaponType" "melee"
+	"body_type" "battle_rifle"
+	"fire_mode" "offhandMelee"
+	"offhand_cancelled_by_melee" "0"
+	"never_drop" "1"
+	"melee_can_hit_humansized" "1"
+	"melee_can_hit_titans" "0"
+	"melee_raise_recovery_animtime_normal" "0.750000"
+	"melee_raise_recovery_animtime_quick" "0.400000"
+	"melee_range" "60"
+	"melee_rumble_on_hit" "pilot_melee_hit"
+	"melee_rumble_on_hit_partial" "pilot_melee_hit_partial"
+	"melee_freezelook_on_hit" "0.250000"
+	"damage_flags" "DF_MELEE | DF_KNOCK_BACK"
+	"impulse_force" "0"
+	"offhand_keep_primary_in_hand" "0"
+	"zoom_effects" "0"
+	"melee_anim_1p" "ACT_VM_MELEE_ATTACK2"
+	"ammo_suck_behavior" "melee_weapons"
+	"viewkick_spring" "melee"
+	"viewkick_pitch_base" "-1.750000"
+	"viewkick_pitch_random" "0.750000"
+	"viewkick_pitch_softScale" "2.300000"
+	"viewkick_pitch_hardScale" "2.500000"
+	"viewkick_yaw_base" "1.000000"
+	"viewkick_yaw_random" "0.380000"
+	"viewkick_yaw_softScale" "2.380000"
+	"viewkick_yaw_hardScale" "2.500000"
+	"viewkick_roll_base" "0"
+	"viewkick_roll_randomMin" "0.600000"
+	"viewkick_roll_randomMax" "0.800000"
+	"viewkick_roll_softScale" "15.200000"
+	"viewkick_roll_hardScale" "15.750000"
+	"damage_rodeo" "100"
+	"deployfirst_time" "1.250000"
+	"sprintcycle_time" "0.550000"
+	"force_has_weapon_clone" "1"
+	"allow_gibraltar_shield" "0"
+	"flyoutEnabled" "0"
+	"melee_angle" "30"
+	"melee_attack_animtime" "0"
+	"melee_damage" "30"
+	"melee_damage_heavyarmor" "30"
+	"melee_lunge_no_target_range" "60"
+	"melee_lunge_target_angle" "30"
+	"melee_lunge_target_range" "60"
+	"melee_lunge_time" "0.350000"
+	"melee_knockback_velocity_magnitude" "350"
+	"is_Melee_Weapon" "1"
+
+	"Mods"
+	{
+
+		"data_knife"
+		{
+			"viewmodel" "mdl/weapons/data_knife/ptpov_data_knife.rmdl"
+			"melee_attack_animtime" "1"
+			"damage_flags" "DF_BULLET"
+			"viewkick_pitch_base" "-0.500000"
+			"viewkick_pitch_random" "0.750000"
+			"viewkick_pitch_softScale" "1.300000"
+			"viewkick_pitch_hardScale" "1.500000"
+			"viewkick_yaw_base" "0.500000"
+			"viewkick_yaw_random" "0.380000"
+			"viewkick_yaw_softScale" "2.380000"
+			"viewkick_yaw_hardScale" "2.500000"
+			"viewkick_roll_base" "0"
+			"viewkick_roll_randomMin" "0.600000"
+			"viewkick_roll_randomMax" "0.800000"
+			"viewkick_roll_softScale" "7.200000"
+			"viewkick_roll_hardScale" "7.750000"
+
+		}
+
+		"disable_lunge"
+		{
+			"melee_lunge_target_range" "0"
+			"melee_lunge_no_target_range" "0"
+
+		}
+
+		"shadow_form_hands"
+		{
+			"viewmodel" "mdl/Weapons/empty_handed/ptpov_shadowhand.rmdl"
+
+		}
+
+		"revenant_shadow_form_melee"
+		{
+			"melee_angle" "*1.4"
+			"melee_lunge_no_target_range" "*1.4"
+			"melee_lunge_target_angle" "*1.4"
+			"melee_lunge_target_range" "*1.4"
+			"melee_range" "*1.4"
+
+		}
+
+		"proto_door_kick"
+		{
+			"melee_attack_animtime" "1.300000"
+			"melee_anim_1p" "ACT_VM_MELEE_ATTACK3"
+			"impulse_force" "20000"
+			"activitymodifier3P" "door"
+
+		}
+	}
+}

@@ -1,0 +1,78 @@
+global function PassiveExtraMedInv_Init
+
+void function PassiveExtraMedInv_Init()
+{
+	#if SERVER
+		AddCallback_OnPassiveChanged( ePassives.PAS_EXTRA_MED_INV, PassiveExtraMedInv_PassiveToggle )
+		AddCallback_OnPassiveChanged( ePassives.PAS_BATTERY_STACK, PassiveExtraMedInv_PassiveToggle )
+	                       
+		AddCallback_OnPassiveChanged( ePassives.PAS_EXTRA_ALL_MED_INV, PassiveExtraMedInv_PassiveToggle )
+       
+	#endif
+}
+
+#if SERVER
+void function PassiveExtraMedInv_PassiveToggle( entity player, int passive, bool didHave, bool nowHas )
+{
+	if ( !IsAlive( player ) )
+		return
+
+	if ( GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_FIRING_RANGE ) && Survival_FiringRange_IsCharacterRespawning() )
+		return
+
+	if ( didHave )
+	{
+		PassiveExtraMedInv_RemovePassive( player )
+	}
+
+	if ( nowHas )
+	{
+		PassiveExtraMedInv_ApplyPassive( player )
+	}
+}
+
+void function PassiveExtraMedInv_ApplyPassive( entity player )
+{
+	array<ConsumableInventoryItem> playerInventory = SURVIVAL_GetPlayerInventory( player )
+	SURVIVAL_ConsolidateInventoryItems( player, playerInventory )
+	SetPlayerInventory( player, playerInventory )
+}
+
+void function PassiveExtraMedInv_RemovePassive( entity player )
+{
+	array<ConsumableInventoryItem> playerInventory = SURVIVAL_GetPlayerInventory( player )
+
+	table<string, int> itemsToReAdd
+
+	int backPackCount = playerInventory.len()
+	for ( int i = backPackCount - 1; i >= 0; i-- )
+	{
+		ConsumableInventoryItem invItem = playerInventory[i]
+		LootData data                   = SURVIVAL_Loot_GetLootDataByIndex( invItem.type )
+		int slotCount                   = SURVIVAL_GetInventorySlotCountForPlayer( player, data )
+
+		if ( !(data.ref in itemsToReAdd) )
+			itemsToReAdd[ data.ref ] <- 0
+
+		itemsToReAdd[ data.ref ] = itemsToReAdd[ data.ref ] + invItem.count
+	}
+
+	foreach ( ref, count in itemsToReAdd )
+	{
+		if ( count <= 0 )
+			continue
+
+		//Remove everything from the inventory and re-add it to see how many we can fit
+		SURVIVAL_RemoveFromPlayerInventory( player, ref, count )
+		int numAdded = SURVIVAL_AddToPlayerInventory( player, ref, count, false )
+		int diff     = count - numAdded
+		//If we can't fit everything, drop the amount we can't fit
+		if ( diff > 0 )
+		{
+			SURVIVAL_DropBackpackItem( player, ref, diff, null, true, false )
+		}
+		//Add it for real
+		SURVIVAL_AddToPlayerInventory( player, ref, numAdded, true )
+	}
+}
+#endif // #if SERVER

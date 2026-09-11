@@ -1,0 +1,112 @@
+global function Achievements_Init
+global function Achievements_OnPlayerMatchParticipationEnded
+
+void function Achievements_Init()
+{
+	if ( !IsLobby() )
+	{
+		Loot_AddCallback_OnPlayerLootPickup( OnPlayerLootPickedUp )
+	}
+}
+
+void function OnPlayerLootPickedUp( entity player, entity ent, string ref, int unitsPickedUp, bool willDestroy, entity deathBox, int pickupFlags )
+{
+	if ( GetGameState() < eGameState.Playing )
+		return
+
+                     
+	// gold armor is removed with upgrades, so this achievement is changed to be have 2 pieces of gold equipment
+	table<string, EquipmentSlot> slots = EquipmentSlot_GetAllEquipmentSlots()
+	int numLegendaries = 0
+	foreach( slotStr, equipmentSlot in slots )
+	{
+		// filter out things that aren't equipment, ie attachments and weapons
+		if( EquipmentSlot_IsAttachmentSlot( slotStr ) || EquipmentSlot_IsMainWeaponSlot( slotStr ) || equipmentSlot.type == eEquipmentSlotType.SLING_WEAPON )
+			continue
+
+		int slotTier = EquipmentSlot_GetEquipmentTier( player, slotStr )
+		if( slotTier == eLootTier.LEGENDARY )
+		{
+			numLegendaries += 1
+			if( numLegendaries >= 2 )
+			{
+				UnlockAchievement( player, achievements.DECKED_OUT )
+				break
+			}
+		}
+	}
+      
+                                                                                                                     
+                                                      
+       
+
+	//No unlocking the fully kitted achievement in Gold Rush Duos - ChadA
+	if ( SURVIVAL_Weapon_IsFullyKitted( ref ) && !IsGoldRushMode() )
+		UnlockAchievement( player, achievements.FULLY_KITTED )
+}
+
+void function Achievements_OnPlayerMatchParticipationEnded( entity player )
+{
+                  
+                                                                            
+         
+       
+
+	                      
+		if ( GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_WINTEREXPRESS ) )
+			return
+       
+
+	                              
+		if ( GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_SHADOW_ARMY ) )
+			return
+       
+
+	int rank = Survival_GetCurrentRank( player )
+	Assert( rank > 0 )
+	GameSummarySquadData gameSummaryData = GameSummary_GetPlayerData( player )
+	ItemFlavor character = LoadoutSlot_GetItemFlavor( ToEHI( player ), Loadout_Character() )
+
+	if ( GetGameState() >= eGameState.WinnerDetermined )
+	{
+		int winningTeam                = GetWinningTeam()
+		if ( player.GetTeam() == winningTeam )
+		{
+			if ( rank == 1 )
+			{
+				int role = CharacterClass_GetRole( character )
+				switch( role )
+				{
+					case eCharacterClassRole.OFFENSE:
+						UnlockAchievement( player, achievements.APEX_OFFENSE )
+						break
+
+					case eCharacterClassRole.DEFENSE:
+						UnlockAchievement( player, achievements.APEX_DEFENSE )
+						break
+
+					case eCharacterClassRole.SUPPORT:
+						UnlockAchievement( player, achievements.APEX_SUPPORT )
+						break
+
+					case eCharacterClassRole.RECON:
+						UnlockAchievement( player, achievements.APEX_RECON )
+						break
+
+					default:
+						printt( "Character is missing an assigned role in bakery")
+				}
+			}
+		}
+	}
+
+	int count = 0
+	foreach( characterRef in GetAllCharacterGUIDStringsForStats() )
+	{
+		int damageDone = GetStat_Int( player, ResolveStatEntry( CAREER_STATS.character_damage_done, characterRef ), eStatGetWhen.CURRENT )
+		if ( damageDone >= 5000 )
+			count++
+	}
+	if ( count >= 8 )
+		UnlockAchievement( player, achievements.WELL_ROUNDED )
+}

@@ -1,0 +1,59 @@
+
+global function MeleeMirageStatue_Init
+
+global function OnWeaponActivate_melee_mirage_statue
+global function OnWeaponDeactivate_melee_mirage_statue
+
+// Future: Define Effects here, Currently defined inside of animation events
+
+                         
+                                
+      
+
+void function MeleeMirageStatue_Init()
+{
+	// Future: precache particles etc.
+
+                         
+                                  
+      
+
+}
+
+// this weapon is only used for attacks (not "primary weapon" idling onscreen)
+// - activate = attack start; deactivate = attack finished
+void function OnWeaponActivate_melee_mirage_statue( entity weapon )
+{
+	entity player = weapon.GetWeaponOwner()
+	string meleeSkinName = MeleeSkin_GetSkinNameFromPlayer( player )
+
+	if ( meleeSkinName == "statue" )
+	{
+		// Future: Play Effects Here
+	}
+                         
+                                           
+  
+                              
+  
+      
+
+}
+
+void function OnWeaponDeactivate_melee_mirage_statue( entity weapon )
+{
+	entity player = weapon.GetWeaponOwner()
+	string meleeSkinName = MeleeSkin_GetSkinNameFromPlayer( player )
+
+	if ( meleeSkinName == "statue" )
+	{
+		// Future: Stop Effects Here
+	}
+                         
+                                           
+  
+                              
+  
+      
+
+}

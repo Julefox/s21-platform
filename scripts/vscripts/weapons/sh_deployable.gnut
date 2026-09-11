@@ -1,0 +1,189 @@
+//
+
+global const DEPLOYABLE_THROW_POWER = 500.0
+global const DEPLOYABLE_BOUNCE_DOT = DOT_45DEGREE //0.707106781187
+
+global function ThrowDeployable
+global function OnProjectileCollision_weapon_deployable
+                     
+global function OnProjectileCollision_weapon_deployable_LDOV
+global function OnProjectileCollision_weapon_deployable_noVehicles
+                           
+#if SERVER
+global function Deployable_CountBouncesAndRefund
+#endif
+
+entity function ThrowDeployable(
+entity weapon, WeaponPrimaryAttackParams attackParams, float throwPower,
+void functionref( entity, DeployableCollisionParams ) deployFunc,
+void functionref( entity, DeployableCollisionParams ) bounceFunc = null,
+vector ornull angularVelocity = null,
+bool predicted = PROJECTILE_PREDICTED )
+{
+	#if CLIENT
+		if ( !weapon.ShouldPredictProjectiles() )
+			return null
+	#endif
+
+	entity weaponOwner = weapon.GetWeaponOwner()
+
+	vector attackPos = attackParams.pos
+
+	vector angles   = VectorToAngles( attackParams.dir )
+	vector velocity = GetDeployableThrowVelocity( weaponOwner, angles, throwPower )
+	if ( angularVelocity == null )
+		angularVelocity = <600, 300, 0>//<600, RandomFloatRange( -300, 300 ), 0>
+	expect vector( angularVelocity )
+
+	float fuseTime = 0.0    // infinite
+
+	bool isPredicted = predicted
+	if ( weaponOwner.IsNPC() )
+		isPredicted = PROJECTILE_NOT_PREDICTED
+
+	WeaponFireGrenadeParams fireGrenadeParams
+	fireGrenadeParams.pos = attackPos
+	fireGrenadeParams.vel = velocity
+	fireGrenadeParams.angVel = angularVelocity
+	fireGrenadeParams.fuseTime = fuseTime
+	fireGrenadeParams.scriptTouchDamageType = damageTypes.explosive
+	fireGrenadeParams.scriptExplosionDamageType = damageTypes.explosive
+	fireGrenadeParams.clientPredicted = isPredicted
+	fireGrenadeParams.lagCompensated = true
+	fireGrenadeParams.useScriptOnDamage = true
+	entity projectile = weapon.FireWeaponGrenade( fireGrenadeParams )
+
+	if ( projectile )
+	{
+		#if SERVER
+			if ( IsValid( weaponOwner ) )
+			{
+				projectile.RemoveFromAllRealms()
+				projectile.AddToOtherEntitysRealms( weaponOwner )
+			}
+
+			projectile.proj.savedOrigin = projectile.GetOrigin()
+			projectile.proj.savedAngles = <0, angles.y, 0>
+			projectile.proj.savedVel = projectile.GetVelocity()
+			Grenade_Init( projectile, weapon )
+			//thread OnProjectilePlanted( projectile, deployFunc )
+		#endif
+		projectile.proj.deployFunc = deployFunc
+		projectile.proj.bounceFunc = bounceFunc
+	}
+
+	return projectile
+}
+
+
+vector function GetDeployableThrowVelocity( entity player, vector baseAngles, float throwPower )
+{
+	vector forward = AnglesToForward( baseAngles )
+
+	if ( throwPower != 1.0 )
+	{
+		baseAngles += <-8, 0, 0>
+		if ( baseAngles.x < 80 )
+			throwPower = GraphCapped( baseAngles.x, 0, 80, throwPower, throwPower * 3 )
+	}
+
+	vector velocity = forward * throwPower
+	return velocity
+}
+#if SERVER
+void function Deployable_CountBouncesAndRefund( entity projectile, DeployableCollisionParams cp )
+{
+	if ( projectile.proj.projectileBounceCount > 50 )
+	{
+		if ( projectile.proj.refundAmount > 0 )
+		{
+			entity weapon = projectile.GetWeaponSource()
+			if ( IsValid( weapon ) )
+			{
+				int ammo = weapon.GetWeaponPrimaryClipCount()
+				weapon.SetWeaponPrimaryClipCount( minint( ammo + projectile.proj.refundAmount, weapon.GetWeaponPrimaryClipCountMax() ) )
+				weapon.SetNextAttackAllowedTime( Time() )
+			}
+		}
+
+		projectile.Destroy()
+	}
+	projectile.proj.projectileBounceCount++
+	projectile.proj.projectileBounceNormal = cp.normal
+}
+#endif
+
+
+void function OnProjectileCollision_weapon_deployableInternal( entity projectile, DeployableCollisionParams cp )
+{
+	#if SERVER
+		if ( projectile.proj.isPlanted )
+			return
+
+		Deployable_CountBouncesAndRefund( projectile, cp )
+	#endif
+
+	PlantStickyEntityThatBouncesOffWalls( projectile, cp, DEPLOYABLE_BOUNCE_DOT, <90, 0, 0> )
+}
+
+#if SERVER
+void function OnProjectileCollision_weapon_deployable( entity projectile, vector pos, vector normal, entity hitEnt, int hitBox, bool isCritical )
+#else
+void function OnProjectileCollision_weapon_deployable( entity projectile, vector pos, vector normal, entity hitEnt, int hitBox, bool isCritical, bool isPassthrough )
+#endif
+{
+	DeployableCollisionParams cp
+	cp.pos = pos
+	cp.normal = normal
+	cp.hitEnt = hitEnt
+	cp.hitBox = hitBox
+	cp.isCritical = isCritical
+	cp.deployableFlags = 0
+
+	OnProjectileCollision_weapon_deployableInternal( projectile, cp )
+}
+
+                     
+#if SERVER
+void function OnProjectileCollision_weapon_deployable_noVehicles( entity projectile, vector pos, vector normal, entity hitEnt, int hitBox, bool isCritical )
+#else
+void function OnProjectileCollision_weapon_deployable_noVehicles( entity projectile, vector pos, vector normal, entity hitEnt, int hitBox, bool isCritical, bool isPassthrough )
+#endif
+{
+	DeployableCollisionParams cp
+	cp.pos = pos
+	cp.normal = normal
+	cp.hitEnt = hitEnt
+	cp.hitBox = hitBox
+	cp.isCritical = isCritical
+	cp.deployableFlags = eDeployableFlags.VEHICLES_NO_STICK
+
+	OnProjectileCollision_weapon_deployableInternal( projectile, cp )
+}
+#if SERVER
+void function OnProjectileCollision_weapon_deployable_LDOV( entity projectile, vector pos, vector normal, entity hitEnt, int hitBox, bool isCritical )
+#else
+void function OnProjectileCollision_weapon_deployable_LDOV( entity projectile, vector pos, vector normal, entity hitEnt, int hitBox, bool isCritical, bool isPassthrough )
+#endif
+{
+	DeployableCollisionParams cp
+	cp.pos = pos
+	cp.normal = normal
+	cp.hitEnt = hitEnt
+	cp.hitBox = hitBox
+	cp.isCritical = isCritical
+	cp.deployableFlags = eDeployableFlags.VEHICLES_LARGE_DEPLOYABLE
+
+	OnProjectileCollision_weapon_deployableInternal( projectile, cp )
+}
+                           
+
+//#if SERVER
+//void function OnProjectilePlanted( entity projectile, void functionref(entity) deployFunc )
+//{
+//	projectile.EndSignal( "OnDestroy" )
+//	projectile.WaitSignal( "Planted" )
+//	projectile.proj.isPlanted = true
+//	thread deployFunc( projectile )
+//}
+//#endif

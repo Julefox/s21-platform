@@ -1,0 +1,40 @@
+"WeaponAmmoSuckBehaviors"
+{
+
+	"primary_weapons"
+	{
+		"rifle" "1"
+		"pistol" "1"
+		"anti-titan" "1"
+		"FORCE_SAME_WEAPON" "1"
+
+	}
+
+	"special_weapons"
+	{
+		"special" "1"
+		"FORCE_SAME_WEAPON" "1"
+
+	}
+
+	"offhand_weapons"
+	{
+		"ordnance" "1"
+		"tactical" "0"
+		"FORCE_SAME_WEAPON" "1"
+
+	}
+
+	"melee_weapons"
+	{
+		"melee" "0"
+		"FORCE_SAME_WEAPON" "1"
+
+	}
+
+	"disabled"
+	{
+		"FORCE_NO_SUCK" "1"
+
+	}
+}

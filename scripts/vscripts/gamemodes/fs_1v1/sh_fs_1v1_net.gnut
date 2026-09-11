@@ -1,0 +1,1581 @@
+// fs_1v1 netvars + client remotes (S21 RegisterNetworkedVariable / Remote_Register*).
+// Full mode bodies not required for registration; client stubs are loud until cl_ lands.
+
+global function FS_1v1_RegisterNetwork
+global function FS_1v1_SharedInit
+
+#if CLIENT
+// SetScreen / OpenVotingPhase / scoreboard remotes: cl_gamemode_1v1.nut
+global function ServerCallback_FSDM_ChampionScreenHandle
+global function ServerCallback_FSDM_UpdateVotingMaps
+global function ServerCallback_FSDM_UpdateMapVotesClient
+global function ServerCallback_SendScoreboardToClient
+global function ServerCallback_ClearScoreboardOnClient
+global function FSDM_CustomWinnerScreen_Start
+global function DM_HintCatalog
+global function Flowstate_ShowRespawnTimeUI
+global function ServerCallback_FSDM_CoolCamera
+global function ForceScoreboardLoseFocus
+// S21 remotes: not ByRef. Local minimap Internal is file-local; call public APIs.
+global function ServerCallback_FS_MinimapDisableDraw
+global function ServerCallback_FS_MinimapEnableDraw
+global function ServerCallback_SpawnOrModifyClientSideDynamicLight
+global function ServerCallback_FS_1v1_PodiumEmote
+global function ServerCallback_FS_1v1_PodiumTbag
+global function ServerCallback_FS_1v1_WorldBanner
+global function FS_1v1_ChampionRoomIsRunning
+global function FS_1v1_ChampionFX_Precache
+#endif
+
+#if SERVER
+global function ClientCallback_FS_1v1_PodiumEmote
+global function ClientCallback_FS_1v1_PodiumTbag
+#endif
+
+struct
+{
+	bool netRegistered = false
+	#if CLIENT
+		table<int, entity> clientDynamicLights
+		bool championRoomRunning = false
+		entity championCharacterModel
+		entity championCharacterNode
+		bool championEmoting = false
+		bool championJumpRegistered = false
+		bool championDuckRegistered = false
+		bool championDuckHeldAtArm = false
+		bool championTbagActive = false
+		var championHintRui
+		float championTbagNextTime = 0.0
+		float championTbagNextSend = 0.0
+		float championTbagCrouchUntil = 0.0
+		bool coolCameraRunning = false
+		bool championDisabledApexScreens = false
+		var worldBannerRui
+		var worldBannerTopo
+	#endif
+} file
+
+void function FS_1v1_SharedInit()
+{
+	// Capability framework: elim policy, death-screen refuse, inventory signals.
+	FS_Core_SharedInit()
+
+	FS_1v1_InitHelpers()
+	FS_1v1_RegisterNetwork()
+
+	// BR systems FlagInit+Set these in deathfield/loot populate. Arena maps still FlagWait them; 1v1 never runs those inits.
+	// BleedoutDebug is FlagInit'd only in Bleedout_Init; CodeCallback_KillDamagePlayerOrNPC still Flags it on kill.
+	#if SERVER
+		FlagInit( "DeathFieldCalculationComplete" )
+		FlagInit( "Survival_LootSpawned" )
+		FlagInit( "BleedoutDebug", false )
+		if ( !FlagExists( "DeathCircleActive" ) )
+			FlagInit( "DeathCircleActive" )
+		if ( !FlagExists( "SUR_DeathFieldShrinking" ) )
+			FlagInit( "SUR_DeathFieldShrinking" )
+		if ( !Flag( "DeathFieldCalculationComplete" ) )
+			FlagSet( "DeathFieldCalculationComplete" )
+		if ( !Flag( "Survival_LootSpawned" ) )
+			FlagSet( "Survival_LootSpawned" )
+		printt( "[FS-1V1] survival world flags set (deathfield+loot)" )
+
+		FS_1v1_SetupApexScreenSequence()
+	#endif
+
+	// Death screen Flag("SquadEliminated") without ClGamemodeSurvival_Init which FlagInits it.
+	#if CLIENT
+		FlagInit( "SquadEliminated" )
+		RegisterSignal( "FS_1v1_StopChampionScreen" )
+		RegisterSignal( "FS_1v1_WorldBannerStop" )
+		RegisterSignal( "Destroy1v1SettingsHint" )
+		if ( !IsValidSignal( "ChallengeStartRemoveCameras" ) )
+			RegisterSignal( "ChallengeStartRemoveCameras" )
+		RegisterNetVarIntChangeCallback( "FS_1v1_CareerKills", FS_1v1_CareerStatsChanged )
+		RegisterNetVarIntChangeCallback( "FS_1v1_CareerDeaths", FS_1v1_CareerStatsChanged )
+		RegisterNetVarIntChangeCallback( "kills", FS_1v1_CareerStatsChanged )
+		RegisterNetVarIntChangeCallback( "deaths", FS_1v1_CareerStatsChanged )
+	#endif
+
+	printt( "[FS-1V1] SharedInit complete (wave0 scaffold)" )
+}
+
+#if SERVER
+void function FS_1v1_SetupApexScreenSequence()
+{
+	ApexScreenSettingsGroup randomPlayers
+	randomPlayers.displayMode = eApexScreenDisplayGroup.DISPLAY_RANDOM_PLAYERS
+	randomPlayers.duration = 14.0
+
+	ApexScreenSettingsGroup localPlayer
+	localPlayer.displayMode = eApexScreenDisplayGroup.DISPLAY_LOCALPLAYER
+	localPlayer.duration = 8.0
+
+	array<ApexScreenSettingsGroup> playing = [ randomPlayers, localPlayer ]
+	SvApexScreens_SetScreenSequenceForGameState( eGameState.Playing, playing )
+	SvApexScreens_SetScreenSequenceForGameState( eGameState.WaitingForPlayers, playing )
+	SvApexScreens_SetLogoModeCenterOnly( true )
+	printt( "[FS-1V1] apex screen sequence random+local" )
+}
+#endif
+
+void function FS_1v1_RegisterNetwork()
+{
+	#if !( SERVER || CLIENT)
+		return
+	#endif
+
+	if ( file.netRegistered )
+		return
+
+	file.netRegistered = true
+
+	// Round / duel state (shared with DM-style loop)
+	RegisterNetworkedVariable( "championDisplayEndTime", SNDC_GLOBAL, SNVT_TIME, -1 )
+	RegisterNetworkedVariable( "flowstate_DMStartTime", SNDC_GLOBAL, SNVT_TIME, -1 )
+	RegisterNetworkedVariable( "flowstate_DMRoundEndTime", SNDC_GLOBAL, SNVT_TIME, -1 )
+	RegisterNetworkedVariable( "FSDM_GameState", SNDC_GLOBAL, SNVT_INT, -1 )
+	// Round intro countdown window. Combat clock (flowstate_DMStartTime) begins at
+	// this time; matchmaking holds until it passes. -1 = no intro this round.
+	RegisterNetworkedVariable( "FSDM_RoundIntroEndTime", SNDC_GLOBAL, SNVT_TIME, -1 )
+	RegisterNetworkedVariable( "FSDM_CurrentRound", SNDC_GLOBAL, SNVT_INT, 1 )
+
+	// Per-player duel surface
+	RegisterNetworkedVariable( "FSDM_1v1_Enemy", SNDC_PLAYER_GLOBAL, SNVT_ENTITY )
+	RegisterNetworkedVariable( "FSDM_1v1_PositionInScoreboard", SNDC_PLAYER_GLOBAL, SNVT_INT, -1 )
+	RegisterNetworkedVariable( "FS_1v1_PlayerState", SNDC_PLAYER_EXCLUSIVE, SNVT_INT )
+	RegisterNetworkedVariable( "FS_PlayerIsMnk", SNDC_PLAYER_GLOBAL, SNVT_BOOL, false )
+
+	// VS HUD input readout: eIBMMLockState, and the current duel opponent's
+	// device (0 = MnK, 1 = controller, -1 = unknown)
+	RegisterNetworkedVariable( "FS_1v1_LockState", SNDC_PLAYER_EXCLUSIVE, SNVT_INT, -1 )
+	RegisterNetworkedVariable( "FS_1v1_EnemyInput", SNDC_PLAYER_EXCLUSIVE, SNVT_INT, -1 )
+
+	// Waiting-room queue card: when the IBMM input-lock grace opens to any input,
+	// and how long the grace was (drives the countdown bar client-side)
+	RegisterNetworkedVariable( "FS_1v1_QueueGraceEnd", SNDC_PLAYER_EXCLUSIVE, SNVT_TIME, -1 )
+	RegisterNetworkedVariable( "FS_1v1_QueueGraceDur", SNDC_PLAYER_EXCLUSIVE, SNVT_FLOAT_RANGE, 0.0, 0.0, 60.0 )
+
+	// Career totals. Session "kills" is SNVT_INT (-512..511); career must not share that. -1 = not published yet.
+	RegisterNetworkedVariable( "FS_1v1_CareerKills", SNDC_PLAYER_GLOBAL, SNVT_BIG_INT, -1 )
+	RegisterNetworkedVariable( "FS_1v1_CareerDeaths", SNDC_PLAYER_GLOBAL, SNVT_BIG_INT, -1 )
+
+	// Do not re-register "deaths" -- name-hash collision hard-fails script init. Session damage needs SNVT_BIG_INT.
+	RegisterNetworkedVariable( "damage", SNDC_PLAYER_GLOBAL, SNVT_BIG_INT, 0 )
+	RegisterNetworkedVariable( "latency", SNDC_PLAYER_GLOBAL, SNVT_INT, 0 )
+	RegisterNetworkedVariable( "accuracy", SNDC_PLAYER_GLOBAL, SNVT_INT, 0 )
+
+	Remote_RegisterClientFunction( "Gamemode1v1_ForceLegendSelector_Deprecated" )
+
+	// Cross-realm scoreboard. Bridge S2C remotes cap at 16 args -- names and
+	// stats are chunked (3 names / 5 stats per call) instead of 1 remote/player.
+	Remote_RegisterClientFunction( "ServerCallback_1v1_SbName",
+		"int", 0, 4,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX )
+	Remote_RegisterClientFunction( "ServerCallback_1v1_SbStats",
+		"int", 0, 6,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX )
+	// Sender slot per scoreboard row. Chat mute keys on this: the SayText
+	// payload names its sender by slot, which reaches us for every player,
+	// realm-visible or not.
+	Remote_RegisterClientFunction( "ServerCallback_1v1_SbSlot",
+		"int", 0, 7,
+		"int", INT_MIN, INT_MAX, "int", 0, 255,
+		"int", INT_MIN, INT_MAX, "int", 0, 255,
+		"int", INT_MIN, INT_MAX, "int", 0, 255,
+		"int", INT_MIN, INT_MAX, "int", 0, 255,
+		"int", INT_MIN, INT_MAX, "int", 0, 255,
+		"int", INT_MIN, INT_MAX, "int", 0, 255 )
+	Remote_RegisterClientFunction( "ServerCallback_1v1_ScoreboardClear" )
+	Remote_RegisterClientFunction( "ServerCallback_1v1_ScoreboardRefresh" )
+	// The four leading args are a packed name: byte 3 of a group lands in the sign
+	// bit, so the range must be signed like SbName and Obituary already are.
+	Remote_RegisterClientFunction( "ServerCallback_1v1_VsHudEnemy",
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", 0, INT_MAX, "int", 0, INT_MAX, "int", 0, INT_MAX, "int", -1, INT_MAX,
+		"int", 0, INT_MAX, "int", 0, INT_MAX )
+	Remote_RegisterClientFunction( "ServerCallback_1v1_VsHudHide" )
+
+	// Round-end / FSDM-style remotes used by _Run1v1 (stubbed on client until full UI)
+	Remote_RegisterClientFunction( "DM_HintCatalog", "int", -100, 101, "entity" )
+	Remote_RegisterClientFunction( "Flowstate_ShowRespawnTimeUI", "int", -1, 1200 )
+	Remote_RegisterClientFunction( "ServerCallback_FSDM_SetScreen", "int", 0, 256, "int", 0, 9999, "int", 0, 42069, "int", 0, 256 )
+	Remote_RegisterClientFunction( "ServerCallback_FSDM_OpenVotingPhase", "bool" )
+	Remote_RegisterClientFunction( "ServerCallback_FSDM_CoolCamera" )
+	Remote_RegisterClientFunction( "ServerCallback_FSDM_ChampionScreenHandle", "bool", "int", INT_MIN, INT_MAX, "int", 0, 1000,
+		"int", 0, INT_MAX, "int", 0, INT_MAX, "int", -1, 32, "int", -1, 32 )
+	Remote_RegisterClientFunction( "ServerCallback_FS_1v1_PodiumEmote", "int", INT_MIN, INT_MAX )
+	Remote_RegisterServerFunction( "ClientCallback_FS_1v1_PodiumEmote", "int", INT_MIN, INT_MAX )
+	Remote_RegisterClientFunction( "ServerCallback_FS_1v1_PodiumTbag" )
+	Remote_RegisterServerFunction( "ClientCallback_FS_1v1_PodiumTbag" )
+	Remote_RegisterClientFunction( "ServerCallback_FS_1v1_WorldBanner",
+		"vector", -64000.0, 64000.0, 32,
+		"vector", -360.0, 360.0, 32,
+		"float", 0.0, 2000.0, 16,
+		"float", 0.0, 2000.0, 16 )
+	Remote_RegisterClientFunction( "ServerCallback_FSDM_UpdateVotingMaps", "int", 0, 256, "int", 0, 256, "int", 0, 256, "int", 0, 256 )
+	Remote_RegisterClientFunction( "ServerCallback_FSDM_UpdateMapVotesClient", "int", 0, 256, "int", 0, 256, "int", 0, 256, "int", 0, 256 )
+	Remote_RegisterClientFunction( "ServerCallback_SendScoreboardToClient", "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", -1, INT_MAX, "float", 0.0, FLT_MAX, 32, "int", 0, INT_MAX, "int", 0, INT_MAX )
+	Remote_RegisterClientFunction( "ServerCallback_ClearScoreboardOnClient" )
+	Remote_RegisterClientFunction( "FSDM_CustomWinnerScreen_Start", "int", -1, 127, "int", 0, 11 )
+	Remote_RegisterClientFunction( "ForceScoreboardLoseFocus" )
+	Remote_RegisterClientFunction( "ServerCallback_FS_MinimapDisableDraw" )
+	Remote_RegisterClientFunction( "ServerCallback_FS_MinimapEnableDraw" )
+
+	// Waiting-room lights (party crasher / arena composite). origin, angles, colorIdx, radius, intensity, lightId
+	Remote_RegisterClientFunction( "ServerCallback_SpawnOrModifyClientSideDynamicLight",
+		"vector", -64000.0, 64000.0, 32,
+		"vector", -360.0, 360.0, 32,
+		"int", 0, 16,
+		"int", 0, 8192,
+		"float", 0.0, 32.0, 16,
+		"int", 0, 64 )
+
+	// APPEND ONLY. Registration order is the wire index; inserting mid-list remaps every remote after it.
+
+	// Banner data for one scoreboard row, by GUID. Other-realm players have no local entity.
+	Remote_RegisterClientFunction( "ServerCallback_1v1_SbCard",
+		"int", 0, 3,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX )
+
+	Remote_RegisterClientFunction( "ServerCallback_1v1_ChallengeState",
+		"int", 0, 3,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX )
+	Remote_RegisterClientFunction( "ServerCallback_1v1_ChallengeInbox",
+		"int", 0, 4,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+		"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX )
+
+	printt( "[FS-1V1] network registered (netvars + remotes)" )
+}
+
+#if CLIENT
+// Scoreboard remotes + SetScreen/OpenVotingPhase: cl_gamemode_1v1.nut
+
+void function FS_1v1_CareerStatsChanged( entity player, int newVal )
+{
+	if ( !IsValid( player ) )
+		return
+	TriggerUpdateOfNestedGladiatorCardsForPlayer( player )
+}
+
+void function ServerCallback_FSDM_ChampionScreenHandle( bool show, int teamWon, int durationSec, int careerKills, int careerDeaths, int champSkin, int champCamo )
+{
+	entity player = GetLocalClientPlayer()
+	printt( "[FS-1V1] ChampionScreenHandle show=" + string( show ) + " team=" + string( teamWon )
+		+ " dur=" + string( durationSec ) + " championEEH=" + string( GetGlobalNetInt( "championEEH" ) )
+		+ " skin=" + string( champSkin ) + " camo=" + string( champCamo ) )
+
+	if ( IsValid( player ) && IsValidSignal( "Destroy1v1SettingsHint" ) )
+		Signal( player, "Destroy1v1SettingsHint" )
+
+	if ( show )
+		FS_1v1_BeginLeaderboardTransition()
+
+	if ( !show )
+	{
+		file.championRoomRunning = false
+		if ( IsValid( player ) && IsValidSignal( "FS_1v1_StopChampionScreen" ) )
+			Signal( player, "FS_1v1_StopChampionScreen" )
+		FS_1v1_RestoreWorldViewAfterChampion()
+		return
+	}
+
+	if ( file.championRoomRunning )
+	{
+		printt( "[FS-1V1] ChampionScreenHandle ignored -- already running" )
+		return
+	}
+
+	thread FS_1v1_ClientChampionRoom_THREAD( durationSec, careerKills, careerDeaths, champSkin, champCamo )
+}
+
+// Pixels below the fullscreen anchor. spectator_card lays its title out for a
+// FULL_BOX card; the gladiator_card_side_pane layout overlaps one.
+const float FS_1V1_CHAMPION_CARD_Y_OFFSET = 0.0
+
+var function FS_1v1_CreateChampionPaneRui( float yOffset, array<var> topos )
+{
+	UISize screenSize = GetScreenSize()
+	UISize topoSize = GetScaledVirtualScreenSize( GetCurrentVirtualScreenSize( false ), screenSize )
+	UISize ruiSize = GetCurrentVirtualScreenSize( true )
+
+	var topo = RuiTopology_CreatePlane(
+		<( screenSize.width - topoSize.width ) / 2.0, yOffset, 0>,
+		<float( topoSize.width ), 0, 0>,
+		<0, float( topoSize.height ), 0>, false )
+	topos.append( topo )
+
+	var rui = RuiCreate( $"ui/spectator_card.rpak", topo, RUI_DRAW_POSTEFFECTS, RUI_SORT_GLADCARD )
+	RuiSetResolution( rui, float( ruiSize.width ), float( ruiSize.height ) )
+	return rui
+}
+
+// Podium flames, same path the survival victory sequence uses for its per-map
+// effect packages. The lobby variant is authored for menu scenes and draws from
+// particle/fire/*.rson; the P_fire_* family still ships the old .vmt cards.
+// Lives in common.rpak, so it is loaded everywhere.
+const asset FS_1V1_CHAMPION_FIRE = $"P_bh_emt_fire_sm_lobby"
+
+void function FS_1v1_ChampionFX_Precache()
+{
+	PrecacheParticleSystem( FS_1V1_CHAMPION_FIRE )
+}
+
+// Maps that ship a victory podium also ship its pyro: eight info_particle_system
+// emitters named script_fireballs_L1..R2 and script_sparks_L1..R2, spawned
+// inactive. Enabling them is what the stock podium sequence does, so prefer them
+// and only fall back to a spawned flame on a map with no podium.
+array<string> function FS_1v1_PodiumPyro_FlameEnts()
+{
+	return [ "script_fireballs_L1", "script_fireballs_L2", "script_fireballs_R1", "script_fireballs_R2" ]
+}
+
+array<string> function FS_1v1_PodiumPyro_SparkEnts()
+{
+	return [ "script_sparks_L1", "script_sparks_L2", "script_sparks_R1", "script_sparks_R2" ]
+}
+
+bool function FS_1v1_PodiumPyro_Exists()
+{
+	foreach ( string scriptName in FS_1v1_PodiumPyro_FlameEnts() )
+	{
+		if ( GetEntArrayByScriptName( scriptName ).len() > 0 )
+			return true
+	}
+	return false
+}
+
+void function FS_1v1_PodiumPyro_Set( string scriptName, bool enabled )
+{
+	foreach ( entity ent in GetEntArrayByScriptName( scriptName ) )
+	{
+		if ( IsValid( ent ) )
+			ent.SetEnabled( enabled )
+	}
+}
+
+void function FS_1v1_PodiumPyro_AllOff()
+{
+	foreach ( string scriptName in FS_1v1_PodiumPyro_FlameEnts() )
+		FS_1v1_PodiumPyro_Set( scriptName, false )
+	foreach ( string scriptName in FS_1v1_PodiumPyro_SparkEnts() )
+		FS_1v1_PodiumPyro_Set( scriptName, false )
+}
+
+// Burst cadence copied from the stock podium sequence: two paired double-taps,
+// then a staggered four-way finish.
+void function FS_1v1_PodiumPyro_THREAD( entity lp )
+{
+	EndSignal( lp, "FS_1v1_StopChampionScreen" )
+	OnThreadEnd( void function() : () { FS_1v1_PodiumPyro_AllOff() } )
+
+	EmitSoundOnEntity( lp, "Podium_Pyro_FlameBurst_Sequence" )
+
+	for ( int pass = 0; pass < 2; pass++ )
+	{
+		wait 1.0 - ( pass * 0.75 )
+		FS_1v1_PodiumPyro_Set( "script_fireballs_L1", true )
+		FS_1v1_PodiumPyro_Set( "script_fireballs_R1", true )
+		wait 0.1
+		FS_1v1_PodiumPyro_Set( "script_fireballs_L2", true )
+		FS_1v1_PodiumPyro_Set( "script_fireballs_R2", true )
+		wait 0.25
+		FS_1v1_PodiumPyro_Set( "script_fireballs_L1", false )
+		FS_1v1_PodiumPyro_Set( "script_fireballs_R1", false )
+		wait 0.1
+		FS_1v1_PodiumPyro_Set( "script_fireballs_L2", false )
+		FS_1v1_PodiumPyro_Set( "script_fireballs_R2", false )
+	}
+
+	wait 0.5
+	foreach ( string scriptName in FS_1v1_PodiumPyro_FlameEnts() )
+	{
+		FS_1v1_PodiumPyro_Set( scriptName, true )
+		wait 0.015
+	}
+	foreach ( string scriptName in FS_1v1_PodiumPyro_SparkEnts() )
+		FS_1v1_PodiumPyro_Set( scriptName, true )
+
+	wait 1.0
+	FS_1v1_PodiumPyro_AllOff()
+}
+
+// Offsets are relative to the podium facing: x right, y toward the camera, z up.
+void function FS_1v1_ChampionFire_Start( vector pos, vector ang, array<int> handles )
+{
+	if ( !GetCurrentPlaylistVarBool( "fs_1v1_champion_fire", true ) )
+		return
+
+	entity lp = GetLocalClientPlayer()
+	if ( FS_1v1_PodiumPyro_Exists() && IsValid( lp ) )
+	{
+		printt( "[FS-1V1] champion fire using map podium pyro" )
+		thread FS_1v1_PodiumPyro_THREAD( lp )
+		return
+	}
+
+	vector forward = AnglesToForward( ang )
+	vector fireAngles = < 0, ang.y, 0 >
+	bool fxSound = GetCurrentPlaylistVarBool( "enable_fx_sound", true )
+
+	// Open toward the camera so nothing sits between the winner and the lens.
+	array<vector> offsets = [
+		<  150,   10, -8 >,
+		< -150,   10, -8 >,
+		<   95, -120, -8 >,
+		<  -95, -120, -8 >,
+		<    0, -175, -8 > ]
+
+	foreach ( vector offset in offsets )
+		FS_1v1_ChampionFire_Spawn( FS_1V1_CHAMPION_FIRE, pos, forward, offset, fireAngles, fxSound, handles )
+
+	printt( "[FS-1V1] champion fire fallback flames count=" + handles.len() )
+}
+
+void function FS_1v1_ChampionFire_Spawn( asset effect, vector pos, vector forward, vector offset, vector fireAngles, bool fxSound, array<int> handles )
+{
+	vector origin = OffsetPointRelativeToVector( pos, offset, forward )
+	int handle = StartParticleEffectInWorldWithHandle( GetParticleSystemIndex( effect ), origin, fireAngles )
+	if ( !EffectDoesExist( handle ) )
+	{
+		printt( "[FS-1V1] champion fire failed to start", effect )
+		return
+	}
+
+	if ( fxSound )
+		EffectSetSoundEnabled( handle, true )
+
+	handles.append( handle )
+}
+
+void function FS_1v1_ChampionCapture_Prepare()
+{
+	// Apex banners hold the same PIP slots and capture rooms the nested card needs.
+	if ( !ClApexScreens_IsDisabled() )
+	{
+		ClApexScreens_DisableAllScreens()
+		file.championDisabledApexScreens = true
+	}
+
+	if ( !IsCaptureRoomAvailable() )
+	{
+		ClSceneCapture_PROTO_AddCaptureRoom( <0, 0, 10000> )
+		printt( "[FS-1V1] champion capture room added" )
+	}
+}
+
+void function FS_1v1_ChampionCapture_Release()
+{
+	if ( !file.championDisabledApexScreens )
+		return
+
+	file.championDisabledApexScreens = false
+	if ( ClApexScreens_IsDisabled() )
+		ClApexScreens_EnableAllScreens()
+}
+
+void function FS_1v1_WaitForBodyResident( asset bodyModel, float timeoutSec )
+{
+	if ( bodyModel == $"" )
+		return
+
+	StreamModelHint( bodyModel )
+	float deadline = Time() + timeoutSec
+	while ( !StreamModelIsResident( bodyModel ) && Time() < deadline )
+	{
+		StreamModelHint( bodyModel )
+		WaitFrame()
+	}
+}
+
+void function FS_1v1_ClientChampionRoom_THREAD( int durationSec, int careerKills, int careerDeaths, int champSkin, int champCamo )
+{
+	entity lp = GetLocalClientPlayer()
+	if ( !IsValid( lp ) )
+		return
+
+	file.championRoomRunning = true
+	FS_1v1_ChampionHudHide( lp )
+
+	array<entity> cleanupEnts
+	array<var> ruis
+	array<NestedGladiatorCardHandle> cardHandles
+	array<var> cardTopos
+	array<int> fireHandles
+	float cameraMoveDur = float( durationSec )
+	if ( cameraMoveDur < 3.0 )
+		cameraMoveDur = 3.0
+
+	OnThreadEnd(
+		void function() : ( cleanupEnts, ruis, cardHandles, cardTopos, fireHandles )
+		{
+			FS_1v1_PodiumPerform_Shutdown()
+			FS_1v1_PodiumPyro_AllOff()
+			foreach ( int fireHandle in fireHandles )
+			{
+				if ( EffectDoesExist( fireHandle ) )
+					EffectStop( fireHandle, false, false )
+			}
+			file.championRoomRunning = false
+			foreach ( NestedGladiatorCardHandle cardHandle in cardHandles )
+				CleanupNestedGladiatorCard( cardHandle )
+			FS_1v1_ChampionCapture_Release()
+			foreach ( rui in ruis )
+				RuiDestroyIfAlive( rui )
+			foreach ( var topo in cardTopos )
+				RuiTopology_Destroy( topo )
+			foreach ( entity ent in cleanupEnts )
+			{
+				if ( IsValid( ent ) )
+					ent.Destroy()
+			}
+			SetMapSetting_FogEnabled( true )
+			FS_1v1_RestoreWorldViewAfterChampion()
+		}
+	)
+
+	float readyUntil = Time() + 1.0
+	int champEEH = GetGlobalNetInt( "championEEH" )
+	ItemFlavor ornull wantedCharacter = null
+	if ( FS_1v1_IsForceCharacter() && !FlowState_ForceAdminCharacter() )
+		wantedCharacter = FS_1v1_GetForcedCharacterFlavor()
+
+	while ( Time() < readyUntil )
+	{
+		champEEH = GetGlobalNetInt( "championEEH" )
+		if ( champEEH != EHI_null && EHIHasValidScriptStruct( champEEH ) && LoadoutSlot_IsReady( champEEH, Loadout_Character() ) )
+		{
+			if ( wantedCharacter == null || LoadoutSlot_GetItemFlavor( champEEH, Loadout_Character() ) == expect ItemFlavor( wantedCharacter ) )
+				break
+		}
+		WaitFrame()
+	}
+
+	if ( !IsValid( lp ) )
+		lp = GetLocalClientPlayer()
+	if ( !IsValid( lp ) )
+		return
+
+	EndSignal( lp, "FS_1v1_StopChampionScreen" )
+
+	string champName = ""
+	if ( champEEH != EHI_null && EHIHasValidScriptStruct( champEEH ) )
+		champName = GetPlayerNameUnlessAnonymized( champEEH )
+	if ( champName == "" )
+	{
+		entity champEnt = FromEHI( champEEH )
+		if ( IsValid( champEnt ) )
+			champName = champEnt.GetPlayerName()
+	}
+
+	ItemFlavor displayCharacter = FS_1v1_GetForcedCharacterFlavor()
+	if ( wantedCharacter != null )
+		displayCharacter = expect ItemFlavor( wantedCharacter )
+	else if ( champEEH != EHI_null && EHIHasValidScriptStruct( champEEH ) && LoadoutSlot_IsReady( champEEH, Loadout_Character() ) )
+		displayCharacter = LoadoutSlot_GetItemFlavor( champEEH, Loadout_Character() )
+
+	ItemFlavor displaySkin = CharacterClass_GetDefaultSkin( displayCharacter )
+	if ( champEEH != EHI_null && EHIHasValidScriptStruct( champEEH ) && LoadoutSlot_IsReady( champEEH, Loadout_CharacterSkin( displayCharacter ) ) )
+		displaySkin = LoadoutSlot_GetItemFlavor( champEEH, Loadout_CharacterSkin( displayCharacter ) )
+
+	string slotRef = "not-ready"
+	if ( champEEH != EHI_null && EHIHasValidScriptStruct( champEEH ) && LoadoutSlot_IsReady( champEEH, Loadout_Character() ) )
+		slotRef = ItemFlavor_GetHumanReadableRef( LoadoutSlot_GetItemFlavor( champEEH, Loadout_Character() ) )
+	asset bodyModel = CharacterSkin_GetBodyModel( displaySkin )
+	StreamModelHint( bodyModel )
+
+	printt( "[FS-1V1] champion room begin dur=" + string( durationSec ) + " winner=" + champName
+		+ " display=" + ItemFlavor_GetHumanReadableRef( displayCharacter )
+		+ " slot=" + slotRef
+		+ " force=" + string( FS_1v1_IsForceCharacter() )
+		+ " skin=" + string( champSkin ) + " camo=" + string( champCamo ) )
+
+	FS_1v1_ChampionCapture_Prepare()
+	WaitEndFrame()
+
+	var podiumRui = CreateFullscreenRui( $"ui/entry_podium_ui.rpak" )
+	ruis.append( podiumRui )
+	RuiSetBool( podiumRui, "isFriendly", lp.GetEncodedEHandle() == champEEH )
+	RuiSetString( podiumRui, "title", Localize( "#GLADIATOR_CARD_INTRO_CHAMPION_SOLO" ) )
+	RuiSetString( podiumRui, "desc", champName )
+	string modeLabel = "FLOWSTATE 1V1"
+	if ( GetCurrentPlaylistVarBool( "freedm_ffa_active", false ) )
+		modeLabel = "FLOWSTATE FFA"
+	RuiSetString( podiumRui, "gameModeString", modeLabel )
+	RuiSetString( podiumRui, "mapNameString", Localize( GetCurrentMapDisplayName() ) )
+
+	var cardPaneRui = FS_1v1_CreateChampionPaneRui( FS_1V1_CHAMPION_CARD_Y_OFFSET, cardTopos )
+	ruis.append( cardPaneRui )
+	RuiSetImage( cardPaneRui, "titleIcon", $"" )
+	RuiSetString( cardPaneRui, "titleText", "" )
+
+	int cardOwner = champEEH
+	if ( champEEH == EHI_null || !EHIHasValidScriptStruct( champEEH ) )
+		cardOwner = LocalClientEHI()
+
+	NestedGladiatorCardHandle cardHandle = CreateNestedGladiatorCard( cardPaneRui, "cardFrontFace",
+		eGladCardDisplaySituation.GAME_INTRO_CHAMPION_SQUAD_ANIMATED, eGladCardPresentation.FULL_BOX )
+	ChangeNestedGladiatorCardOwner( cardHandle, cardOwner, Time(), eGladCardLifestateOverride.ALIVE )
+	if ( champName != "" )
+		SetNestedGladiatorCardOverrideName( cardHandle, champName )
+	SetNestedGladiatorCardOverrideCharacter( cardHandle, displayCharacter )
+	SetNestedGladiatorCardOverrideSkin( cardHandle, displaySkin )
+	SetNestedGladiatorCardOverrideStance( cardHandle, Loadout_GladiatorCardStance( displayCharacter ).defaultItemFlavor )
+	SetNestedGladiatorCardOverrideFrame( cardHandle, Loadout_GladiatorCardFrame( displayCharacter ).defaultItemFlavor )
+	cardHandles.append( cardHandle )
+
+	SetNestedGladiatorCardRawTracker( cardHandle, 0, "LIFETIME KILLS", careerKills )
+	SetNestedGladiatorCardRawTracker( cardHandle, 1, "LIFETIME DEATHS", careerDeaths )
+
+	float kd = careerDeaths > 0 ? careerKills.tofloat() / careerDeaths.tofloat() : careerKills.tofloat()
+	int kdWhole = int( kd )
+	int kdFrac = int( ( kd - kdWhole.tofloat() ) * 100.0 + 0.5 )
+	if ( kdFrac > 99 )
+	{
+		kdFrac = 0
+		kdWhole += 1
+	}
+	SetNestedGladiatorCardRawTracker( cardHandle, 2, "LIFETIME K/D", kdWhole, format( ".%02d", kdFrac ) )
+
+	EmitSoundOnEntity( lp, "UI_InGame_ChampionMountain_Whoosh" )
+
+	ScreenFade( lp, 0, 0, 0, 255, 0.2, 0.1, FFADE_OUT | FFADE_PURGE )
+	wait 0.2
+
+	if ( !IsValid( lp ) )
+		lp = GetLocalClientPlayer()
+	if ( !IsValid( lp ) )
+		return
+
+	vector pos = <12000, 12000, 8000>
+	vector ang = <0, 180, 0>
+	bool haveMapPodium = false
+
+	array<entity> podiumTargets = GetEntArrayByScriptName( "podium_info_target" )
+	if ( podiumTargets.len() < 1 )
+		podiumTargets = GetEntArrayByScriptName( "podium_base_skin_swap" )
+	if ( podiumTargets.len() > 0 && IsValid( podiumTargets[0] ) )
+	{
+		pos = podiumTargets[0].GetOrigin()
+		ang = podiumTargets[0].GetAngles()
+		haveMapPodium = true
+		printt( "[FS-1V1] champion podium pos=" + string( pos ) )
+	}
+	else
+	{
+		printt( "[FS-1V1] champion podium missing, fallback pos=" + string( pos ) )
+	}
+
+	SetMapSetting_FogEnabled( false )
+	FS_1v1_ChampionFire_Start( pos, ang, fireHandles )
+
+	if ( !haveMapPodium )
+	{
+		vector bgPos = pos - ( AnglesToForward( ang ) * 80 ) + <0, 0, 24>
+		entity bgGeo = CreateClientSidePropDynamic( bgPos, ang, $"mdl/levels_terrain/mp_lobby/mp_character_select_geo.rmdl" )
+		bgGeo.kv.solid = 0
+		bgGeo.kv.disableshadows = 1
+		bgGeo.kv.fadedist = -1
+		bgGeo.MakeSafeForUIScriptHack()
+		bgGeo.SetSkin( CHAMPION_SQAUD_BACKGROUND_SKIN_INDEX )
+		cleanupEnts.append( bgGeo )
+
+		entity bgSmoke = CreateClientSidePropDynamic( bgPos, ang, $"mdl/levels_terrain/mp_lobby/mp_character_select_smoke.rmdl" )
+		bgSmoke.kv.solid = 0
+		bgSmoke.kv.disableshadows = 1
+		bgSmoke.kv.fadedist = -1
+		bgSmoke.MakeSafeForUIScriptHack()
+		bgSmoke.SetSkin( CHAMPION_SQAUD_SMOKE_SKIN_INDEX )
+		cleanupEnts.append( bgSmoke )
+	}
+
+	entity platformModel = CreateClientSidePropDynamic( pos, ang, $"mdl/dev/empty_model.rmdl" )
+	cleanupEnts.append( platformModel )
+
+	vector characterAngles = < ang.x / 2.0, ang.y, ang.z >
+	vector characterPos = pos - < 0, 0, 8 >
+
+	entity characterNode = CreateScriptRef( characterPos, characterAngles )
+	characterNode.SetParent( platformModel, "", true )
+	entity characterModel = CreateClientSidePropDynamic( characterPos, characterAngles, $"mdl/dev/empty_model.rmdl" )
+	SetForceDrawWhileParented( characterModel, true )
+	characterModel.MakeSafeForUIScriptHack()
+	CharacterSkin_Apply( characterModel, displaySkin )
+	FS_1v1_WaitForBodyResident( bodyModel, 1.0 )
+	if ( champSkin >= 0 )
+	{
+		characterModel.SetSkin( champSkin )
+		characterModel.SetCamo( champCamo )
+	}
+	characterModel.SetParent( characterNode, "", false )
+	characterModel.SetupForSequenceTransitions()
+	string idleAct = "ACT_MP_MENU_LOBBY_SELECT_IDLE"
+	if ( characterModel.LookupSequence( idleAct ) == -1 )
+		idleAct = "ACT_MP_MENU_MAIN_IDLE"
+	characterModel.Anim_Play( idleAct )
+	characterModel.Anim_EnableUseAnimatedRefAttachmentInsteadOfRootMotion()
+	cleanupEnts.append( characterModel )
+	cleanupEnts.append( characterNode )
+	file.championCharacterModel = characterModel
+	file.championCharacterNode = characterNode
+	printt( "[FS-1V1] champion podium body=" + string( bodyModel )
+		+ " resident=" + string( StreamModelIsResident( bodyModel ) )
+		+ " seq=" + idleAct )
+
+	float camera_fov = 35.5
+	vector camera_offset_start = < 0, 320, 68 >
+	vector camera_offset_end = < 0, 200, 48 >
+	vector camera_focus_offset = < 0, 0, 36 >
+	if ( !haveMapPodium )
+	{
+		camera_offset_start = < 0, 160, 56 >
+		camera_offset_end = < 0, 110, 48 >
+	}
+	vector camera_start_pos = OffsetPointRelativeToVector( pos, camera_offset_start, AnglesToForward( ang ) )
+	vector camera_end_pos = OffsetPointRelativeToVector( pos, camera_offset_end, AnglesToForward( ang ) )
+	vector camera_focus_pos = OffsetPointRelativeToVector( pos, camera_focus_offset, AnglesToForward( ang ) )
+	vector camera_start_angles = VectorToAngles( camera_focus_pos - camera_start_pos )
+	vector camera_end_angles = VectorToAngles( camera_focus_pos - camera_end_pos )
+
+	entity cameraMover = CreateClientsideScriptMover( $"mdl/dev/empty_model.rmdl", camera_start_pos, camera_start_angles )
+	entity camera = CreateClientSidePointCamera( camera_start_pos, camera_start_angles, camera_fov )
+	lp.SetMenuCameraEntity( camera )
+	camera.SetTargetFOV( camera_fov, true, EASING_CUBIC_INOUT, 0.0 )
+	camera.SetParent( cameraMover, "", false )
+	cleanupEnts.append( camera )
+	cleanupEnts.append( cameraMover )
+
+	cameraMover.NonPhysicsMoveTo( camera_end_pos, cameraMoveDur, 0.0, cameraMoveDur / 2.0 )
+	cameraMover.NonPhysicsRotateTo( camera_end_angles, cameraMoveDur, 0.0, cameraMoveDur / 2.0 )
+
+	ScreenFade( lp, 0, 0, 0, 255, 0.2, 0.0, FFADE_IN | FFADE_PURGE )
+	FS_1v1_PodiumPerform_Arm( champEEH, characterModel )
+
+	wait cameraMoveDur
+}
+
+array<ItemFlavor> function FS_1v1_PodiumEmote_Collect( int eeh, entity characterModel )
+{
+	array<ItemFlavor> options
+	if ( eeh == EHI_null || !EHIHasValidScriptStruct( eeh ) || !LoadoutSlot_IsReady( eeh, Loadout_Character() ) )
+		return options
+
+	ItemFlavor character = LoadoutSlot_GetItemFlavor( eeh, Loadout_Character() )
+	foreach ( ItemFlavor emote in GetAllCharacterEmotesForCharacter( character ) )
+	{
+		if ( !FS_1v1_PodiumEmote_IsPlayable( emote, character, characterModel ) )
+			continue
+		options.append( emote )
+	}
+	return options
+}
+
+bool function FS_1v1_PodiumEmote_IsPlayable( ItemFlavor emote, ItemFlavor character, entity characterModel )
+{
+	if ( CharacterQuip_IsTheEmpty( emote ) )
+		return false
+	if ( ItemFlavor_GetType( emote ) != eItemType.character_emote )
+		return false
+	if ( IsValid( characterModel ) && characterModel.LookupSequence( CharacterQuip_GetAnim3p( emote, character ) ) == -1 )
+		return false
+	return true
+}
+
+void function FS_1v1_PodiumPerform_Arm( int champEEH, entity characterModel )
+{
+	entity lp = GetLocalClientPlayer()
+	if ( !IsValid( lp ) || lp.GetEncodedEHandle() != champEEH )
+		return
+
+	file.championTbagNextTime = 0.0
+	file.championTbagNextSend = 0.0
+	file.championTbagCrouchUntil = 0.0
+
+	array<string> hintLines
+
+	if ( FS_1v1_PodiumEmote_Collect( champEEH, characterModel ).len() > 0 )
+	{
+		RegisterConCommandTriggeredCallback( "+jump", FS_1v1_PodiumEmote_OnJump )
+		file.championJumpRegistered = true
+		hintLines.append( "%jump% EMOTE" )
+	}
+
+	if ( FS_1v1_PodiumTbag_ModelSupports( characterModel ) )
+	{
+		// Crouch is bound to either the hold or the toggle command depending on
+		// the player's settings; both reach the same handler.
+		file.championDuckHeldAtArm = lp.IsInputCommandHeld( IN_DUCK ) || lp.IsInputCommandHeld( IN_DUCKTOGGLE )
+		RegisterConCommandTriggeredCallback( "+duck", FS_1v1_PodiumTbag_OnDuck )
+		RegisterConCommandTriggeredCallback( "+toggle_duck", FS_1v1_PodiumTbag_OnDuck )
+		RegisterConCommandTriggeredCallback( "-duck", FS_1v1_PodiumTbag_OnDuckReleased )
+		RegisterConCommandTriggeredCallback( "-toggle_duck", FS_1v1_PodiumTbag_OnDuckReleased )
+		file.championDuckRegistered = true
+		// hintLines.append( "%duck% T-BAG" )
+	}
+	else
+	{
+		printt( "[FS-1V1] podium t-bag unavailable: " + FS_1V1_TBAG_CROUCH_ACT
+			+ " missing on " + characterModel.GetModelName() )
+	}
+
+	if ( hintLines.len() > 0 )
+		FS_1v1_PodiumHint_Show( FS_1v1_JoinLines( hintLines ) )
+}
+
+string function FS_1v1_JoinLines( array<string> lines )
+{
+	string joined = ""
+	foreach ( int idx, string line in lines )
+		joined += idx == 0 ? line : "\n" + line
+	return joined
+}
+
+// Both prompts share the comms-hint RUI. Podium built-in stays off (bare bool, no settable text).
+const asset FS_1V1_PODIUM_HINT_RUI = $"ui/wraith_comms_hint.rpak"
+const float FS_1V1_PODIUM_HINT_DURATION = 30.0
+
+void function FS_1v1_PodiumHint_Show( string hintText )
+{
+	FS_1v1_PodiumHint_Destroy()
+
+	file.championHintRui = CreateFullscreenPostFXRui( FS_1V1_PODIUM_HINT_RUI )
+	RuiSetGameTime( file.championHintRui, "startTime", Time() )
+	RuiSetGameTime( file.championHintRui, "endTime", Time() + FS_1V1_PODIUM_HINT_DURATION )
+	RuiSetBool( file.championHintRui, "commsMenuOpen", false )
+	RuiSetString( file.championHintRui, "msg", Localize( hintText ) )
+	printt( "[FS-1V1] podium hint: " + hintText )
+}
+
+void function FS_1v1_PodiumHint_Destroy()
+{
+	if ( file.championHintRui != null )
+	{
+		RuiDestroyIfAlive( file.championHintRui )
+		file.championHintRui = null
+	}
+}
+
+void function FS_1v1_PodiumPerform_Shutdown()
+{
+	if ( file.championJumpRegistered )
+	{
+		DeregisterConCommandTriggeredCallback( "+jump", FS_1v1_PodiumEmote_OnJump )
+		file.championJumpRegistered = false
+	}
+	if ( file.championDuckRegistered )
+	{
+		DeregisterConCommandTriggeredCallback( "+duck", FS_1v1_PodiumTbag_OnDuck )
+		DeregisterConCommandTriggeredCallback( "+toggle_duck", FS_1v1_PodiumTbag_OnDuck )
+		DeregisterConCommandTriggeredCallback( "-duck", FS_1v1_PodiumTbag_OnDuckReleased )
+		DeregisterConCommandTriggeredCallback( "-toggle_duck", FS_1v1_PodiumTbag_OnDuckReleased )
+		file.championDuckRegistered = false
+	}
+	file.championDuckHeldAtArm = false
+	FS_1v1_PodiumHint_Destroy()
+	file.championCharacterModel = null
+	file.championCharacterNode = null
+	file.championEmoting = false
+	file.championTbagActive = false
+	file.championTbagNextTime = 0.0
+	file.championTbagNextSend = 0.0
+	file.championTbagCrouchUntil = 0.0
+}
+
+void function FS_1v1_PodiumEmote_OnJump( entity player )
+{
+	if ( player != GetLocalClientPlayer() )
+		return
+	if ( file.championEmoting || file.championTbagActive )
+		return
+	if ( !IsValid( file.championCharacterModel ) )
+		return
+
+	int champEEH = GetGlobalNetInt( "championEEH" )
+	array<ItemFlavor> options = FS_1v1_PodiumEmote_Collect( champEEH, file.championCharacterModel )
+	if ( options.len() < 1 )
+		return
+
+	ItemFlavor emote = options.getrandom()
+	thread FS_1v1_PodiumEmote_Play( file.championCharacterModel, emote, true )
+}
+
+void function ServerCallback_FS_1v1_PodiumEmote( int emoteGUID )
+{
+	if ( !IsValidItemFlavorGUID( emoteGUID ) )
+		return
+	if ( file.championEmoting || file.championTbagActive )
+		return
+	if ( !IsValid( file.championCharacterModel ) )
+		return
+
+	ItemFlavor emote = GetItemFlavorByGUID( emoteGUID )
+	if ( ItemFlavor_GetType( emote ) != eItemType.character_emote )
+		return
+
+	thread FS_1v1_PodiumEmote_Play( file.championCharacterModel, emote, false )
+}
+
+void function FS_1v1_PodiumEmote_Play( entity characterModel, ItemFlavor emote, bool sendToServer )
+{
+	if ( !IsValid( characterModel ) )
+		return
+
+	file.championEmoting = true
+
+	entity mover = CreateClientsideScriptMover( $"mdl/dev/empty_model.rmdl", characterModel.GetOrigin(), characterModel.GetAngles() )
+	mover.MakeSafeForUIScriptHack()
+	characterModel.SetParent( mover )
+
+	if ( sendToServer )
+		Remote_ServerCallFunction( "ClientCallback_FS_1v1_PodiumEmote", ItemFlavor_GetGUID( emote ) )
+
+	OnThreadEnd(
+		void function() : ( characterModel, mover )
+		{
+			if ( IsValid( mover ) )
+				mover.Destroy()
+			file.championEmoting = false
+			if ( IsValid( characterModel ) )
+			{
+				characterModel.ClearParent()
+				if ( IsValid( file.championCharacterNode ) )
+					characterModel.SetParent( file.championCharacterNode, "", false )
+				FS_1v1_PodiumPlayPose( characterModel, FS_1V1_PODIUM_IDLE_ACT )
+			}
+		}
+	)
+
+	printt( "[FS-1V1] podium emote" )
+	waitthread ModelPerformEmote( characterModel, emote, mover, true, false, GetGlobalNetInt( "championEEH" ) )
+}
+
+// Standing back up into ACT_MP_STAND_IDLE swaps the podium pose for a gameplay idle.
+const string FS_1V1_PODIUM_IDLE_ACT = "ACT_MP_MENU_LOBBY_SELECT_IDLE"
+const string FS_1V1_TBAG_CROUCH_ACT = "ACT_MP_CROUCH_IDLE"
+
+// One press = one dip. DIP_HOLD is pose hold; MIN_INTERVAL spam floor; SEND_INTERVAL is the wire throttle.
+const float FS_1V1_TBAG_DIP_HOLD = 0.13
+const float FS_1V1_TBAG_MIN_INTERVAL = 0.12
+const float FS_1V1_TBAG_SEND_INTERVAL = 0.18
+const float FS_1V1_TBAG_LINGER = 0.6
+
+bool function FS_1v1_PodiumTbag_ModelSupports( entity characterModel )
+{
+	if ( !IsValid( characterModel ) )
+		return false
+	return characterModel.LookupSequence( FS_1V1_TBAG_CROUCH_ACT ) != -1
+}
+
+void function FS_1v1_PodiumTbag_OnDuck( entity player )
+{
+	if ( player != GetLocalClientPlayer() )
+		return
+	if ( file.championEmoting )
+		return
+	if ( player.GetEncodedEHandle() != GetGlobalNetInt( "championEEH" ) )
+		return
+	if ( file.championDuckHeldAtArm )
+		return
+	if ( Time() < file.championTbagNextTime )
+		return
+
+	file.championTbagNextTime = Time() + FS_1V1_TBAG_MIN_INTERVAL
+	FS_1v1_PodiumTbag_Pulse()
+
+	if ( Time() >= file.championTbagNextSend )
+	{
+		file.championTbagNextSend = Time() + FS_1V1_TBAG_SEND_INTERVAL
+		Remote_ServerCallFunction( "ClientCallback_FS_1v1_PodiumTbag" )
+	}
+}
+
+void function FS_1v1_PodiumTbag_OnDuckReleased( entity player )
+{
+	if ( player != GetLocalClientPlayer() )
+		return
+	file.championDuckHeldAtArm = false
+}
+
+void function ServerCallback_FS_1v1_PodiumTbag()
+{
+	if ( file.championEmoting )
+		return
+	FS_1v1_PodiumTbag_Pulse()
+}
+
+// Extends the current dip, starting the session thread if this is the first press.
+void function FS_1v1_PodiumTbag_Pulse()
+{
+	entity characterModel = file.championCharacterModel
+	if ( !IsValid( characterModel ) )
+		return
+	// Arm already logged the unsupported case; a pulse fires far too often to log.
+	if ( !FS_1v1_PodiumTbag_ModelSupports( characterModel ) )
+		return
+
+	file.championTbagCrouchUntil = Time() + FS_1V1_TBAG_DIP_HOLD
+
+	if ( !file.championTbagActive )
+		thread FS_1v1_PodiumTbag_Session( characterModel )
+}
+
+void function FS_1v1_PodiumTbag_Session( entity characterModel )
+{
+	file.championTbagActive = true
+
+	EndSignal( characterModel, "OnDestroy" )
+
+	OnThreadEnd(
+		void function() : ( characterModel )
+		{
+			file.championTbagActive = false
+			if ( IsValid( characterModel ) )
+				FS_1v1_PodiumPlayPose( characterModel, FS_1V1_PODIUM_IDLE_ACT )
+		}
+	)
+
+	printt( "[FS-1V1] podium t-bag session start" )
+
+	bool crouched = false
+	float idleOutTime = Time() + FS_1V1_TBAG_LINGER
+
+	while ( Time() < idleOutTime )
+	{
+		bool wantCrouch = Time() < file.championTbagCrouchUntil
+		if ( wantCrouch != crouched )
+		{
+			FS_1v1_PodiumPlayPose( characterModel, wantCrouch ? FS_1V1_TBAG_CROUCH_ACT : FS_1V1_PODIUM_IDLE_ACT )
+			crouched = wantCrouch
+		}
+		if ( wantCrouch )
+			idleOutTime = Time() + FS_1V1_TBAG_LINGER
+
+		WaitFrame()
+	}
+}
+
+// Anim_Play resets the ref-attachment mode the podium set up at spawn, so it has
+// to be re-armed on every pose change or the model walks off its node.
+void function FS_1v1_PodiumPlayPose( entity characterModel, string activity )
+{
+	characterModel.Anim_Play( activity )
+	characterModel.Anim_EnableUseAnimatedRefAttachmentInsteadOfRootMotion()
+}
+
+bool function FS_1v1_ChampionRoomIsRunning()
+{
+	return file.championRoomRunning
+}
+
+void function FS_1v1_ChampionHudHide( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+	FS_1v1_SetCombatHudVisible( false )
+}
+
+void function FS_1v1_ChampionHudShow( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+	FS_1v1_SetCombatHudVisible( true )
+}
+
+void function FS_1v1_RestoreWorldViewAfterChampion()
+{
+	entity lp = GetLocalClientPlayer()
+	if ( GetCurrentPlaylistVarBool( "freedm_ffa_active", false ) )
+	{
+		FS_1v1_ClearMenuCamera()
+		if ( IsValid( lp ) )
+		{
+			SetAllHudVisExceptMinimap( true )
+			ShowScriptHUD( lp )
+		}
+		thread FS_1v1_RestoreWorldViewRetry_THREAD()
+		return
+	}
+
+	int st = e1v1State.INVALID
+	if ( IsValid( lp ) )
+		st = lp.GetPlayerNetInt( "FS_1v1_PlayerState" )
+	if ( FS_1v1_ShouldShowCombatHud( st ) )
+		FS_1v1_ChampionHudShow( lp )
+	else
+		FS_1v1_ChampionHudHide( lp )
+	FS_1v1_ClearMenuCamera()
+	thread FS_1v1_RestoreWorldViewRetry_THREAD()
+}
+
+void function FS_1v1_ClearMenuCamera()
+{
+	if ( file.coolCameraRunning )
+		return
+	entity lp = GetLocalClientPlayer()
+	if ( !IsValid( lp ) )
+		lp = GetLocalViewPlayer()
+	if ( !IsValid( lp ) )
+		return
+	lp.ClearMenuCameraEntity()
+	ScreenFade( lp, 0, 0, 0, 0, 0.15, 0.0, FFADE_IN | FFADE_PURGE )
+}
+
+void function FS_1v1_RestoreWorldViewRetry_THREAD()
+{
+	int i
+	for ( i = 0; i < 4; i++ )
+	{
+		wait 0.25
+		FS_1v1_ClearMenuCamera()
+	}
+}
+
+void function ServerCallback_FSDM_UpdateVotingMaps( int a, int b, int c, int d )
+{
+}
+
+void function ServerCallback_FSDM_UpdateMapVotesClient( int a, int b, int c, int d )
+{
+}
+
+void function ServerCallback_SendScoreboardToClient( int a, int b, int c, float d, int e, int f )
+{
+	printt( "[FS-1V1] ServerCallback_SendScoreboardToClient stub" )
+}
+
+void function ServerCallback_ClearScoreboardOnClient()
+{
+}
+
+void function FSDM_CustomWinnerScreen_Start( int a, int b )
+{
+	printt( "[FS-1V1] FSDM_CustomWinnerScreen_Start stub" )
+}
+
+void function DM_HintCatalog( int a, entity b )
+{
+}
+
+void function Flowstate_ShowRespawnTimeUI( int t )
+{
+}
+
+void function ServerCallback_FSDM_CoolCamera()
+{
+	thread FS_1v1_CoolCamera_THREAD()
+}
+
+LocPair function FS_1v1_NewCameraPair( vector origin, vector angles )
+{
+	LocPair locPair
+	locPair.origin = origin
+	locPair.angles = angles
+	return locPair
+}
+
+array<LocPair> function FS_1v1_GetCoolCameraSpawns()
+{
+	array<LocPair> cutsceneSpawns
+	string map = GetMapName()
+
+	switch ( map )
+	{
+		case "mp_rr_desertlands_64k_x_64k":
+		case "mp_rr_desertlands_64k_x_64k_nx":
+		case "mp_rr_desertlands_64k_x_64k_tt":
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <10915.0039, 6811.3418, -3539.73657>, <0, -100.5355, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <9586.79199, 24404.5898, -2019.6366>, <0, -52.6216431, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-29335.9199, 11470.1729, -2374.77954>, <0, -2.17369795, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <16346.3076, -34468.9492, -1109.32153>, <0, -44.3879509, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <1133.25562, -20102.9648, -2488.08252>, <0, -24.9140873, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <4225.83447, 3396.84448, -3090.29712>, <0, 38.1615944, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-9873.3916, 5598.64307, -2453.47461>, <0, -107.887512, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-28200.6348, 2603.86792, -3899.62598>, <0, -94.3539505, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-13217.0469, 24311.4375, -3157.30908>, <0, 97.8569489, 0> ) )
+			break
+
+		case "mp_rr_canyonlands_staging":
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <32645.04, -9575.77, -25911.94>, <7.71, 91.67, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <49180.1055, -6836.14502, -23461.8379>, <0, -55.7723808, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <43552.3203, -1023.86182, -25270.9766>, <0, 20.9528542, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <30038.0254, -1036.81982, -23369.6035>, <55, -24.2035522, 0> ) )
+			break
+
+		case "mp_rr_canyonlands_mu1":
+		case "mp_rr_canyonlands_mu1_night":
+		case "mp_rr_canyonlands_64k_x_64k":
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-7984.68408, -16770.2031, 3972.28271>, <0, -158.605301, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-19691.1621, 5229.45264, 4238.53125>, <0, -54.6054993, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <13270.0576, -20413.9023, 2999.29468>, <0, 98.6180649, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-25250.0391, -723.554199, 3427.51831>, <0, -55.5126762, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <10445.5107, -30267.8691, 3435.0647>, <0, -151.025223, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-21710.4395, -12452.8604, 2887.22778>, <0, 29.4609108, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-17403.5469, 15699.3867, 4041.38379>, <0, -1.59664249, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-3939.00781, 16862.0586, 3525.45728>, <0, 142.246902, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <26928.9668, 7577.22363, 2926.2876>, <0, 55.0248222, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <32170.3008, -1944.38562, 3590.89258>, <0, 27.8040161, 0> ) )
+			break
+
+		case "mp_rr_party_crasher":
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-1363.75867, -2183.58081, 1354.65466>, <0, 72.5054092, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <2378.75439, 1177.52783, 1309.69019>, <0, 146.118546, 0> ) )
+			break
+
+		case "mp_rr_arena_composite":
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <2343.25171, 4311.43896, 829.289917>, <0, -139.293152, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-1661.23608, 2852.71924, 657.674316>, <0, -56.0820427, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-640.810059, 1039.97424, 514.500793>, <0, -23.5162239, 0> ) )
+			break
+
+		case "mp_rr_aqueduct":
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <1593.85205, -3274.99365, 1044.39099>, <0, -126.270805, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <1489.99255, -6570.93262, 741.996887>, <0, 133.833832, 0> ) )
+			break
+
+		case "mp_rr_district":
+		case "mp_rr_district_mu1":
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-4760.08, 26948, 5444.92>, <0, 47.8929, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-14817.6, -487.405, 6167.61>, <0, 71.2196, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <17630.7, 2273.61, 6705.35>, <0, 34.6238, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <9352.75, 5865.61, 6969.9>, <0, 131.445, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-22905.4, -2099.93, 7154.03>, <0, 0.0124814, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <11397.7, 1619.8, 6680.02>, <0, 91.7844, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <25400.8, 8320.78, 8080.03>, <0, -117.055, 0> ) )
+			break
+
+		case "mp_rr_olympus":
+		case "mp_rr_olympus_tt":
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-7456.63, -27769.3, -2266.86>, <0, 179.823, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <2203.04, 7071.94, -4727.97>, <0, 144.415, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <2844.82, 10619.7, -4923.97>, <0, 339.7, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-1557.65, 11655.7, -4695.97>, <0, 194.497, 0> ) )
+			break
+
+		case "mp_rr_arena_phase_runner":
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <27566.5, 18078, -814.57>, <0, 239.637, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <27927, 21191.8, -618.33>, <0, 158.675, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <23239.9, 20568.8, -738.54>, <0, 224.603, 0> ) )
+			break
+
+		case "mp_rr_arena_habitat":
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-93.0710754, 5404.34326, 2240.08911>, <15, 92.6367188, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <400, 5404.34326, 2100>, <10, 180, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( <-500, 5000, 2100>, <10, 90, 0> ) )
+			break
+	}
+
+	if ( cutsceneSpawns.len() == 0 )
+	{
+		entity lp = GetLocalClientPlayer()
+		if ( IsValid( lp ) )
+		{
+			vector o = lp.GetOrigin()
+			vector a = lp.GetAngles()
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( o + <0, 0, 400>, <15, a.y, 0> ) )
+			cutsceneSpawns.append( FS_1v1_NewCameraPair( o + AnglesToRight( a ) * 400 + <0, 0, 320>, <12, a.y + 40, 0> ) )
+		}
+	}
+
+	return cutsceneSpawns
+}
+
+void function FS_1v1_CoolCamera_THREAD()
+{
+	entity player = GetLocalClientPlayer()
+	if ( !IsValid( player ) )
+		return
+
+	if ( file.coolCameraRunning )
+	{
+		Signal( player, "ChallengeStartRemoveCameras" )
+		WaitFrame()
+		player = GetLocalClientPlayer()
+		if ( !IsValid( player ) )
+			return
+	}
+
+	array<LocPair> cutsceneSpawns = FS_1v1_GetCoolCameraSpawns()
+	if ( cutsceneSpawns.len() == 0 )
+		return
+
+	file.coolCameraRunning = true
+	FS_1v1_ChampionHudHide( player )
+	EndSignal( player, "ChallengeStartRemoveCameras" )
+	EndSignal( player, "OnDestroy" )
+
+	cutsceneSpawns.randomize()
+	vector randomcameraPos = cutsceneSpawns[0].origin
+	vector randomcameraAng = cutsceneSpawns[0].angles
+
+	entity camera = CreateClientSidePointCamera( randomcameraPos, randomcameraAng, 17 )
+	camera.SetFOV( 100 )
+	entity cutsceneMover = CreateClientsideScriptMover( $"mdl/dev/empty_model.rmdl", randomcameraPos, randomcameraAng )
+	camera.SetParent( cutsceneMover )
+	player.SetMenuCameraEntity( camera )
+	DoF_SetFarDepth( 6000, 10000 )
+
+	OnThreadEnd(
+		function() : ( player, cutsceneMover, camera )
+		{
+			file.coolCameraRunning = false
+			if ( IsValid( player ) )
+			{
+				player.ClearMenuCameraEntity()
+				int st = player.GetPlayerNetInt( "FS_1v1_PlayerState" )
+				if ( FS_1v1_ShouldShowCombatHud( st ) )
+					FS_1v1_ChampionHudShow( player )
+			}
+			if ( IsValid( camera ) )
+				camera.Destroy()
+			if ( IsValid( cutsceneMover ) )
+				cutsceneMover.Destroy()
+			DoF_SetNearDepthToDefault()
+			DoF_SetFarDepthToDefault()
+		}
+	)
+
+	printt( "[FS-1V1] CoolCamera start map=" + GetMapName() + " shots=" + string( cutsceneSpawns.len() ) )
+	FS_1v1_CoolCameraMovement( player, cutsceneMover, camera, cutsceneSpawns )
+}
+
+void function FS_1v1_CoolCameraMovement( entity player, entity cutsceneMover, entity camera, array<LocPair> cutsceneSpawns )
+{
+	int locationindex = 0
+
+	while ( true )
+	{
+		if ( locationindex == cutsceneSpawns.len() )
+			locationindex = 0
+
+		vector startpos = cutsceneSpawns[locationindex].origin
+		vector startangs = cutsceneSpawns[locationindex].angles
+		locationindex++
+
+		cutsceneMover.SetOrigin( startpos )
+		cutsceneMover.SetAngles( startangs )
+		camera.SetOrigin( startpos )
+		camera.SetAngles( startangs )
+
+		cutsceneMover.NonPhysicsMoveTo( startpos + AnglesToRight( startangs ) * 700, 15, 0, 0 )
+		cutsceneMover.NonPhysicsRotateTo( startangs, 10, 0.0, 3.0 )
+		wait 5
+	}
+}
+
+void function ForceScoreboardLoseFocus()
+{
+	FS_1v1_ForceCloseVoluntaryLeaderboard()
+}
+
+void function ServerCallback_FS_MinimapDisableDraw()
+{
+	FS_1v1_SetMinimapVisible( false )
+}
+
+void function ServerCallback_FS_MinimapEnableDraw()
+{
+	FS_1v1_SetMinimapVisible( true )
+}
+
+// Waiting-room fill lights. colorIdx: 0 white, 1 warm. lightId is a stable slot.
+void function ServerCallback_SpawnOrModifyClientSideDynamicLight( vector origin, vector angles, int colorIdx, int radius, float intensity, int lightId )
+{
+	vector color = <1.0, 1.0, 1.0>
+	if ( colorIdx == 1 )
+		color = <1.0, 0.85, 0.55>
+
+	float brightness = intensity
+	if ( brightness <= 0.0 )
+		brightness = 1.0
+
+	entity light = null
+	if ( lightId in file.clientDynamicLights )
+	{
+		light = file.clientDynamicLights[ lightId ]
+		if ( !IsValid( light ) )
+			light = null
+	}
+
+	if ( light == null )
+	{
+		light = CreateClientSideDynamicLight( origin, angles, color * brightness, 0.0 )
+		file.clientDynamicLights[ lightId ] <- light
+	}
+	else
+	{
+		light.SetOrigin( origin )
+		light.SetAngles( angles )
+		light.SetLightColor( color * brightness )
+	}
+
+	if ( IsValid( light ) )
+		light.SetLightRadius( float( radius ) )
+}
+
+const array<asset> FS_1V1_WORLD_BANNER_IMAGES = [
+	$"rui/world/flowstate1v1_banner01",
+	$"rui/world/flowstate1v1_banner03",
+	$"rui/world/flowstate1v1_banner04",
+]
+const float FS_1V1_WORLD_BANNER_ALPHA = 0.95
+const float FS_1V1_WORLD_BANNER_CYCLE = 10.0
+const float FS_1V1_WORLD_BANNER_FADE = 2.0
+
+void function FS_1v1_WorldBanner_Destroy()
+{
+	if ( IsValid( clGlobal.levelEnt ) )
+		clGlobal.levelEnt.Signal( "FS_1v1_WorldBannerStop" )
+
+	if ( file.worldBannerRui != null )
+	{
+		RuiDestroyIfAlive( file.worldBannerRui )
+		file.worldBannerRui = null
+	}
+	if ( file.worldBannerTopo != null )
+	{
+		RuiTopology_Destroy( file.worldBannerTopo )
+		file.worldBannerTopo = null
+	}
+}
+
+void function FS_1v1_WorldBanner_SetTint( float t )
+{
+	if ( file.worldBannerRui == null )
+		return
+	RuiSetFloat3( file.worldBannerRui, "basicImageColor", <t, t, t> )
+}
+
+void function FS_1v1_WorldBanner_Fade( float from, float to, float dur )
+{
+	float start = Time()
+	while ( true )
+	{
+		if ( file.worldBannerRui == null )
+			return
+		float u = dur > 0.0 ? ( Time() - start ) / dur : 1.0
+		if ( u >= 1.0 )
+			break
+		FS_1v1_WorldBanner_SetTint( from + ( to - from ) * u )
+		WaitFrame()
+	}
+	FS_1v1_WorldBanner_SetTint( to )
+}
+
+void function FS_1v1_WorldBanner_Apply( asset img )
+{
+	if ( file.worldBannerRui == null )
+		return
+	RuiSetImage( file.worldBannerRui, "basicImage", img )
+	FS_1v1_WorldBanner_SetTint( FS_1V1_WORLD_BANNER_ALPHA )
+}
+
+void function FS_1v1_WorldBanner_CycleTHREAD()
+{
+	if ( IsValid( clGlobal.levelEnt ) )
+		clGlobal.levelEnt.EndSignal( "FS_1v1_WorldBannerStop" )
+
+	entity player = GetLocalClientPlayer()
+	if ( IsValid( player ) )
+		player.EndSignal( "OnDestroy" )
+
+	int count = FS_1V1_WORLD_BANNER_IMAGES.len()
+	if ( count < 2 )
+		return
+
+	int idx = 0
+	while ( true )
+	{
+		wait FS_1V1_WORLD_BANNER_CYCLE
+		if ( file.worldBannerRui == null )
+			return
+
+		FS_1v1_WorldBanner_Fade( FS_1V1_WORLD_BANNER_ALPHA, 0.0, FS_1V1_WORLD_BANNER_FADE )
+		if ( file.worldBannerRui == null )
+			return
+
+		idx = ( idx + 1 ) % count
+		FS_1v1_WorldBanner_Apply( FS_1V1_WORLD_BANNER_IMAGES[ idx ] )
+		FS_1v1_WorldBanner_Fade( 0.0, FS_1V1_WORLD_BANNER_ALPHA, FS_1V1_WORLD_BANNER_FADE )
+	}
+}
+
+void function ServerCallback_FS_1v1_WorldBanner( vector origin, vector angles, float width, float height )
+{
+	FS_1v1_WorldBanner_Destroy()
+
+	if ( width < 1.0 || height < 1.0 )
+		return
+
+	file.worldBannerTopo = CreateRUITopology_Worldspace( origin, angles, width, height )
+	file.worldBannerRui = RuiCreate( $"ui/basic_image.rpak", file.worldBannerTopo, RUI_DRAW_WORLD, 0 )
+	FS_1v1_WorldBanner_Apply( FS_1V1_WORLD_BANNER_IMAGES[ 0 ] )
+	printt( "[FS-Banner] world banner rui at " + string( origin ) + " cycle=" + string( FS_1V1_WORLD_BANNER_IMAGES.len() ) )
+	thread FS_1v1_WorldBanner_CycleTHREAD()
+}
+#endif // CLIENT
+
+#if SERVER
+const float FS_1V1_PODIUM_EMOTE_RATE = 2.0
+// The t-bag is one pulse per crouch press, so the floor sits just under the
+// client's send throttle -- tight enough to bound a spoofed client, loose enough
+// that an honest one is never dropped on jitter.
+const float FS_1V1_PODIUM_TBAG_RATE = 0.15
+
+// Both podium performances are driven by one client but replayed on every other
+// client, so the sender must be the champion the podium is actually showing, and
+// only while that screen is up.
+bool function FS_1v1_PodiumPerform_ServerAllows( entity player, string rateKey, float rate )
+{
+	if ( !GetChampionShowingState() )
+		return false
+	if ( player.GetEncodedEHandle() != GetGlobalNetInt( "championEEH" ) )
+		return false
+	return CheckRate( player, rateKey, rate, false )
+}
+
+void function ClientCallback_FS_1v1_PodiumEmote( entity player, int emoteGUID )
+{
+	if ( !IsValid( player ) )
+		return
+	if ( !IsValidItemFlavorGUID( emoteGUID ) )
+		return
+	if ( ItemFlavor_GetType( GetItemFlavorByGUID( emoteGUID ) ) != eItemType.character_emote )
+		return
+	if ( !FS_1v1_PodiumPerform_ServerAllows( player, "podium_emote", FS_1V1_PODIUM_EMOTE_RATE ) )
+		return
+
+	foreach ( entity other in GetPlayerArray() )
+	{
+		if ( !IsValid( other ) || other == player || !FS_1v1_PlayerHasClient( other ) )
+			continue
+		Remote_CallFunction_NonReplay( other, "ServerCallback_FS_1v1_PodiumEmote", emoteGUID )
+	}
+}
+
+void function ClientCallback_FS_1v1_PodiumTbag( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+	if ( !FS_1v1_PodiumPerform_ServerAllows( player, "podium_tbag", FS_1V1_PODIUM_TBAG_RATE ) )
+		return
+
+	foreach ( entity other in GetPlayerArray() )
+	{
+		if ( !IsValid( other ) || other == player || !FS_1v1_PlayerHasClient( other ) )
+			continue
+		Remote_CallFunction_NonReplay( other, "ServerCallback_FS_1v1_PodiumTbag" )
+	}
+}
+#endif // SERVER

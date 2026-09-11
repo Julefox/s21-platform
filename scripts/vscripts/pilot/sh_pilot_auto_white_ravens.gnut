@@ -1,0 +1,75 @@
+global function AutoWhiteRavens_Init
+
+const float AREA_SONAR_SCAN_RADIUS = 3000.0
+
+void function AutoWhiteRavens_Init()
+{
+	#if SERVER
+	AddCallback_OnPassiveChanged( ePassives.PAS_AUTO_WHITE_RAVEN_SPAWN, AutoWhiteRavens_OnPassiveChanged )
+
+	RegisterSignal( "AutoWhiteRavens_End" )
+
+	#endif
+}
+
+#if SERVER
+void function AutoWhiteRavens_OnPassiveChanged( entity player, int passive, bool didHave, bool nowHas )
+{
+		if ( nowHas )
+		{
+			thread AutoWhiteRavens_TrackDistance( player )
+		}
+
+		if( didHave )
+		{
+			player.Signal( "AutoWhiteRavens_End" )
+		}
+}
+
+float function AutoWhiteRavens_CooldownTime()
+{
+	return GetCurrentPlaylistVarFloat( "bloodhound_auto_white_ravens_cooldown", 60.0 )
+}
+
+void function AutoWhiteRavens_TrackDistance( entity player )
+{
+	player.EndSignal( "AutoWhiteRavens_End" )
+	player.EndSignal( "OnDestroy" )
+
+	bool enemiesWereClose = false
+	float lastWhiteRavenSpawn = -60
+	while( IsValid( player ) )
+	{
+		int myTeam = player.GetTeam()
+		array< entity > players = GetPlayerArray_Alive()
+		float closeThreshold = GetRavenCloseEnemyDistance( player )
+		bool enemyInCloseRange = false
+
+		foreach( otherPlayer in players )
+		{
+			if( otherPlayer.GetTeam() == myTeam )
+				continue
+
+			float distSqr = DistanceSqr( otherPlayer.GetOrigin(), player.GetOrigin() )
+			if( distSqr < ( closeThreshold * closeThreshold ) )
+			{
+				enemyInCloseRange = true
+			}
+		}
+
+		if( enemyInCloseRange != enemiesWereClose )
+		{
+			float curTime = Time()
+			if( enemyInCloseRange && ( curTime - lastWhiteRavenSpawn ) >  AutoWhiteRavens_CooldownTime() )
+			{
+				TrackingVision_CreateWhiteRavenInFlight( player, eWhiteRavenTargetType.ENEMY, true ) // should from ult be true or false?
+				lastWhiteRavenSpawn = curTime
+			}
+			enemiesWereClose = enemyInCloseRange
+		}
+
+		Wait( .5 )
+	}
+}
+#endif
+

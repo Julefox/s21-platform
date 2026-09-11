@@ -1,0 +1,513 @@
+// Minimal shared helpers for fs_1v1 port (Wave 0).
+// Prefer playlist-name strings over R5V ePlaylists enums.
+
+// From sh_gamemode_scenarios (scenarios not ported; const still needed by 1v1 init).
+global const int SCENARIOS_MAX_ALLOWED_TEAMSIZE = 5
+// Indices into LEGEND_CHARACTER_REFS. Anything above the last entry is a custom
+// pilot model, not a legend, and resolves through SetPlayerCustomModel instead.
+global const int FS_1V1_DEFAULT_LEGEND_INDEX = 8 // Wraith
+global const string FS_1V1_DEFAULT_LEGEND_REF = "character_wraith"
+global const int FS_1V1_LAST_LEGEND_INDEX = 10
+global const int FS_1V1_CAMO_RANDOM = 9
+
+// GetAllCharacters() is registration order, not this list. Resolve by ref.
+global array<string> LEGEND_CHARACTER_REFS =
+[
+	"character_bangalore",
+	"character_bloodhound",
+	"character_caustic",
+	"character_gibraltar",
+	"character_lifeline",
+	"character_mirage",
+	"character_octane",
+	"character_pathfinder",
+	"character_wraith",
+	"character_wattson",
+	"character_crypto"
+]
+
+global function FS_Is1v1Playlist
+global function FS_Is1v1GameMode
+global function FS_1v1_IsLobbyState
+global function FS_1v1_ShouldBlockLobbyMelee
+global function FS_1v1_ShouldShowCombatHud
+global function FS_1v1_PlayerHasClient
+global function FS_1v1_InitHelpers
+global function FS_1v1_InitPlaylistSettings
+
+// LocalMsg lives in sh_fs_local_msg.gnut (do not redeclare here)
+global function FlowState_ChosenCharacter
+global function FS_1v1_IsForceCharacter
+global function FS_1v1_GetCharacterFlavorByIndex
+global function FS_1v1_GetForcedCharacterFlavor
+global function FlowState_AdminTgive
+global function FlowState_TgiveEnabled
+global function FlowState_ForceAdminCharacter
+global function FlowState_ChosenAdminCharacter
+global function FlowState_Timer
+global function FlowState_MaxPingAllowed
+global function FlowState_KickHighPingPlayer
+global function FlowState_RingColor
+global function FlowState_TgiveDelay
+global function Flowstate_DoorsEnabled
+global function Flowstate_AutoChangeLevelRounds
+global function Flowstate_EnableAutoChangeLevel
+global function Flowstate_IsLGDuels
+global function Flowstate_IsGame1v1Type
+global function Flowstate_GetDissolveTime
+
+global function bAfkToRest
+global function SetAfkToRest
+global function bIsCoachingMode
+
+global function Tracker_RoundEnd
+global function Tracker_GotoNextMap
+global function Tracker_DetermineNextMap
+global function Tracker_IsSafeMapName
+global function FlowstateTracker_Finalize
+global function Tracker_GetCurrentEventForAttackerOnVictim
+global function Tracker_SetPlayerAsChampion
+
+// Tracker damage event (minimal fields used by 1v1 rest grace).
+global struct DamageEvent
+{
+	int attackerHandle
+	int victimHandle
+	float lastHitTimestamp = 0.0
+	bool isValid = false
+}
+
+global struct FS_FlowstateSettings
+{
+	bool ForceCharacter = false
+	bool is_halo_gamemode = false
+	bool RandomCharacterOnSpawn = false
+	bool GiveAllOpticsToPlayer = false
+	bool hackersVsPros = false
+	bool enable_afk_thread = true
+	bool enable_ping_kick = false
+	float aimassist_magnet_pc = 0.0
+	bool BattleLogEnable = false
+	bool BattleLog_Linux = false
+	string custom_match_ending_title = ""
+	string custom_match_ending_message = ""
+	bool end_match_message = true
+	bool rotate_map = false
+	string maplist = ""
+	float ring_radius_padding = 800.0
+	string Admins = ""
+	bool enable_oddball_gamemode = false
+	float default_ibmm_wait = 0.0
+	bool ReloadTacticalOnRespawn = false
+	bool ReloadUltimateOnRespawn = false
+	bool RandomHaloGuns = false
+	bool DroppodsOnPlayerConnected = false
+	bool EndlessFFAorTDM = false
+	int endgame_delay = 6
+	bool enable_global_chat = true
+	bool allow_cfgs = false
+	bool give_random_custom_models_toall = false
+	bool show_short_champion_screen = true
+	bool bIsRealisticMode = false
+	int give_weapon_stack_count_amount = 0
+}
+
+global FS_FlowstateSettings flowstateSettings
+
+struct
+{
+	bool helpersInited = false
+	bool afkToRest = true
+} file
+
+bool function FS_Is1v1Playlist()
+{
+	string pl = GetCurrentPlaylistName()
+	return pl == "fs_1v1" || pl == "fs_vamp_1v1" || pl == "fs_lgduels_1v1" || pl == "fs_1v1_headshots_only" || pl == "fs_1v1_coaching"
+}
+
+bool function FS_Is1v1GameMode()
+{
+	return GameMode_FindByDevName( "fs_1v1" ) != eGameModes.invalid && GameMode_IsActive( GameMode_FindByDevName( "fs_1v1" ) )
+}
+
+bool function Flowstate_IsGame1v1Type()
+{
+	return FS_Is1v1Playlist() || FS_Is1v1GameMode()
+}
+
+bool function FS_1v1_IsLobbyState( int state )
+{
+	return state != e1v1State.SEQUENCE && state != e1v1State.IN_MATCH
+}
+
+bool function FS_1v1_ShouldBlockLobbyMelee( entity player )
+{
+	if ( !Flowstate_IsGame1v1Type() )
+		return false
+#if UI
+	return false
+#else
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return false
+	return player.GetPlayerNetInt( "FS_1v1_PlayerState" ) != e1v1State.IN_MATCH
+#endif
+}
+
+bool function FS_1v1_ShouldShowCombatHud( int state )
+{
+	return state == e1v1State.IN_MATCH
+}
+
+bool function FS_1v1_PlayerHasClient( entity player )
+{
+	#if UI
+		return false
+	#else
+		return IsValid( player ) && player.IsPlayer() && !player.IsBot()
+	#endif
+}
+
+bool function Flowstate_IsLGDuels()
+{
+	return GetCurrentPlaylistName() == "fs_lgduels_1v1"
+}
+
+void function FS_1v1_InitHelpers()
+{
+	if ( file.helpersInited )
+		return
+
+	file.helpersInited = true
+	FS_1v1_InitPlaylistSettings()
+
+	#if SERVER || CLIENT
+		Remote_RegisterClientFunction( "ServerCallback_1v1_Obituary",
+			"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+			"int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX, "int", INT_MIN, INT_MAX,
+			"int", INT_MIN, INT_MAX, "int", 0, 255 )
+	#endif
+
+	#if SERVER
+		AddCallback_OnPlayerKilled( Gamemode1v1_BroadcastObituary )
+	#endif
+
+	printt( "[FS-1V1] helpers ready playlist='" + GetCurrentPlaylistName() + "' is1v1=" + string( FS_Is1v1Playlist() ) + " force=" + string( FS_1v1_IsForceCharacter() ) + " chosen=" + string( FlowState_ChosenCharacter() ) )
+}
+
+void function FS_1v1_InitPlaylistSettings()
+{
+	flowstateSettings.ForceCharacter = GetCurrentPlaylistVarBool( "flowstateForceCharacter", GetCurrentPlaylistName() == "fs_1v1" )
+	flowstateSettings.is_halo_gamemode = GetCurrentPlaylistVarBool( "is_halo_gamemode", false )
+	flowstateSettings.RandomCharacterOnSpawn = GetCurrentPlaylistVarBool( "flowstateRandomCharacterOnSpawn", false )
+	flowstateSettings.GiveAllOpticsToPlayer = GetCurrentPlaylistVarBool( "flowstateGiveAllOpticsToPlayer", false )
+	flowstateSettings.hackersVsPros = GetCurrentPlaylistVarBool( "flowstate_hackersVsPros", false )
+	flowstateSettings.enable_afk_thread = GetCurrentPlaylistVarBool( "enable_afk_thread", true )
+	flowstateSettings.enable_ping_kick = GetCurrentPlaylistVarBool( "enable_ping_kick", false )
+	file.afkToRest = GetCurrentPlaylistVarBool( "afk_to_rest_bool", true )
+	flowstateSettings.aimassist_magnet_pc = GetCurrentPlaylistVarFloat( "aimassist_magnet_pc", 0.0 )
+	flowstateSettings.BattleLogEnable = GetCurrentPlaylistVarBool( "flowstateBattleLogEnable", false )
+	flowstateSettings.BattleLog_Linux = GetCurrentPlaylistVarBool( "flowstateBattleLog_Linux", false )
+	flowstateSettings.custom_match_ending_title = GetCurrentPlaylistVarString( "custom_match_ending_title", "Server clean up incoming" )
+	flowstateSettings.custom_match_ending_message = GetCurrentPlaylistVarString( "custom_match_ending_message", "Don't leave. Server is going to reload to avoid lag." )
+	flowstateSettings.end_match_message = GetCurrentPlaylistVarBool( "end_match_message", true )
+	flowstateSettings.rotate_map = GetCurrentPlaylistVarBool( "rotate_map", false )
+	flowstateSettings.maplist = GetCurrentPlaylistVarString( "maplist", "" )
+	flowstateSettings.ring_radius_padding = GetCurrentPlaylistVarFloat( "ring_radius_padding", 800 )
+	flowstateSettings.Admins = GetCurrentPlaylistVarString( "Admins", "" )
+	flowstateSettings.enable_oddball_gamemode = GetCurrentPlaylistVarBool( "enable_oddball_gamemode", false )
+	flowstateSettings.default_ibmm_wait = GetCurrentPlaylistVarFloat( "default_ibmm_wait", 0 )
+	flowstateSettings.ReloadTacticalOnRespawn = GetCurrentPlaylistVarBool( "flowstateReloadTacticalOnRespawn", false )
+	flowstateSettings.ReloadUltimateOnRespawn = GetCurrentPlaylistVarBool( "flowstateReloadUltimateOnRespawn", false )
+	flowstateSettings.RandomHaloGuns = GetCurrentPlaylistVarBool( "flowstateRandomHaloGuns", false )
+	flowstateSettings.DroppodsOnPlayerConnected = GetCurrentPlaylistVarBool( "flowstateDroppodsOnPlayerConnected", false )
+	flowstateSettings.EndlessFFAorTDM = GetCurrentPlaylistVarBool( "flowstateEndlessFFAorTDM", false )
+	flowstateSettings.endgame_delay = GetCurrentPlaylistVarInt( "endgame_delay", 6 )
+	flowstateSettings.enable_global_chat = GetCurrentPlaylistVarBool( "enable_global_chat", true )
+	flowstateSettings.allow_cfgs = GetCurrentPlaylistVarBool( "flowstate_allow_cfgs", false )
+	flowstateSettings.give_random_custom_models_toall = GetCurrentPlaylistVarBool( "flowstate_give_random_custom_models_toall", false )
+	flowstateSettings.show_short_champion_screen = GetCurrentPlaylistVarBool( "show_short_champion_screen", true )
+	flowstateSettings.bIsRealisticMode = GetCurrentPlaylistName() == "fs_realistic_ttv"
+	flowstateSettings.give_weapon_stack_count_amount = GetCurrentPlaylistVarInt( "give_weapon_stack_count_amount", 0 )
+}
+
+int function FlowState_ChosenCharacter()
+{
+	return GetCurrentPlaylistVarInt( "flowstateChosenCharacter", FS_1V1_DEFAULT_LEGEND_INDEX )
+}
+
+ItemFlavor function FS_1v1_GetCharacterFlavorByIndex( int index )
+{
+	if ( index < 0 || index >= LEGEND_CHARACTER_REFS.len() )
+		index = FS_1V1_DEFAULT_LEGEND_INDEX
+
+	string ref = LEGEND_CHARACTER_REFS[ index ]
+	if ( IsValidItemFlavorCharacterRef( ref ) )
+		return GetItemFlavorByCharacterRef( ref )
+
+	printt( format( "[FS-1V1][LEGEND] ref '%s' (index %d) is not a valid character ref", ref, index ) )
+
+	if ( IsValidItemFlavorCharacterRef( FS_1V1_DEFAULT_LEGEND_REF ) )
+		return GetItemFlavorByCharacterRef( FS_1V1_DEFAULT_LEGEND_REF )
+
+	if ( IsValidItemFlavorSettingsAsset( $"settings/itemflav/character/wraith.rpak" ) )
+		return GetItemFlavorByAsset( $"settings/itemflav/character/wraith.rpak" )
+
+	printt( "[FS-1V1][LEGEND] no character refs resolve at all -- registry is not populated" )
+	return Loadout_Character().defaultItemFlavor
+}
+
+ItemFlavor function FS_1v1_GetForcedCharacterFlavor()
+{
+	return FS_1v1_GetCharacterFlavorByIndex( FlowState_ChosenCharacter() )
+}
+
+// SharedInit runs before ShPlaylist_Init; the client never re-reads the cache.
+// Missing var on fs_1v1 still forces -- that playlist's contract is one legend.
+bool function FS_1v1_IsForceCharacter()
+{
+	bool force = GetCurrentPlaylistVarBool( "flowstateForceCharacter", GetCurrentPlaylistName() == "fs_1v1" )
+	flowstateSettings.ForceCharacter = force
+	return force
+}
+
+bool function FlowState_AdminTgive()
+{
+	return GetCurrentPlaylistVarBool( "flowstateAdminTgive", false )
+}
+
+bool function FlowState_TgiveEnabled()
+{
+	return GetCurrentPlaylistVarBool( "flowstateTgiveEnabled", false )
+}
+
+bool function FlowState_ForceAdminCharacter()
+{
+	return GetCurrentPlaylistVarBool( "flowstateForceAdminCharacter", false )
+}
+
+int function FlowState_ChosenAdminCharacter()
+{
+	return GetCurrentPlaylistVarInt( "flowstateChosenAdminCharacter", 0 )
+}
+
+bool function FlowState_Timer()
+{
+	return GetCurrentPlaylistVarBool( "flowstateTimer", true )
+}
+
+int function FlowState_MaxPingAllowed()
+{
+	return GetCurrentPlaylistVarInt( "flowstateMaxPingAllowed", 200 )
+}
+
+bool function FlowState_KickHighPingPlayer()
+{
+	return GetCurrentPlaylistVarBool( "flowstateKickHighPingPlayer", true )
+}
+
+string function FlowState_RingColor()
+{
+	return GetCurrentPlaylistVarString( "flowstateRingColor", "255 255 255" )
+}
+
+float function FlowState_TgiveDelay()
+{
+	return GetCurrentPlaylistVarFloat( "flowstateTgiveDelay", 1.0 )
+}
+
+bool function bAfkToRest()
+{
+	return file.afkToRest
+}
+
+void function SetAfkToRest( bool setting )
+{
+	file.afkToRest = setting
+}
+
+bool function bIsCoachingMode()
+{
+	return GetCurrentPlaylistName() == "fs_1v1_coaching"
+}
+
+bool function Flowstate_DoorsEnabled()
+{
+	return GetCurrentPlaylistVarBool( "flowstateDoorsEnabled", false )
+}
+
+int function Flowstate_AutoChangeLevelRounds()
+{
+	return GetCurrentPlaylistVarInt( "flowstateRoundsBeforeChangeLevel", 2 )
+}
+
+bool function Flowstate_EnableAutoChangeLevel()
+{
+	return GetCurrentPlaylistVarBool( "flowstateAutoChangeLevelEnable", false )
+}
+
+float function Flowstate_GetDissolveTime()
+{
+	return GetCurrentPlaylistVarFloat( "dissolve_drops_time", 7 )
+}
+
+void function Tracker_RoundEnd( int round )
+{
+	printt( "[FS-1V1] RoundEnd round=" + string( round ) )
+}
+
+bool function Tracker_IsSafeMapName( string mapName )
+{
+	int n = mapName.len()
+	if ( n < 3 || n > 63 )
+		return false
+
+	for ( int i = 0; i < n; i++ )
+	{
+		string ch = mapName.slice( i, i + 1 )
+		if ( ch == "_" )
+			continue
+		if ( ch >= "a" && ch <= "z" )
+			continue
+		if ( ch >= "0" && ch <= "9" )
+			continue
+		return false
+	}
+
+	return true
+}
+
+array<string> function Tracker_ParseMapList( string raw )
+{
+	array<string> maps
+	array<string> parts = split( raw, "," )
+	foreach ( string p in parts )
+	{
+		string mapName = strip( p )
+		if ( mapName == "" )
+			continue
+		maps.append( mapName )
+	}
+	return maps
+}
+
+array<string> function Tracker_GetRotateMaps()
+{
+	array<string> raw
+	string overrideList = GetCurrentPlaylistVarString( "maplist", "" )
+	if ( overrideList == "" )
+		overrideList = flowstateSettings.maplist
+
+	if ( overrideList != "" )
+		raw = Tracker_ParseMapList( overrideList )
+	else
+		raw = GetPlaylistMaps( GetCurrentPlaylistName() )
+
+	array<string> installed
+	bool haveInstalled = false
+	#if SERVER
+	try
+	{
+		installed = GetAvailableMaps()
+		haveInstalled = installed.len() > 0
+	}
+	catch ( e )
+	{
+		haveInstalled = false
+	}
+	#endif
+
+	array<string> maps
+	foreach ( string mapName in raw )
+	{
+		if ( mapName == "" )
+			continue
+		if ( !Tracker_IsSafeMapName( mapName ) )
+		{
+			printt( "[FS-1V1] skip unsafe map '" + mapName + "'" )
+			continue
+		}
+		if ( !GetCurrentPlaylistVarBool( "fs_1v1_rotate_" + mapName, true ) )
+		{
+			printt( "[FS-1V1] skip rotate-disabled map '" + mapName + "'" )
+			continue
+		}
+		if ( haveInstalled && !installed.contains( mapName ) )
+		{
+			printt( "[FS-1V1] skip uninstalled map '" + mapName + "'" )
+			continue
+		}
+		if ( maps.contains( mapName ) )
+			continue
+		maps.append( mapName )
+	}
+
+	return maps
+}
+
+string function Tracker_DetermineNextMap()
+{
+	#if UI
+		return ""
+	#else
+		array<string> maps = Tracker_GetRotateMaps()
+		string cur = GetMapName()
+		if ( maps.len() == 0 )
+		{
+			printt( "[FS-1V1] DetermineNextMap empty pool, staying on " + cur )
+			return cur
+		}
+
+		int idx = maps.find( cur )
+		int next = 0
+		if ( idx >= 0 )
+			next = ( idx + 1 ) % maps.len()
+
+		string to_map = maps[next]
+		printt( "[FS-1V1] DetermineNextMap cur=" + cur + " next=" + to_map + " idx=" + string( idx ) + " pool=" + string( maps.len() ) )
+		return to_map
+	#endif
+}
+
+void function Tracker_GotoNextMap()
+{
+	#if SERVER
+		string to_map = Tracker_DetermineNextMap()
+		string playlist = GetCurrentPlaylistName()
+		if ( to_map == "" || !Tracker_IsSafeMapName( to_map ) )
+		{
+			printt( "[FS-1V1] GotoNextMap aborted: bad map '" + to_map + "' playlist=" + playlist )
+			return
+		}
+		printt( "[FS-1V1] GotoNextMap map=" + to_map + " playlist=" + playlist )
+		GameRules_ChangeMap( to_map, playlist )
+	#else
+		printt( "[FS-1V1] GotoNextMap ignored (not server)" )
+	#endif
+}
+
+void function FlowstateTracker_Finalize( string platformUid, bool unused )
+{
+}
+
+// No damage-event tracker ported -- rest grace treats last hit as ancient.
+DamageEvent function Tracker_GetCurrentEventForAttackerOnVictim( int attackerHandle, int victimHandle )
+{
+	DamageEvent e
+	e.attackerHandle = attackerHandle
+	e.victimHandle = victimHandle
+	e.lastHitTimestamp = 0.0
+	e.isValid = false
+	return e
+}
+
+void function Tracker_SetPlayerAsChampion( entity player )
+{
+	// UI VM has no entity methods at compile time (GetPlayerName etc.).
+	#if UI
+		printt( "[FS-Tracker] SetPlayerAsChampion stub" )
+	#else
+		if ( IsValid( player ) )
+			printt( "[FS-Tracker] SetPlayerAsChampion stub " + player.GetPlayerName() )
+	#endif
+}

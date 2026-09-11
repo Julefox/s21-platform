@@ -1,0 +1,31 @@
+global function ShPassiveAirborneHealthRegen_Init
+#if SERVER
+global function AirboneRegen_MonitorInAirHeal
+#endif
+
+void function ShPassiveAirborneHealthRegen_Init()
+{
+
+}
+
+#if SERVER
+float function AirboneRegen_GetInAirUpgradedRegenRate()
+{
+	return GetCurrentPlaylistVarFloat( "AirboneRegen_upgraded_in_air_regen_rate", 5 )
+}
+
+void function AirboneRegen_MonitorInAirHeal( entity player )
+{
+	player.EndSignal( "OnDestroy" )
+
+	const float WAIT_TIME = .5
+
+	EntityHealResource_Add( player, WAIT_TIME, AirboneRegen_GetInAirUpgradedRegenRate(), 0, "regen_default", player )
+	Wait( WAIT_TIME )
+	while( !player.IsOnGround() && !player.IsZiplining() )
+	{
+		EntityHealResource_Add( player, WAIT_TIME, AirboneRegen_GetInAirUpgradedRegenRate(), 0, "regen_default", player )
+		Wait( WAIT_TIME )
+	}
+}
+#endif

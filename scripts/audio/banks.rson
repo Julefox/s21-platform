@@ -1,0 +1,11 @@
+// List of Miles banks to load.
+// Sibling objects are RSON_ARRAY_OBJECT. A lone {name} is type 8 (rejected).
+// A [ ] wrapper is also the wrong type and fatals the client.
+
+{
+	name: "general"
+}
+
+{
+	name: "custom"
+}

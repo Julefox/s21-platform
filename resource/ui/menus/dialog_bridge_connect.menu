@@ -1,0 +1,269 @@
+resource/ui/menus/dialog_bridge_connect.menu
+{
+	menu
+	{
+		ControlName				Frame
+		xpos					0
+		ypos					0
+		zpos					3
+		wide					f0
+		tall					f0
+		autoResize				0
+		pinCorner				0
+		visible					1
+		enabled					1
+		PaintBackgroundType		0
+		infocus_bgcolor_override	"0 0 0 0"
+		outoffocus_bgcolor_override	"0 0 0 0"
+
+		ScreenBlur
+		{
+			ControlName				Label
+			labelText				""
+		}
+
+		DarkenBackground
+		{
+			ControlName				ImagePanel
+			xpos					0
+			ypos					0
+			wide					%100
+			tall					%100
+			visible					1
+			scaleImage				1
+			image					"vgui/white"
+			drawColor				"0 0 0 235"
+			zpos					0
+		}
+
+		DialogBG
+		{
+			ControlName				Label
+			wide					520
+			tall					380
+			zpos					10
+			labelText				""
+			bgcolor_override		"4 4 6 255"
+			paintbackground			1
+			visible					1
+			enabled					1
+
+			pin_to_sibling			DarkenBackground
+			pin_corner_to_sibling	CENTER
+			pin_to_sibling_corner	CENTER
+		}
+
+		TitleLabel
+		{
+			ControlName				Label
+			ypos					-20
+			zpos					20
+			wide					480
+			tall					36
+			visible					1
+			labelText				"#BRIDGE_CONNECT_TITLE"
+			textAlignment			center
+			font					DefaultBold_41
+			fontHeight				38
+			fgcolor_override		"255 255 255 255"
+
+			pin_to_sibling			DialogBG
+			pin_corner_to_sibling	TOP
+			pin_to_sibling_corner	TOP
+		}
+
+		HostLabel
+		{
+			ControlName				Label
+			xpos					-32
+			ypos					-68
+			zpos					20
+			auto_wide_tocontents	1
+			auto_tall_tocontents	1
+			visible					1
+			labelText				"HOST"
+			font					Default_28
+			fontHeight				16
+			fgcolor_override		"200 200 200 220"
+
+			pin_to_sibling			DialogBG
+			pin_corner_to_sibling	TOP_LEFT
+			pin_to_sibling_corner	TOP_LEFT
+		}
+
+		ConnectHost
+		{
+			ControlName				TextEntry
+			zpos					100
+			wide					456
+			tall					40
+			xpos					-32
+			ypos					-90
+			allowRightClickMenu		0
+			allowSpecialCharacters	1
+			unicode					0
+			visible					1
+			enabled					1
+			textHidden				0
+			editable				1
+			maxchars				64
+			textAlignment			"west"
+			ruiFont					TitleRegularFont
+			ruiFontHeight			22
+			ruiMinFontHeight		16
+			bgcolor_override		"30 30 30 240"
+			paintbackground			1
+			fgcolor_override		"255 255 255 255"
+			keyboardTitle			"Server address"
+			keyboardDescription		"IP or hostname"
+			cursorPriority			20
+
+			pin_to_sibling			DialogBG
+			pin_corner_to_sibling	TOP_LEFT
+			pin_to_sibling_corner	TOP_LEFT
+		}
+
+		PortLabel
+		{
+			ControlName				Label
+			xpos					0
+			ypos					10
+			zpos					20
+			auto_wide_tocontents	1
+			auto_tall_tocontents	1
+			visible					1
+			labelText				"PORT"
+			font					Default_28
+			fontHeight				16
+			fgcolor_override		"200 200 200 220"
+
+			pin_to_sibling			ConnectHost
+			pin_corner_to_sibling	TOP_LEFT
+			pin_to_sibling_corner	BOTTOM_LEFT
+		}
+
+		ConnectPort
+		{
+			ControlName				TextEntry
+			zpos					100
+			wide					160
+			tall					40
+			xpos					0
+			ypos					4
+			allowRightClickMenu		0
+			allowSpecialCharacters	0
+			unicode					0
+			visible					1
+			enabled					1
+			textHidden				0
+			editable				1
+			maxchars				8
+			textAlignment			"west"
+			ruiFont					TitleRegularFont
+			ruiFontHeight			22
+			ruiMinFontHeight		16
+			bgcolor_override		"30 30 30 240"
+			paintbackground			1
+			fgcolor_override		"255 255 255 255"
+			keyboardTitle			"Port"
+			keyboardDescription		"Server port"
+			cursorPriority			20
+
+			pin_to_sibling			PortLabel
+			pin_corner_to_sibling	TOP_LEFT
+			pin_to_sibling_corner	BOTTOM_LEFT
+		}
+
+		KeyLabel
+		{
+			ControlName				Label
+			xpos					0
+			ypos					10
+			zpos					20
+			auto_wide_tocontents	1
+			auto_tall_tocontents	1
+			visible					1
+			labelText				"NET KEY"
+			font					Default_28
+			fontHeight				16
+			fgcolor_override		"200 200 200 220"
+
+			pin_to_sibling			ConnectPort
+			pin_corner_to_sibling	TOP_LEFT
+			pin_to_sibling_corner	BOTTOM_LEFT
+		}
+
+		ConnectKey
+		{
+			ControlName				TextEntry
+			zpos					100
+			wide					456
+			tall					40
+			xpos					0
+			ypos					4
+			allowRightClickMenu		0
+			allowSpecialCharacters	1
+			unicode					0
+			visible					1
+			enabled					1
+			textHidden				0
+			editable				1
+			maxchars				64
+			textAlignment			"west"
+			ruiFont					TitleRegularFont
+			ruiFontHeight			22
+			ruiMinFontHeight		16
+			bgcolor_override		"30 30 30 240"
+			paintbackground			1
+			fgcolor_override		"255 255 255 255"
+			keyboardTitle			"Net key"
+			keyboardDescription		"Optional net_setKey"
+			cursorPriority			20
+
+			pin_to_sibling			KeyLabel
+			pin_corner_to_sibling	TOP_LEFT
+			pin_to_sibling_corner	BOTTOM_LEFT
+		}
+
+		ConnectButton
+		{
+			ControlName				RuiButton
+			style					RuiButton
+			wide					200
+			tall					48
+			ypos					24
+			zpos					100
+			visible					1
+			enabled					1
+			rui						"ui/generic_button.rpak"
+			cursorVelocityModifier	0.7
+			cursorPriority			20
+			sound_focus				"UI_Menu_Focus_Large"
+
+			ruiArgs
+			{
+				buttonText			"#BRIDGE_SB_CONNECT"
+			}
+
+			pin_to_sibling			ConnectKey
+			pin_corner_to_sibling	TOP
+			pin_to_sibling_corner	BOTTOM
+		}
+
+		FooterButtons
+		{
+			ControlName				CNestedPanel
+			controlSettingsFile		"resource/ui/menus/panels/footer_buttons.res"
+			xpos					0
+			ypos					0
+			zpos					20
+			wide					f0
+			tall					36
+			visible					1
+
+			pin_to_sibling			DarkenBackground
+			pin_corner_to_sibling	BOTTOM
+			pin_to_sibling_corner	BOTTOM
+		}
+	}
+}

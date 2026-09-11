@@ -1,0 +1,70 @@
+global function ShBattlepassPresaleVoucher_LevelInit
+global function GetDisplayImageAssetFromBPPresaleVoucher
+#if UI
+global function GetBPPresaleOfferDescString
+#endif
+
+/////////////////////////
+/////////////////////////
+//// Initialization ////
+/////////////////////////
+/////////////////////////
+
+#if SERVER || CLIENT || UI
+void function ShBattlepassPresaleVoucher_LevelInit()
+{
+	AddCallback_RegisterRootItemFlavors( RegisterAllBattlepassPresaleVouchersAsItemFlavors )
+}
+#endif
+
+#if SERVER || CLIENT || UI
+void function RegisterAllBattlepassPresaleVouchersAsItemFlavors()
+{
+	foreach ( asset bpPresaleVoucherAsset in GetBaseItemFlavorsFromArray( "battlepassPresaleVouchers" ) )
+	{
+		if ( bpPresaleVoucherAsset == $"" )
+		{
+			continue
+		}
+		ItemFlavor ornull image2DOrNull = RegisterItemFlavorFromSettingsAsset( bpPresaleVoucherAsset )
+		if ( image2DOrNull == null )
+		{
+			printt( "Failed to register BP Presale Voucher ItemFlavor from Settings Asset ", bpPresaleVoucherAsset )
+		}
+	}
+}
+#endif
+
+//////////////////////////
+//////////////////////////
+//// Helper functions ////
+//////////////////////////
+//////////////////////////
+
+// Given a season number, returns the loc string for that season's name.
+// NOTE: If you use this function, make sure the loc string for your desired season number has been defined
+//	  in battlepass_english.txt. Otherwise, the game will display the raw loc string returned from this function.
+string function GetLocStringForSeasonName( int season )
+{
+	return format("#BP_S%d_NAME", season)
+}
+
+//////////////////////////
+//////////////////////////
+//// Global functions ////
+//////////////////////////
+//////////////////////////
+
+asset function GetDisplayImageAssetFromBPPresaleVoucher( ItemFlavor flavor )
+{
+	Assert( ItemFlavor_GetType( flavor ) == eItemType.battlepass_presale_voucher )
+
+	return GetGlobalSettingsAsset( ItemFlavor_GetAsset( flavor ), "displayImage" )
+}
+
+#if UI
+string function GetBPPresaleOfferDescString()
+{
+	return Localize( "#BP_PRESALE_OFFER_DESC" )
+}
+#endif

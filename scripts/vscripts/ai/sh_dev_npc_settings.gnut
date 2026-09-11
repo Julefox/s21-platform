@@ -1,0 +1,3 @@
+// Moved to ui/menu_dev.nut (legacy R5VLibrary pattern).
+// Survival DevMenu helpers must always compile with UI, not only DEV && UI.
+// Kept as an empty unit so old rson paths / includes do not break.

@@ -1,0 +1,95 @@
+global function InitBroadcastDrones
+global function EntitiesDidLoadBroadcastDrones
+
+global function BroadcastDrones_GetTrainNodesArray
+
+global function BroadcastDrones_CreateBroadcastDrone
+global function BroadcastDrones_DestroyAllBroadcastDrones
+
+struct
+{
+	array<entity> initOnly_broadcastDroneTrainNodes
+} file
+
+void function InitBroadcastDrones()
+{
+	Assert( !Flag( "EntitiesDidLoad" ), "Warning! You need to call InitBroadcastDrones() before entities loaded!" )
+	AddSpawnCallback_ScriptName( BROADCAST_DRONE_NODE_SCRIPT_NAME, OnBroadcastDroneNodeSpawned )
+}
+
+void function EntitiesDidLoadBroadcastDrones()
+{
+	PrecacheScriptString( BROADCAST_DRONE_MODEL_SCRIPTNAME )
+	PrecacheScriptString( BROADCAST_DRONE_MOVER_SCRIPTNAME )
+	PrecacheScriptString( BROADCAST_DRONE_ROTATOR_SCRIPTNAME )
+
+	PrecacheScriptString( BROADCAST_DRONE_NODE_SCRIPT_NAME )
+}
+
+void function OnBroadcastDroneNodeSpawned( entity node )
+{
+	string nodeType = node.GetClassName()
+	switch ( nodeType )
+	{
+		case DRONE_TRACK_NODE_CLASS_NAME:
+			AddNodeToTrainNodeArray( node )
+			break
+	}
+}
+
+void function AddNodeToTrainNodeArray( entity node )
+{
+	if ( !file.initOnly_broadcastDroneTrainNodes.contains( node ) )
+		file.initOnly_broadcastDroneTrainNodes.append( node )
+}
+
+array<entity> function BroadcastDrones_GetTrainNodesArray()
+{
+	return file.initOnly_broadcastDroneTrainNodes
+}
+
+DroneData function BroadcastDrones_CreateBroadcastDrone( vector origin, vector angles )
+{
+	DroneData data
+	entity droneModel = CreatePropDynamic( BROADCAST_DRONE_MODEL, origin, angles )
+	droneModel.SetScriptName( BROADCAST_DRONE_MODEL_SCRIPTNAME )
+	droneModel.SetModelScale( BROADCAST_DRONE_MODEL_SCALE )
+
+	droneModel.kv.CollisionGroup = TRACE_COLLISION_GROUP_NONE
+	droneModel.NotSolid()
+
+	entity mover = CreateScriptMover( BROADCAST_DRONE_MOVER_SCRIPTNAME, origin, angles )
+	mover.DisallowZiplines()
+
+	droneModel.SetParent( mover )
+	data.model = droneModel
+	data.mover = mover
+	data.__accel = BROADCAST_DRONE_FLIGHT_ACCEL
+	data.__maxSpeed = BROADCAST_DRONE_FLIGHT_SPEED_MAX
+	data.__panicSpeed = BROADCAST_DRONE_FLIGHT_SPEED_PANIC
+	data.__panicDuration = BROADCAST_DRONE_PANIC_DURATION
+	data.droneType = eDroneType.BROADCAST_DRONE
+
+	MarkEntForCleanupOnRoundEnd( droneModel )
+
+	entity soundEntity = CreateEntity( "ambient_generic" )
+	soundEntity.SetOrigin( droneModel.GetOrigin() )
+	soundEntity.SetSoundName( BROADCAST_DRONE_LIVING_SOUND )
+	soundEntity.SetParent( droneModel )
+	soundEntity.SetEnabled( true )
+	data.soundEntity = soundEntity
+
+	Drones_GetAllActiveDrones().append( data )
+	ShDrones_DroneSpawned( data.model )
+
+	return data
+}
+
+void function BroadcastDrones_DestroyAllBroadcastDrones()
+{
+	foreach ( DroneData data in Drones_GetAllActiveDrones() )
+	{
+		if ( data.droneType == eDroneType.BROADCAST_DRONE )
+			Drones_DestroyDrone( data )
+	}
+}

@@ -1,0 +1,86 @@
+"WeaponData"
+{
+	"printname" "#ABL_ULT_CHEAT_DEATH"
+	"shortprintname" "#ABL_ULT_CHEAT_DEATH_SHORT"
+	"description" "#ABL_ULT_CHEAT_DEATH_DESC"
+	"longdesc" "#ABL_ULT_CHEAT_DEATH_LONGDESC"
+	"weaponType" "shoulder"
+	"fire_mode" "offhand"
+	"offhand_active_slot" "mainHand"
+	"offhand_activates_on_zoom" "0"
+	"offhand_interupts_weapon_anims" "1"
+	"hud_icon" "rui/hud/ultimate_icons/ultimate_revenant"
+	"OnWeaponActivate" "OnWeaponActivate_ability_cheat_death"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_ability_cheat_death"
+	"OnWeaponPrimaryAttack" "OnWeaponPrimaryAttack_ability_cheat_death"
+	"OnWeaponAttemptOffhandSwitch" "OnWeaponAttemptOffhandSwitch_ability_cheat_death"
+	"viewmodel" "mdl/weapons/empty_handed/ptpov_revenant_totem.rmdl"
+	"playermodel" "mdl/weapons/empty_handed/w_empty_handed_human.rmdl"
+	"ammo_display" "count"
+	"ammo_clip_size" "180"
+	"ammo_default_total" "0"
+	"ammo_min_to_fire" "180"
+	"ammo_per_shot" "180"
+	"ammo_stockpile_max" "180"
+	"ammo_drains_to_empty_on_fire" "0"
+	"ammo_no_remove_from_clip" "0"
+	"regen_ammo_refill_rate" "1.000000"
+	"regen_ammo_refill_start_delay" "0.000000"
+	"fire_rate" "0.660000"
+	"fire_anim_rate" "0.660000"
+	"holster_time" "0.400000"
+	"deploy_time" "0"
+	"lower_time" "0.400000"
+	"raise_time" "0"
+	"allow_empty_fire" "0"
+	"reload_enabled" "0"
+	"empty_reload_only" "0"
+	"fire_rumble" "rumble_shotgun"
+	"weapon_type_flags" "WPT_TACTICAL"
+	"offhand_default_inventory_slot" "1"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "survival_ui_tactical_ready"
+	"update_player_last_fire_time" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"copycat_mod"
+		{
+			"weapon_type_flags" "WPT_SURVIVAL"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+	}
+}

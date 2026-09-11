@@ -1,0 +1,1200 @@
+"WeaponData"
+{
+	"printname" "#WPN_DOUBLETAKE"
+	"shortprintname" "#WPN_DOUBLETAKE_SHORT"
+	"description" "#WPN_DOUBLETAKE_DESC"
+	"longdesc" "#WPN_DOUBLETAKE_LONGDESC"
+	"weapon_type_flags" "WPT_PRIMARY"
+	"menu_icon" "rui/weapon_icons/r5/weapon_triple_take"
+	"hud_icon" "rui/weapon_icons/r5/weapon_triple_take"
+	"hud_icon_mastered" "rui/weapon_icons/mastered/weapon_triple_take"
+	"stat_damage" "83"
+	"stat_accuracy" "76"
+	"stat_range" "100"
+	"stat_rof" "20"
+	"viewmodel" "mdl/weapons/doubletake/ptpov_doubletake.rmdl"
+	"playermodel" "mdl/weapons/doubletake/w_doubletake.rmdl"
+	"chroma_color" ".1 1 .3"
+	"OnWeaponPrimaryAttack" "OnWeaponPrimaryAttack_weapon_doubletake"
+	"OnWeaponNpcPrimaryAttack" "OnWeaponNpcPrimaryAttack_weapon_doubletake"
+	"OnWeaponChargeLevelIncreased" "OnWeaponChargeLevelIncreased_weapon_doubletake"
+	"OnWeaponChargeBegin" "EnergyChargeWeapon_OnWeaponChargeBegin"
+	"OnWeaponChargeEnd" "OnWeaponChargeEnd_weapon_doubletake"
+	"OnProjectileCollision" "OnProjectileCollision_weapon_doubletake"
+	"OnWeaponActivate" "OnWeaponActivate_weapon_doubletake"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_weapon_doubletake"
+	"OnWeaponReload" "OnWeaponReload_weapon_doubletake"
+	"charge_time" "0.000000"
+	"charge_levels" "0"
+	"charge_level_base" "0"
+	"charge_cooldown_time" "1.000000"
+	"charge_cooldown_delay" "0.000000"
+	"charge_is_triggered_by_ADS" "1"
+	"charge_fraction_scales_anim_rate" "1"
+	"charge_end_forces_fire" "0"
+	"charge_remain_full_when_fired" "0"
+	"fire_rate" "1.300000"
+	"is_semi_auto" "1"
+	"impulse_force" "1000"
+	"ads_fov_zoomfrac_start" "0.200000"
+	"ads_fov_zoomfrac_end" "0.900000"
+	"viewmodel_offset_zoom_frac_start" "0.200000"
+	"viewmodel_offset_zoom_frac_end" "0.900000"
+	"damage_near_value" "22"
+	"damage_far_value" "22"
+	"damage_very_far_value" "22"
+	"damage_near_value_titanarmor" "22"
+	"damage_far_value_titanarmor" "22"
+	"damage_very_far_value_titanarmor" "22"
+	"damage_rodeo" "80"
+	"critical_hit_damage_scale" "2.000000"
+	"damage_headshot_scale" "1.500000"
+	"damage_leg_scale" "0.900000"
+	"damage_flags" "DF_BULLET | DF_KNOCK_BACK"
+	"viewmodel_offset_ads" "0 -3.0 0"
+	"viewmodel_shake_forward" "0.500000"
+	"viewmodel_shake_up" "0.100000"
+	"viewmodel_shake_right" "0.000000"
+	"projectile_launch_speed" "31000"
+	"projectiles_per_shot" "3"
+	"blast_pattern" "doubletake"
+	"blast_pattern_zero_distance" "3940.000000"
+	"blast_pattern_default_scale" "16.000000"
+	"blast_pattern_npc_scale" "1.000000"
+	"projectile_drag_coefficient" "0.000000"
+	"bolt_hitsize" "0.250000"
+	"projectile_spread_choke_frac_1" "1.000000"
+	"projectile_spread_choke_frac_2" "0.600000"
+	"projectile_spread_choke_frac_3" "0.250000"
+	"projectile_spread_choke_frac_4" "0.010000"
+	"ammo_clip_size" "6"
+	"ammo_default_total" "0"
+	"ammo_no_remove_from_stockpile" "1"
+	"uses_ammo_pool" "0"
+	"regen_ammo_refill_rate"		"18"
+	"regen_ammo_refill_start_delay"		"0.100000"
+	"regen_ammo_stockpile_max_fraction"		"1.000000"
+	"regen_ammo_while_firing"		"0"
+	"ammo_pool_type" "special"
+	"ammo_per_shot" "1"
+	"ammo_min_to_fire" "1"
+	"ammo_clip_random_loss_on_npc_drop_chunksize" "1"
+	"reload_enabled" "1"
+	"allow_empty_click" "1"
+	"empty_reload_only" "0"
+	"low_ammo_fraction" "0.350000"
+	"reload_time" "2.600000"
+	"reload_time_late1" "1.320000"
+	"reloadempty_time" "3.400000"
+	"reloadempty_time_late1" "2.260000"
+	"reloadempty_time_late2" "1.260000"
+	"deployfirst_time" "1.500000"
+	"r_trig_custom_str" "2"
+	"l_trig_custom_mode" "101"
+	"l_trig_custom_str" "2"
+	"viewkick_spring" "doubletake"
+	"viewkick_pitch_base" "-0.800000"
+	"viewkick_pitch_random" "0.150000"
+	"viewkick_perm_pitch_base" "0.000000"
+	"viewkick_perm_pitch_random" "0.000000"
+	"viewkick_perm_pitch_random_innerexclude" "0.000000"
+	"viewkick_pitch_softScale" "1.200000"
+	"viewkick_pitch_hardScale" "0.900000"
+	"viewkick_yaw_base" "0.200000"
+	"viewkick_yaw_random" "0.150000"
+	"viewkick_perm_yaw_base" "0.000000"
+	"viewkick_perm_yaw_random" "0.000000"
+	"viewkick_perm_yaw_random_innerexclude" "0.000000"
+	"viewkick_yaw_softScale" "1.300000"
+	"viewkick_yaw_hardScale" "1.000000"
+	"viewkick_roll_base" "-0.200000"
+	"viewkick_roll_randomMin" "0.100000"
+	"viewkick_roll_randomMax" "0.300000"
+	"viewkick_roll_softScale" "0.500000"
+	"viewkick_roll_hardScale" "1.250000"
+	"viewkick_hipfire_weaponFraction" "0.200000"
+	"viewkick_hipfire_weaponFraction_vmScale" "0.800000"
+	"viewkick_ads_weaponFraction" "0.000000"
+	"viewkick_ads_weaponFraction_vmScale" "1.000000"
+	"viewkick_scale_min_ads" "1.000000"
+	"viewkick_scale_max_ads" "1.500000"
+	"viewkick_scale_pitch_valueLerpStart" "0"
+	"viewkick_scale_pitch_valueLerpEnd" "0"
+	"viewkick_scale_valueDecayDelay" "0.150000"
+	"viewkick_scale_valueDecayRate" "10"
+	"spread_stand_hip" "2.500000"
+	"spread_stand_hip_run" "4.150000"
+	"spread_stand_hip_sprint" "5"
+	"spread_crouch_hip" "1.860000"
+	"spread_air_hip" "5.800000"
+	"spread_stand_ads" "0"
+	"spread_crouch_ads" "0"
+	"spread_air_ads" "4.000000"
+	"spread_max_kick_stand_hip" "7.000000"
+	"spread_max_kick_crouch_hip" "5.000000"
+	"spread_max_kick_air_hip" "9.000000"
+	"spread_moving_increase_rate" "20"
+	"spread_moving_decay_rate" "20"
+	"spread_decay_delay" "0.100000"
+	"spread_decay_rate" "10"
+	"fire_sound_1_npc" "Weapon_DoubleTake_Fire_NPC"
+	"fire_sound_1_player_1p" "Weapon_DoubleTake_Fire_1P"
+	"fire_sound_1_player_3p" "Weapon_DoubleTake_Fire_3P"
+	"low_ammo_sound_name_1" "DoubleTake_LowAmmo_Shot1"
+	"low_ammo_sound_name_2" "DoubleTake_LowAmmo_Shot2"
+	"low_ammo_sound_name_3" "DoubleTake_LowAmmo_Shot3"
+	"sound_zoom_in" "weapon_rangemaster_tripletake_ads_in"
+	"sound_zoom_out" "weapon_rangemaster_tripletake_ads_out"
+	"sound_energy_charge_leveltick_1" ""
+	"sound_energy_charge_leveltick_1_3p" ""
+	"sound_energy_charge_leveltick_2" "weapon_doubletake_leveltick_1"
+	"sound_energy_charge_leveltick_2_3p" "weapon_doubletake_leveltick_1_3p"
+	"sound_energy_charge_leveltick_3" "weapon_doubletake_leveltick_2"
+	"sound_energy_charge_leveltick_3_3p" "weapon_doubletake_leveltick_2_3p"
+	"sound_energy_charge_leveltick_final" "weapon_doubletake_leveltick_final"
+	"sound_energy_charge_leveltick_final_3p" "weapon_doubletake_leveltick_final_3p"
+	"sound_energy_charge_start" "weapon_doubletake_chargedshot_chargestart"
+	"sound_energy_charge_start_3p" "weapon_doubletake_chargedshot_chargestart_3p"
+	"sound_energy_charge_loop" "weapon_doubletake_chargedshot_loop"
+	"sound_energy_charge_loop_3p" "weapon_doubletake_chargedshot_loop_3p"
+	"sound_energy_charge_end" "weapon_doubletake_1p_chargedshot_chargeend"
+	"sound_energy_charge_end_3p" "weapon_doubletake_chargedshot_chargeend_3p"
+	"npc_min_burst" "1"
+	"npc_max_burst" "1"
+	"npc_suppress_lsp_allowed" "0"
+	"npc_rest_time_between_bursts_min" "2.000000"
+	"npc_rest_time_between_bursts_max" "4.000000"
+	"npc_min_range" "0"
+	"npc_max_range" "2800"
+	"npc_damage_near_value" "7"
+	"npc_damage_near_value_titanarmor" "100"
+	"npc_damage_far_value" "7"
+	"npc_damage_far_value_titanarmor" "100"
+	"npc_min_engage_range" "500"
+	"npc_max_engage_range" "2500"
+	"npc_min_engage_range_heavy_armor" "750"
+	"npc_max_engage_range_heavy_armor" "2500"
+	"npc_accuracy_multiplier_pilot" "1.000000"
+	"proficiency_poor_spreadscale" "3.000000"
+	"proficiency_average_spreadscale" "3.000000"
+	"proficiency_good_spreadscale" "2.000000"
+	"proficiency_very_good_spreadscale" "1.500000"
+	"dof_zoom_nearDepthStart" "1.500000"
+	"dof_zoom_nearDepthEnd" "7.100000"
+	"dof_zoom_focusArea_horizontal" "0.068000"
+	"dof_zoom_focusArea_top" "0.065000"
+	"dof_zoom_focusArea_bottom" "-0.046000"
+	"impact_effect_table" "doubletake_bullet"
+	"projectile_trail_effect_0_1p" "P_tracer_proj_sniper_blue"
+	"projectile_trail_effect_0_3p" "P_tracer_proj_sniper_blue"
+	"fx_muzzle_flash_view" "P_wpn_mflash_dbltake_FP"
+	"fx_muzzle_flash_world" "P_wpn_mflash_dbltake"
+	"fx_shell_eject_attach" "shell"
+	"fx_muzzle_flash_attach_scoped" "muzzle_flash_scoped"
+	"fx_shell_eject_attach_scoped" "shell"
+	"fx_shell_eject2_attach" "shell_L"
+	"fx_shell_eject_view" "wpn_shelleject_rifle_assault_FP"
+	"fx_shell_eject_world" "wpn_shelleject_rifle_assault"
+	"fx_shell_eject2_view" "wpn_shelleject_rifle_assault_FP"
+	"fx_shell_eject2_world" "wpn_shelleject_rifle_assault"
+	"bodygroup3_name" "sight_rail"
+	"bodygroup3_set" "0"
+	"clip_bodygroup" "clip"
+	"clip_bodygroup_index_shown" "0"
+	"clip_bodygroup_index_hidden" "1"
+	"clip_bodygroup_show_for_milestone_0" "1"
+	"clip_bodygroup_show_for_milestone_1" "1"
+	"clip_bodygroup_show_for_milestone_2" "1"
+	"clip_bodygroup_show_for_milestone_3" "1"
+	"custom_float_0" "1"
+	"custom_int_0" "0"
+	"burn_damage" "25"
+	"burn_time" "2.000000"
+	"burn_stacks_max" "1"
+	"burn_stack_debounce" "0.200000"
+	"burn_tick_rate" "0.800000"
+	"sound_burn_damage_tick_1p" "flesh_thermiteburn_3p_vs_1p"
+	"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_TRIPLETAKE"
+	"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_TRIPLETAKE"
+	"player_overheat_per_bullet" "28"
+	"smart_reload_overload_ammo_required" "2"
+	"ui1_enable" "1"
+	"ui1_draw_cloaked" "1"
+	"ui2_enable" "1"
+	"ui20_enable" "0"
+	"ui21_enable" "0"
+	"ui22_enable" "0"
+	"ui23_enable" "0"
+	"ui24_enable" "0"
+	"ui25_enable" "0"
+	"ui26_enable" "0"
+	"rui_crosshair_index" "0"
+	"active_crosshair_count" "1"
+	"weaponSubClass" "marksman"
+	"body_type" "medium"
+	"pickup_hold_prompt" "Hold [USE] [WEAPONNAME]"
+	"pickup_press_prompt" "[USE] [WEAPONNAME]"
+	"minimap_reveal_distance" "32000"
+	"leveled_pickup" "1"
+	"holster_type" "rifle"
+	"thirdperson_fire_from_mount_point" "1"
+	"red_crosshair_range" "0"
+	"heartbeat_sensor_size" "84"
+	"OnClientAnimEvent" "OnClientAnimEvent_weapon_basic_bolt"
+	"damage_type" "bullet"
+	"allow_headshots" "1"
+	"headshot_distance" "17716"
+	"damage_shield_scale" "1"
+	"damage_near_distance" "1000"
+	"damage_far_distance" "2500"
+	"damage_very_far_distance" "5000"
+	"ammo_suck_behavior" "primary_weapons"
+	"secondary_ammo_pool_type" ""
+	"deploy_time" "0.650000"
+	"holster_time" "0.550000"
+	"raise_time" "0.500000"
+	"lower_time" "0.400000"
+	"zoom_time_in" "0.300000"
+	"zoom_time_out" "0.260000"
+	"zoom_fov" "55"
+	"ads_move_speed_scale" "0.425000"
+	"aimassist_disable_hipfire" "0"
+	"aimassist_disable_ads" "0"
+	"aimassist_disable_hipfire_titansonly" "0"
+	"aimassist_disable_ads_titansonly" "0"
+	"aimassist_adspull_weaponclass" "precise"
+	"projectile_gravity_scale" "1.400000"
+	"bolt_zero_distance" "1968.500000"
+	"projectilemodel" "mdl/dev/empty_model.rmdl"
+	"projectile_do_predict_impact_effects" "1"
+	"projectile_lifetime" "5.000000"
+	"pass_through_depth" "0"
+	"pass_through_damage_preserved_scale" "0.650000"
+	"fx_muzzle_flash_attach" "muzzle_flash"
+	"spread_kick_on_fire_stand_hip" "0.750000"
+	"spread_kick_on_fire_crouch_hip" "0.750000"
+	"spread_kick_on_fire_air_hip" "0.750000"
+	"spread_kick_on_fire_stand_ads" "0"
+	"spread_kick_on_fire_crouch_ads" "0"
+	"spread_kick_on_fire_air_ads" "0"
+	"spread_max_kick_stand_ads" "0"
+	"spread_max_kick_crouch_ads" "0"
+	"spread_max_kick_air_ads" "0"
+	"viewkick_move_scale" "1.000000"
+	"viewkick_duck_scale" "1.000000"
+	"viewkick_air_scale_ads" "2.000000"
+	"bob_cycle_time" "0.400000"
+	"bob_vert_dist" "0.190000"
+	"bob_horz_dist" "0.100000"
+	"bob_max_speed" "165"
+	"bob_pitch" "0.750000"
+	"bob_yaw" "-1.700000"
+	"bob_roll" "1.200000"
+	"bob_cycle_time_zoomed" "0.400000"
+	"bob_vert_dist_zoomed" "0.018500"
+	"bob_horz_dist_zoomed" "0.040000"
+	"bob_max_speed_zoomed" "153"
+	"bob_yaw_zoomed" "-0.005000"
+	"bob_roll_zoomed" "0.125000"
+	"viewdrift_ads_delay" "1.200000"
+	"viewdrift_ads_delay_debounce_time" "0.600000"
+	"viewdrift_ads_speed_pitch" "0.400000"
+	"viewdrift_ads_speed_yaw" "0.400000"
+	"viewdrift_ads_stand_scale_pitch" "0.500000"
+	"viewdrift_ads_stand_scale_yaw" "0.400000"
+	"viewdrift_ads_crouch_scale_pitch" "0.300000"
+	"viewdrift_ads_crouch_scale_yaw" "0.250000"
+	"viewdrift_ads_air_scale_pitch" "0.600000"
+	"viewdrift_ads_air_scale_yaw" "0.650000"
+	"sway_rotate_attach" "SWAY_ROTATE"
+	"sway_min_x" "-0.500000"
+	"sway_min_y" "-0.500000"
+	"sway_min_z" "-0.600000"
+	"sway_max_x" "0.500000"
+	"sway_max_y" "0.500000"
+	"sway_max_z" "0.600000"
+	"sway_min_pitch" "-3"
+	"sway_min_yaw" "-2.500000"
+	"sway_min_roll" "-4"
+	"sway_max_pitch" "3"
+	"sway_max_yaw" "2.500000"
+	"sway_max_roll" "4"
+	"sway_translate_gain" "2.500000"
+	"sway_rotate_gain" "7"
+	"sway_move_forward_translate_x" "-0.100000"
+	"sway_move_forward_translate_z" "-0.500000"
+	"sway_move_back_translate_x" "0.200000"
+	"sway_move_back_translate_z" "-0.200000"
+	"sway_move_left_translate_y" "-1"
+	"sway_move_left_translate_z" "-0.500000"
+	"sway_move_left_rotate_roll" "-3.250000"
+	"sway_move_right_translate_y" "0.600000"
+	"sway_move_right_translate_z" "-0.350000"
+	"sway_move_right_rotate_roll" "4"
+	"sway_move_up_translate_z" "-1"
+	"sway_move_down_translate_z" "1"
+	"sway_turn_left_translate_y" "0.500000"
+	"sway_turn_left_rotate_yaw" "-2.500000"
+	"sway_turn_left_rotate_roll" "4"
+	"sway_turn_right_translate_y" "-0.500000"
+	"sway_turn_right_rotate_yaw" "3.000000"
+	"sway_turn_right_rotate_roll" "-4"
+	"sway_turn_up_translate_x" "0.100000"
+	"sway_turn_up_translate_z" "0.200000"
+	"sway_turn_up_rotate_pitch" "3"
+	"sway_turn_up_rotate_roll" "-0.800000"
+	"sway_turn_down_translate_x" "-0.100000"
+	"sway_turn_down_translate_z" "-0.200000"
+	"sway_turn_down_rotate_pitch" "-3"
+	"sway_turn_down_rotate_roll" "0.800000"
+	"sway_rotate_attach_zoomed" "SWAY_ROTATE_ZOOMED"
+	"sway_rotate_attach_blend_time_zoomed" "0.200000"
+	"sway_rotate_gain_zoomed" "5"
+	"sway_min_yaw_zoomed" "-0.047500"
+	"sway_max_yaw_zoomed" "0.047500"
+	"sway_turn_left_rotate_yaw_zoomed" "-0.085000"
+	"sway_turn_right_rotate_yaw_zoomed" "0.085000"
+	"sway_min_roll_zoomed" "-1"
+	"sway_max_roll_zoomed" "1"
+	"sway_turn_left_rotate_roll_zoomed" "-1"
+	"sway_turn_right_rotate_roll_zoomed" "1"
+	"sway_min_pitch_zoomed" "-0.006500"
+	"sway_max_pitch_zoomed" "0.008000"
+	"sway_turn_up_rotate_pitch_zoomed" "0.070000"
+	"sway_turn_down_rotate_pitch_zoomed" "-0.070000"
+	"sway_move_left_rotate_roll_zoomed" "-0.200000"
+	"sway_move_right_rotate_roll_zoomed" "0.200000"
+	"dof_nearDepthStart" "0.000000"
+	"dof_nearDepthEnd" "0.000000"
+	"fire_rumble" "rumble_marksman"
+	"trophy_system_ignores" "always"
+	"bodygroup1_name" "sight_front"
+	"bodygroup1_set" "1"
+	"bodygroup2_name" "sight_rear"
+	"bodygroup2_set" "1"
+	"active_optic_appearance" "__use_old__"
+	"bodygroup6_name" "sight_hcog_og"
+	"bodygroup6_set" "0"
+	"ui6_enable" "0"
+	"ui6_draw_cloaked" "1"
+	"bodygroup7_name" "sight_hcog"
+	"bodygroup7_set" "0"
+	"ui7_enable" "0"
+	"ui7_draw_cloaked" "1"
+	"bodygroup8_name" "sight_holo"
+	"bodygroup8_set" "0"
+	"ui8_enable" "0"
+	"ui8_draw_cloaked" "1"
+	"bodygroup9_name" "sight_holo_mag"
+	"bodygroup9_set" "0"
+	"ui9_enable" "0"
+	"ui9_draw_cloaked" "1"
+	"bodygroup16_name" "sight_acgs"
+	"bodygroup16_set" "0"
+	"ui16_enable" "0"
+	"ui16_draw_cloaked" "1"
+	"bodygroup17_name" "sight_aog"
+	"bodygroup17_set" "0"
+	"ui17_enable" "0"
+	"ui17_draw_cloaked" "1"
+	"projectile_ricochet_max_count" "0"
+	"bolt_bounce_frac" "0.440000"
+	"projectile_bounce_damage_reduction_scale" "0.500000"
+	"projectile_speed_reduction_factor" "0.720000"
+	"projectile_damages_owner" "0"
+	"ap_leghead_ratio_easy" "0.400000"
+	"ap_leghead_ratio_hard" "0.700000"
+	"ap_aim_accuracy_easy" "0.300000"
+	"ap_aim_accuracy_hard" "0.250000"
+	"ap_zoom_accuracy_easy" "0.000000"
+	"ap_zoom_accuracy_hard" "0.000000"
+	"ap_max_engage_range" "40.000000"
+	"ap_optimal_range" "25.000000"
+	"ap_zoom_allowed" "1"
+	"ap_min_burst" "0.100000"
+	"ap_max_burst" "0.100000"
+	"ap_rest_time_between_bursts_min" "0.200000"
+	"ap_rest_time_between_bursts_max" "0.500000"
+	"ap_min_close_range_burst" "0.100000"
+	"ap_max_close_range_burst" "0.100000"
+	"ap_max_range_for_close_burst" "500"
+
+	"Mods"
+	{
+
+		"crate"
+		{
+
+		}
+
+		"hopup_kinetic_loader"
+		{
+
+		}
+
+		"hopup_kinetic_choke"
+		{
+
+		}
+
+		"kinetic_choke"
+		{
+			"mod_activity_modifier" "fire_select"
+			"charge_time" "*0.36"
+
+		}
+
+		"hopup_smart_reload"
+		{
+
+		}
+
+		"fast_reload_mod"
+		{
+			"reload_time" "1.400000"
+
+		}
+
+		"overloaded_ammo"
+		{
+			"ammo_clip_size" "++2"
+
+		}
+
+		"hopup_energy_choke"
+		{
+
+		}
+
+		"choke"
+		{
+			"mod_activity_modifier" "fire_select"
+			"charge_time" "0.850000"
+			"charge_cooldown_time" "0.100000"
+			"charge_cooldown_delay" "0.100000"
+			"charge_levels" "4"
+			"charge_level_base" "1"
+			"rui_crosshair_index" "1"
+			"ui20_enable" "1"
+			"ui21_enable" "1"
+			"ui22_enable" "1"
+			"ui23_enable" "1"
+			"ui24_enable" "1"
+			"ui25_enable" "1"
+			"ui26_enable" "1"
+
+		}
+
+		"stock_sniper_l1"
+		{
+			"zoom_time_in" "*0.8"
+			"zoom_time_out" "*0.8"
+			"deploy_time" "*0.75"
+			"holster_time" "*0.75"
+			"raise_time" "*0.8"
+			"lower_time" "*0.8"
+			"viewdrift_ads_stand_scale_pitch" "*0.8"
+			"viewdrift_ads_stand_scale_yaw" "*0.8"
+			"viewdrift_ads_crouch_scale_pitch" "*0.8"
+			"viewdrift_ads_crouch_scale_yaw" "*0.8"
+			"viewdrift_ads_air_scale_pitch" "*0.8"
+			"viewdrift_ads_air_scale_yaw" "*0.8"
+			"viewdrift_ads_speed_pitch" "*0.9"
+			"viewdrift_ads_speed_yaw" "*0.9"
+			"reload_time" "*0.967"
+			"reload_time_late1" "*0.967"
+			"reload_time_late2" "*0.967"
+			"reload_time_late3" "*0.967"
+			"reload_time_late4" "*0.967"
+			"reload_time_late5" "*0.967"
+			"reloadempty_time" "*0.967"
+			"reloadempty_time_late1" "*0.967"
+			"reloadempty_time_late2" "*0.967"
+			"reloadempty_time_late3" "*0.967"
+			"reloadempty_time_late4" "*0.967"
+			"reloadempty_time_late5" "*0.967"
+
+		}
+
+		"stock_sniper_l2"
+		{
+			"zoom_time_in" "*0.75"
+			"zoom_time_out" "*0.75"
+			"deploy_time" "*0.7"
+			"holster_time" "*0.7"
+			"raise_time" "*0.75"
+			"lower_time" "*0.75"
+			"viewdrift_ads_stand_scale_pitch" "*0.6"
+			"viewdrift_ads_stand_scale_yaw" "*0.6"
+			"viewdrift_ads_crouch_scale_pitch" "*0.6"
+			"viewdrift_ads_crouch_scale_yaw" "*0.6"
+			"viewdrift_ads_air_scale_pitch" "*0.6"
+			"viewdrift_ads_air_scale_yaw" "*0.6"
+			"viewdrift_ads_speed_pitch" "*0.8"
+			"viewdrift_ads_speed_yaw" "*0.8"
+			"reload_time" "*0.933"
+			"reload_time_late1" "*0.933"
+			"reload_time_late2" "*0.933"
+			"reload_time_late3" "*0.933"
+			"reload_time_late4" "*0.933"
+			"reload_time_late5" "*0.933"
+			"reloadempty_time" "*0.933"
+			"reloadempty_time_late1" "*0.933"
+			"reloadempty_time_late2" "*0.933"
+			"reloadempty_time_late3" "*0.933"
+			"reloadempty_time_late4" "*0.933"
+			"reloadempty_time_late5" "*0.933"
+
+		}
+
+		"stock_sniper_l3"
+		{
+			"zoom_time_in" "*0.7"
+			"zoom_time_out" "*0.7"
+			"deploy_time" "*0.65"
+			"holster_time" "*0.65"
+			"raise_time" "*0.7"
+			"lower_time" "*0.7"
+			"viewdrift_ads_stand_scale_pitch" "*0.35"
+			"viewdrift_ads_stand_scale_yaw" "*0.35"
+			"viewdrift_ads_crouch_scale_pitch" "*0.35"
+			"viewdrift_ads_crouch_scale_yaw" "*0.35"
+			"viewdrift_ads_air_scale_pitch" "*0.35"
+			"viewdrift_ads_air_scale_yaw" "*0.35"
+			"viewdrift_ads_speed_pitch" "*0.75"
+			"viewdrift_ads_speed_yaw" "*0.75"
+			"reload_time" "*0.9"
+			"reload_time_late1" "*0.9"
+			"reload_time_late2" "*0.9"
+			"reload_time_late3" "*0.9"
+			"reload_time_late4" "*0.9"
+			"reload_time_late5" "*0.9"
+			"reloadempty_time" "*0.9"
+			"reloadempty_time_late1" "*0.9"
+			"reloadempty_time_late2" "*0.9"
+			"reloadempty_time_late3" "*0.9"
+			"reloadempty_time_late4" "*0.9"
+			"reloadempty_time_late5" "*0.9"
+
+		}
+
+		"optic_cq_hcog_classic"
+		{
+			"bodygroup3_set" "1"
+			"custom_int_0" "1"
+			"zoom_time_in" "0.290000"
+			"zoom_time_out" "0.250000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0"
+			"ads_fov_zoomfrac_end" "1"
+			"viewmodel_offset_zoom_frac_start" "0"
+			"viewmodel_offset_zoom_frac_end" "0.500000"
+			"zoom_fov" "60"
+			"bodygroup1_set" "0"
+			"bodygroup6_set" "1"
+			"ui1_enable" "0"
+			"ui6_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_HCOG_OG"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_HCOG_OG"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"viewmodel_offset_ads" "0 13 -0.15"
+			"dof_zoom_nearDepthStart" "1.000000"
+			"dof_zoom_nearDepthEnd" "8.500000"
+			"zoomed_convar_sensitivity_index" "0"
+
+		}
+
+		"optic_cq_hcog_bruiser"
+		{
+			"bodygroup3_set" "1"
+			"custom_int_0" "2"
+			"zoom_time_in" "0.290000"
+			"zoom_time_out" "0.250000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0.100000"
+			"ads_fov_zoomfrac_end" "0.800000"
+			"viewmodel_offset_zoom_frac_start" "0.100000"
+			"viewmodel_offset_zoom_frac_end" "0.600000"
+			"zoom_fov" "38.590698"
+			"bodygroup1_set" "0"
+			"bodygroup7_set" "1"
+			"ui1_enable" "0"
+			"ui7_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_HCOG"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_HCOG"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"viewmodel_offset_ads" "0 15.5 0"
+			"dof_zoom_nearDepthStart" "1.000000"
+			"dof_zoom_nearDepthEnd" "10.800000"
+			"zoomed_convar_sensitivity_index" "1"
+
+		}
+
+		"optic_cq_holosight"
+		{
+			"bodygroup3_set" "1"
+			"custom_int_0" "3"
+			"zoom_time_in" "0.290000"
+			"zoom_time_out" "0.250000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0"
+			"ads_fov_zoomfrac_end" "0.650000"
+			"viewmodel_offset_zoom_frac_start" "0"
+			"viewmodel_offset_zoom_frac_end" "0.650000"
+			"zoom_fov" "60"
+			"bodygroup1_set" "0"
+			"bodygroup8_set" "1"
+			"ui1_enable" "0"
+			"ui8_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_HOLO"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_HOLO"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"zoom_fov_viewmodel" "20.000000"
+			"viewmodel_offset_ads" "0 27.5 0"
+			"dof_zoom_nearDepthStart" "1.000000"
+			"dof_zoom_nearDepthEnd" "23.000000"
+			"zoomed_convar_sensitivity_index" "0"
+
+		}
+
+		"optic_cq_holosight_variable"
+		{
+			"bodygroup3_set" "1"
+			"custom_int_0" "4"
+			"zoom_time_in" "0.290000"
+			"zoom_time_out" "0.250000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0.100000"
+			"ads_fov_zoomfrac_end" "0.750000"
+			"viewmodel_offset_zoom_frac_start" "0.100000"
+			"viewmodel_offset_zoom_frac_end" "0.750000"
+			"zoom_fov" "60"
+			"zoom_toggle_fov" "38.590698"
+			"zoom_toggle_lerp_time" "0.100000"
+			"zoom_fov_viewmodel" "35"
+			"bodygroup1_set" "0"
+			"bodygroup9_set" "1"
+			"ui1_enable" "0"
+			"ui9_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_HOLOMAG"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_HOLOMAG"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"viewmodel_offset_ads" "0 14.5 0"
+			"dof_zoom_nearDepthStart" "1.000000"
+			"dof_zoom_nearDepthEnd" "7.000000"
+			"zoomed_convar_sensitivity_index" "0"
+			"zoomed_convar_toggle_sensitivity_index" "1"
+
+		}
+
+		"optic_ranged_hcog"
+		{
+			"bodygroup3_set" "1"
+			"custom_int_0" "5"
+			"zoom_time_in" "0.340000"
+			"zoom_time_out" "0.290000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0.100000"
+			"ads_fov_zoomfrac_end" "0.650000"
+			"viewmodel_offset_zoom_frac_start" "0.100000"
+			"viewmodel_offset_zoom_frac_end" "0.650000"
+			"zoom_fov" "26.275600"
+			"zoom_angle_shift_pitch" "0.150000"
+			"zoom_angle_shift_yaw" "0.300000"
+			"zoom_fov_viewmodel" "14"
+			"bodygroup1_set" "0"
+			"bodygroup16_set" "1"
+			"ui1_enable" "0"
+			"ui16_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_ACGS"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_ACGS"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"viewmodel_offset_ads" "0 22 0"
+			"dof_zoom_nearDepthStart" "1.250000"
+			"dof_zoom_nearDepthEnd" "18.000000"
+			"zoomed_convar_sensitivity_index" "2"
+
+		}
+
+		"optic_ranged_aog_variable"
+		{
+			"bodygroup3_set" "1"
+			"custom_int_0" "6"
+			"zoom_time_in" "0.360000"
+			"zoom_time_out" "0.300000"
+			"anim_alt_idleAttack" "1"
+			"ads_fov_zoomfrac_start" "0.100000"
+			"ads_fov_zoomfrac_end" "0.650000"
+			"viewmodel_offset_zoom_frac_start" "0.100000"
+			"viewmodel_offset_zoom_frac_end" "0.650000"
+			"zoom_fov" "38.590698"
+			"zoom_toggle_fov" "19.858299"
+			"zoom_toggle_lerp_time" "0.150000"
+			"zoom_angle_shift_pitch" "0.150000"
+			"zoom_angle_shift_yaw" "0.300000"
+			"bodygroup1_set" "0"
+			"bodygroup17_set" "1"
+			"ui1_enable" "0"
+			"ui17_enable" "1"
+			"mod_activity_modifier" "optic"
+			"viewmodel_offset_ads_by_centerpoint" "1"
+			"viewmodel_ads_rui_bottomleft_attachment" "RUI_BL_CROSSHAIR_AOG"
+			"viewmodel_ads_centerpoint_attachment" "ADS_CENTER_SIGHT_AOG"
+			"zoom_fov_viewmodel" "13.500000"
+			"viewmodel_offset_ads" "0 22.0 0"
+			"dof_zoom_nearDepthStart" "1.000000"
+			"dof_zoom_nearDepthEnd" "16.200001"
+			"zoomed_convar_sensitivity_index" "1"
+			"zoomed_convar_toggle_sensitivity_index" "3"
+
+		}
+
+		"energy_mag_l1"
+		{
+			"ammo_clip_size" "++1"
+
+		}
+
+		"energy_mag_l2"
+		{
+			"ammo_clip_size" "++2"
+
+		}
+
+		"energy_mag_l3"
+		{
+			"ammo_clip_size" "++4"
+
+		}
+
+		"energy_mag_l4"
+		{
+			"ammo_clip_size" "++4"
+
+		}
+
+		"amped_damage"
+		{
+			"projectile_trail_effect_0_1p" "P_tracer_proj_sniper_shield_breaker"
+			"projectile_trail_effect_0_3p" "P_tracer_proj_sniper_shield_breaker"
+			"sustained_laser_damage_scale" "*0.83333"
+			"damage_near_value" "*1.2"
+			"damage_far_value" "*1.2"
+			"damage_very_far_value" "*1.2"
+			"damage_near_value_titanarmor" "*1.2"
+			"damage_far_value_titanarmor" "*1.2"
+			"damage_very_far_value_titanarmor" "*1.2"
+			"impact_effect_table" "hammer_point_bullet"
+
+		}
+
+		"elevator_shooter"
+		{
+			"viewkick_air_scale_ads" "*0.7"
+			"spread_air_hip" "*0.7"
+			"spread_air_hip_moving" "*0.7"
+			"spread_max_kick_air_hip" "*0.8"
+			"spread_air_ads" "*0.7"
+			"spread_air_ads_moving" "*0.7"
+
+		}
+
+		"auto_loader"
+		{
+			"reload_time" "*0.60"
+			"reload_time_late1" "*0.60"
+			"reload_time_late2" "*0.60"
+			"reload_time_late3" "*0.60"
+			"reload_time_late4" "*0.60"
+			"reload_time_late5" "*0.60"
+			"reloadempty_time" "*0.60"
+			"reloadempty_time_late1" "*0.60"
+			"reloadempty_time_late2" "*0.60"
+			"reloadempty_time_late3" "*0.60"
+			"reloadempty_time_late4" "*0.60"
+			"reloadempty_time_late5" "*0.60"
+
+		}
+		"stock_sniper_l4"
+		{
+			"zoom_time_in" "*0.7"
+			"zoom_time_out" "*0.7"
+			"deploy_time" "*0.65"
+			"holster_time" "*0.65"
+			"raise_time" "*0.7"
+			"lower_time" "*0.7"
+			"viewdrift_ads_stand_scale_pitch" "*0.35"
+			"viewdrift_ads_stand_scale_yaw" "*0.35"
+			"viewdrift_ads_crouch_scale_pitch" "*0.35"
+			"viewdrift_ads_crouch_scale_yaw" "*0.35"
+			"viewdrift_ads_air_scale_pitch" "*0.35"
+			"viewdrift_ads_air_scale_yaw" "*0.35"
+			"viewdrift_ads_speed_pitch" "*0.75"
+			"viewdrift_ads_speed_yaw" "*0.75"
+			"reload_time" "*0.9"
+			"reload_time_late1" "*0.9"
+			"reload_time_late2" "*0.9"
+			"reload_time_late3" "*0.9"
+			"reload_time_late4" "*0.9"
+			"reload_time_late5" "*0.9"
+			"reloadempty_time" "*0.9"
+			"reloadempty_time_late1" "*0.9"
+			"reloadempty_time_late2" "*0.9"
+			"reloadempty_time_late3" "*0.9"
+			"reloadempty_time_late4" "*0.9"
+			"reloadempty_time_late5" "*0.9"
+			"move_speed_modifier" "1.150000"
+		}
+		"hopup_ultimate_accelerator"
+		{
+
+		}
+
+		"corrupted_mag"
+		{
+			"ammo_clip_size" "++6"
+			"ammo_stockpile_max" "++12"
+			"reload_time" "*1.35"
+			"reload_time_late1" "*1.35"
+			"reload_time_late2" "*1.35"
+			"reload_time_late3" "*1.35"
+			"reload_time_late4" "*1.35"
+			"reload_time_late5" "*1.35"
+			"reloadempty_time" "*1.35"
+			"reloadempty_time_late1" "*1.35"
+			"reloadempty_time_late2" "*1.35"
+			"reloadempty_time_late3" "*1.35"
+			"reloadempty_time_late4" "*1.35"
+			"reloadempty_time_late5" "*1.35"
+			"reloadsegment_time_loop" "*1.35"
+			"reloadsegment_time_end" "*1.35"
+			"reloadsegmentempty_time_end" "*1.35"
+
+		}
+
+		"corrupted_stock_sniper"
+		{
+			"zoom_time_in" "*0.8"
+			"zoom_time_out" "*0.8"
+			"deploy_time" "*0.75"
+			"holster_time" "*0.75"
+			"raise_time" "*0.8"
+			"lower_time" "*0.8"
+			"viewdrift_ads_stand_scale_pitch" "*0.2"
+			"viewdrift_ads_stand_scale_yaw" "*0.2"
+			"viewdrift_ads_crouch_scale_pitch" "*0.2"
+			"viewdrift_ads_crouch_scale_yaw" "*0.2"
+			"viewdrift_ads_air_scale_pitch" "*0.2"
+			"viewdrift_ads_air_scale_yaw" "*0.2"
+			"viewdrift_ads_speed_pitch" "*0.8"
+			"viewdrift_ads_speed_yaw" "*0.8"
+			"reload_time" "*0.9"
+			"reload_time_late1" "*0.9"
+			"reload_time_late2" "*0.9"
+			"reload_time_late3" "*0.9"
+			"reload_time_late4" "*0.9"
+			"reload_time_late5" "*0.9"
+			"reloadempty_time" "*0.9"
+			"reloadempty_time_late1" "*0.9"
+			"reloadempty_time_late2" "*0.9"
+			"reloadempty_time_late3" "*0.9"
+			"reloadempty_time_late4" "*0.9"
+			"reloadempty_time_late5" "*0.9"
+			"reloadsegment_time_loop" "*0.8"
+			"reloadsegment_time_end" "*0.8"
+			"reloadsegmentempty_time_end" "*0.8"
+			"fire_rate" "*1.2"
+			"rechamber_time" "*0.8"
+			"charge_time" "*0.8"
+			"charge_cooldown_delay" "*0.8"
+			"charge_cooldown_time" "*0.8"
+			"charge_cooldown_time_post_fire" "*0.8"
+			"ammo_clip_size" "*0.8"
+
+		}
+
+	}
+
+	"UiData1"
+	{
+		"ui" "ui/tripletake_reticle"
+		"mesh" "models/weapons/attachments/doubletake_rui_upper"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData2"
+	{
+		"ui" "ui/tripletake_ammo_counter"
+		"mesh" "models/weapons/attachments/doubletake_rui_lower"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"scopeADS" "eWeaponVar.custom_float_0"
+
+		}
+	}
+
+	"UiData20"
+	{
+		"ui" "ui/hopup_sights_tripletake"
+		"mesh" "models/weapons/attachments/hopup_sights"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"charge" "player_chargeFrac"
+			"chargeEnabled" "eWeaponVar.custom_int_0"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData21"
+	{
+		"ui" "ui/hopup_sights_tripletake_hcog_classic"
+		"mesh" "models/weapons/attachments/hopup_sights_hcog_classic"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"charge" "player_chargeFrac"
+			"chargeEnabled" "eWeaponVar.custom_int_0"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData22"
+	{
+		"ui" "ui/hopup_sights_tripletake_hcog_bruiser"
+		"mesh" "models/weapons/attachments/hopup_sights_hcog_bruiser"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"charge" "player_chargeFrac"
+			"chargeEnabled" "eWeaponVar.custom_int_0"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData23"
+	{
+		"ui" "ui/hopup_sights_tripletake_holo"
+		"mesh" "models/weapons/attachments/hopup_sights_holosight"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"charge" "player_chargeFrac"
+			"chargeEnabled" "eWeaponVar.custom_int_0"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData24"
+	{
+		"ui" "ui/hopup_sights_tripletake_holo_variable"
+		"mesh" "models/weapons/attachments/hopup_sights_holosight_variable"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"charge" "player_chargeFrac"
+			"chargeEnabled" "eWeaponVar.custom_int_0"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData25"
+	{
+		"ui" "ui/hopup_sights_tripletake_hcog_ranged"
+		"mesh" "models/weapons/attachments/hopup_sights_hcog_ranged"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"charge" "player_chargeFrac"
+			"chargeEnabled" "eWeaponVar.custom_int_0"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData26"
+	{
+		"ui" "ui/hopup_sights_tripletake_aog_variable"
+		"mesh" "models/weapons/attachments/hopup_sights_aog_variable"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"charge" "player_chargeFrac"
+			"chargeEnabled" "eWeaponVar.custom_int_0"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"RUI_CrosshairData"
+	{
+
+		"DefaultArgs"
+		{
+			"adjustedSpread" "weapon_spread"
+			"adsFrac" "player_zoomFrac"
+			"isSprinting" "player_is_sprinting"
+			"isReloading" "weapon_is_reloading"
+			"teamColor" "crosshair_team_color"
+			"isAmped" "weapon_is_amped"
+			"crosshairMovementX" "crosshair_movement_x"
+			"crosshairMovementY" "crosshair_movement_y"
+
+		}
+
+		"Crosshair_1"
+		{
+			"ui" "ui/crosshair_alternator"
+			"base_spread" "0.000000"
+
+			"Args"
+			{
+				"charge" "player_chargeFrac"
+				"playerFov" "player_fov"
+
+			}
+		}
+
+		"Crosshair_Hopup"
+		{
+			"ui" "ui/crosshair_alternator_charged"
+			"base_spread" "0.000000"
+
+			"Args"
+			{
+				"charge" "player_chargeFrac"
+				"playerFov" "player_fov"
+
+			}
+		}
+	}
+
+	"UiData6"
+	{
+		"ui" "ui/hcog_classic_sights"
+		"mesh" "models/weapons/attachments/hcog_classic_sights"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData7"
+	{
+		"ui" "ui/hcog_upper"
+		"mesh" "models/weapons/attachments/hcog2_rui_upper"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData8"
+	{
+		"ui" "ui/holo_sights"
+		"mesh" "models/weapons/attachments/holo_rui_upper"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"clipCount" "weapon_ammoClipCount"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData9"
+	{
+		"ui" "ui/holo_variable_sights"
+		"mesh" "models/weapons/attachments/holo_variable_sights"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"zoomFOV" "weapon_zoom_fov"
+			"centerOffset" "weapon_ads_center_offset"
+
+		}
+	}
+
+	"UiData16"
+	{
+		"ui" "ui/hcog_ranged_sights"
+		"mesh" "models/weapons/attachments/acgs_rui_upper"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"zoomFOV" "weapon_zoom_fov"
+			"centerOffset" "weapon_ads_center_offset"
+			"varSightOffsets" "variable_sights_offsets"
+			"sniperZeroDistance" "weapon_sniper_range_dot_distance"
+			"boltZeroDistance" "eWeaponVar.bolt_zero_distance"
+
+		}
+	}
+
+	"UiData17"
+	{
+		"ui" "ui/aog_variable_sights"
+		"mesh" "models/weapons/attachments/aog_variable_sights"
+
+		"Args"
+		{
+			"vis" "player_zoomfrac"
+			"ammo" "weapon_ammo"
+			"clipSize" "weapon_clipSize"
+			"zoomFOV" "weapon_zoom_fov"
+			"centerOffset" "weapon_ads_center_offset"
+			"varSightOffsets" "variable_sights_offsets"
+			"sniperZeroDistance" "weapon_sniper_range_dot_distance"
+			"boltZeroDistance" "eWeaponVar.bolt_zero_distance"
+
+		}
+	}
+}

@@ -1,0 +1,88 @@
+global function ShPassiveKnockAdrenaline_Init
+
+const bool ADRENALINE_HAS_FAST_RELOAD = false
+const float ADRENALINE_BOOST_DURATION = 5.0
+
+#if SERVER
+struct AdrenalineStatusEffectIndexes
+{
+	int speedBoostID
+	int adrenalineVisualsID
+}
+
+struct
+{
+		table<entity, AdrenalineStatusEffectIndexes> playerStatusEffects
+} file
+#endif
+
+void function ShPassiveKnockAdrenaline_Init()
+{
+	#if SERVER
+		Bleedout_AddCallback_OnPlayerStartBleedout( KnockAdrenaline_TryApply )
+	#endif
+}
+
+
+
+#if SERVER
+void function KnockAdrenaline_TryApply( entity victim, entity attacker, var damageInfo )
+{
+	if ( !IsValid( victim ) )
+		return
+	if ( !IsValid( attacker ) )
+		return
+	if ( !attacker.IsPlayer() || !IsAlive( attacker ) || Bleedout_IsBleedingOut( attacker ) )
+		return
+
+	if( !attacker.HasPassive( ePassives.PAS_KNOCK_ADRENALINE ) )
+		return
+
+	if( !( attacker in file.playerStatusEffects) )
+	{
+		AdrenalineStatusEffectIndexes statusEffectIndexes
+		file.playerStatusEffects[ attacker ] <- statusEffectIndexes
+	}
+
+	// no need to check both status effect, since he should never have one without the other.
+	if ( StatusEffect_GetTimeRemaining( attacker, eStatusEffect.speed_boost ) > 0 )
+	{
+		StatusEffect_SetDuration( attacker, file.playerStatusEffects[ attacker ].adrenalineVisualsID, ADRENALINE_BOOST_DURATION )
+		StatusEffect_SetDuration( attacker, file.playerStatusEffects[ attacker ].speedBoostID, ADRENALINE_BOOST_DURATION )
+	}
+	else
+	{
+		file.playerStatusEffects[ attacker ].adrenalineVisualsID = StatusEffect_AddTimed( attacker, eStatusEffect.adrenaline_visuals, 1, ADRENALINE_BOOST_DURATION, ADRENALINE_BOOST_DURATION )
+		file.playerStatusEffects[ attacker ].speedBoostID = StatusEffect_AddTimed( attacker, eStatusEffect.speed_boost, 0.15, ADRENALINE_BOOST_DURATION, 0.25 )
+	}
+
+	if ( ADRENALINE_HAS_FAST_RELOAD )
+		thread FastReload_Thread( attacker, ADRENALINE_BOOST_DURATION )
+}
+
+void function FastReload_Thread( entity player, float duration )
+{
+	array<entity> primaryWeapons = SURVIVAL_GetPrimaryWeapons( player )
+	OnThreadEnd(
+		function() : ( player, primaryWeapons )
+		{
+			foreach ( weapon in primaryWeapons )
+			{
+				if ( !IsValid( weapon ) || !IsValid( player ) || DoesPlayerHaveAutoLoaderBuff( player ) )
+					break
+
+				if ( weapon.HasMod( "auto_loader" ) )
+					weapon.RemoveMod( "auto_loader" )
+			}
+		}
+	)
+	foreach ( weapon in primaryWeapons )
+	{
+		if ( !IsValid( weapon ) )
+			break
+		if ( !weapon.HasMod( "auto_loader" ) )
+			weapon.AddMod( "auto_loader" )
+	}
+	wait duration
+}
+#endif

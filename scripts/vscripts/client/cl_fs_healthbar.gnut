@@ -1,0 +1,360 @@
+untyped
+
+global function FS_HealthBar_Init
+global function FS_HealthBar_SetEnabled
+
+const float FS_HEALTHBAR_HIDE_DELAY = 1.4
+const int FS_HEALTHBAR_BASE_HEIGHT = 280
+const float FS_HEALTHBAR_Z_OFFSET = 80.0
+const float FS_HEALTHBAR_RIGHT_OFFSET = 20.0
+
+struct
+{
+	bool inited = false
+	bool enabled = false
+	bool createFailed = false
+	table<entity, entity> healthBars
+	table<entity, float> onPlayerDamagedTimes
+	table<entity, float> occludedTimes
+} file
+
+void function FS_HealthBar_Init()
+{
+	if ( file.inited )
+		return
+	file.inited = true
+
+	RegisterSignal( "StopShowingHealthbars" )
+
+	AddCreateCallback( "player", FS_HealthBar_StartForPlayer )
+	AddDestroyCallback( "player", FS_HealthBar_Destroy )
+	AddLocalPlayerDidDamageCallback( FS_HealthBar_OnLocalPlayerDidDamage )
+	printt( "[FSHealthBar] init" )
+
+	if ( file.enabled )
+		FS_HealthBar_StartAll()
+}
+
+void function FS_HealthBar_SetEnabled( bool enabled )
+{
+	if ( file.enabled == enabled )
+		return
+
+	file.enabled = enabled
+	printt( format( "[FSHealthBar] enabled=%s", string( enabled ) ) )
+
+	if ( !file.inited )
+		return
+
+	if ( enabled )
+		FS_HealthBar_StartAll()
+	else
+		FS_HealthBar_DestroyAll()
+}
+
+void function FS_HealthBar_StartAll()
+{
+	if ( IsLobby() )
+		return
+
+	array<entity> players = GetPlayerArray()
+	foreach ( entity player in players )
+		FS_HealthBar_StartForPlayer( player )
+}
+
+void function FS_HealthBar_DestroyAll()
+{
+	array<entity> keys
+	foreach ( entity player, entity vgui in file.healthBars )
+		keys.append( player )
+
+	foreach ( entity player in keys )
+		FS_HealthBar_Destroy( player )
+}
+
+void function FS_HealthBar_OnLocalPlayerDidDamage( entity attacker, entity victim, vector damagePosition, int damageType, float damageAmount )
+{
+	if ( !file.enabled )
+		return
+	if ( !IsValid( victim ) || !victim.IsPlayer() )
+		return
+
+	if ( victim in file.onPlayerDamagedTimes )
+		file.onPlayerDamagedTimes[victim] = Time()
+	else
+		file.onPlayerDamagedTimes[victim] <- Time()
+}
+
+void function FS_HealthBar_StartForPlayer( entity player )
+{
+	if ( !file.enabled || file.createFailed )
+		return
+	if ( IsLobby() )
+		return
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	entity localPlayer = GetLocalClientPlayer()
+	if ( !IsValid( localPlayer ) || player == localPlayer )
+		return
+
+	if ( !( player in file.healthBars ) || !IsValid( file.healthBars[player] ) )
+	{
+		entity vgui = FS_HealthBar_CreateScreen( player )
+		if ( !IsValid( vgui ) )
+			return
+		file.healthBars[player] <- vgui
+	}
+
+	if ( !( player in file.onPlayerDamagedTimes ) )
+		file.onPlayerDamagedTimes[player] <- 0.0
+
+	player.EnableHealthChangedCallback()
+	FS_HealthBar_Bind( player, file.healthBars[player] )
+}
+
+void function FS_HealthBar_Bind( entity player, entity vgui )
+{
+	if ( !IsValid( player ) || !IsValid( vgui ) )
+		return
+
+	vgui.SetParent( player )
+	thread FS_HealthBar_Think( player, vgui )
+	thread FS_HealthBar_UpdateAngles( player, vgui )
+}
+
+entity function FS_HealthBar_CreateScreen( entity player )
+{
+	if ( file.createFailed )
+		return null
+
+	vector origin = <0, 0, 0>
+	if ( IsValid( player ) && IsValid( GetLocalViewPlayer() ) )
+		origin = player.GetOrigin() + AnglesToUp( player.GetAngles() ) * FS_HEALTHBAR_Z_OFFSET + AnglesToRight( GetLocalViewPlayer().CameraAngles() ) * FS_HEALTHBAR_RIGHT_OFFSET
+
+	entity vgui = null
+	try
+	{
+		vgui = CreateClientsideVGuiScreen( "flowstate_health_bar", VGUI_SCREEN_PASS_WORLD, origin, <0, 0, 0>, 3, 45 )
+	}
+	catch ( errCreate )
+	{
+		file.createFailed = true
+		printt( format( "[FSHealthBar] CreateClientsideVGuiScreen failed: %s", string( errCreate ) ) )
+		return null
+	}
+
+	if ( !IsValid( vgui ) )
+	{
+		file.createFailed = true
+		printt( "[FSHealthBar] CreateClientsideVGuiScreen returned null for flowstate_health_bar" )
+		return null
+	}
+
+	if ( IsValid( player ) )
+		vgui.SetParent( player )
+
+	return vgui
+}
+
+var function FS_HealthBar_HudElem( entity vgui, string name )
+{
+	if ( !IsValid( vgui ) )
+		return null
+
+	try
+	{
+		return HudElement( name, vgui.GetPanel() )
+	}
+	catch ( errHud )
+	{
+		printt( format( "[FSHealthBar] missing HUD element '%s': %s", name, string( errHud ) ) )
+		return null
+	}
+}
+
+void function FS_HealthBar_UpdateAngles( entity player, entity vgui )
+{
+	EndSignal( player, "OnDestroy" )
+	EndSignal( player, "StopShowingHealthbars" )
+
+	while ( true )
+	{
+		WaitFrame()
+
+		if ( !IsValid( player ) )
+			break
+
+		if ( !IsValid( vgui ) )
+		{
+			if ( file.createFailed )
+				break
+			vgui = FS_HealthBar_CreateScreen( player )
+			if ( !IsValid( vgui ) )
+				break
+			file.healthBars[player] <- vgui
+		}
+
+		entity viewPlayer = GetLocalViewPlayer()
+		if ( !IsValid( viewPlayer ) )
+			continue
+
+		vector closestPoint = GetClosestPointOnLine( viewPlayer.CameraPosition(), viewPlayer.CameraPosition() + ( AnglesToRight( viewPlayer.CameraAngles() ) * 100.0 ), vgui.GetOrigin() )
+		vector angles = VectorToAngles( vgui.GetOrigin() - closestPoint )
+		vgui.SetAngles( < -90, angles.y, 0 > )
+		vgui.SetOrigin( player.GetOrigin() + AnglesToUp( player.GetAngles() ) * FS_HEALTHBAR_Z_OFFSET + AnglesToRight( viewPlayer.CameraAngles() ) * FS_HEALTHBAR_RIGHT_OFFSET )
+	}
+}
+
+void function FS_HealthBar_Think( entity player, entity vgui )
+{
+	EndSignal( player, "OnDestroy" )
+	EndSignal( player, "StopShowingHealthbars" )
+
+	var foreground = null
+	var background = null
+	array<var> shields
+
+	while ( true )
+	{
+		WaitFrame()
+
+		if ( !IsValid( player ) )
+			break
+
+		if ( !IsValid( vgui ) )
+		{
+			if ( file.createFailed )
+				break
+			vgui = FS_HealthBar_CreateScreen( player )
+			if ( !IsValid( vgui ) )
+				break
+			file.healthBars[player] <- vgui
+			foreground = null
+			background = null
+			shields.clear()
+		}
+
+		if ( foreground == null )
+		{
+			foreground = FS_HealthBar_HudElem( vgui, "HealthBar_Foreground" )
+			background = FS_HealthBar_HudElem( vgui, "HealthBar_Background" )
+			if ( foreground == null || background == null )
+			{
+				foreground = null
+				continue
+			}
+
+			Hud_SetPos( foreground, 0, 0 )
+			Hud_SetPos( background, 0, 0 )
+
+			shields.clear()
+			for ( int i = 0; i < 5; i++ )
+			{
+				var shieldElem = FS_HealthBar_HudElem( vgui, "ShieldsHealthBar_Foreground" + i )
+				if ( shieldElem == null )
+					continue
+				Hud_SetPos( shieldElem, 100, 0 )
+				Hud_SetVisible( shieldElem, false )
+				shields.append( shieldElem )
+			}
+		}
+
+		bool hide = false
+		if ( !( player in file.onPlayerDamagedTimes ) || Time() - file.onPlayerDamagedTimes[player] > FS_HEALTHBAR_HIDE_DELAY )
+			hide = true
+		else if ( !IsAlive( player ) )
+			hide = true
+		else if ( !IsValid( GetLocalViewPlayer() ) || !player.DoesShareRealms( GetLocalViewPlayer() ) )
+			hide = true
+		else if ( player == GetLocalViewPlayer() )
+			hide = true
+		else if ( GetGameState() != eGameState.Playing )
+			hide = true
+		else if ( Flowstate_IsGame1v1Type() )
+		{
+			entity localPlayer = GetLocalClientPlayer()
+			entity enemy = null
+			if ( IsValid( localPlayer ) )
+				enemy = localPlayer.GetPlayerNetEnt( "FSDM_1v1_Enemy" )
+			if ( player != enemy )
+				hide = true
+		}
+		else if ( IsValid( GetLocalClientPlayer() ) && player.GetTeam() == GetLocalClientPlayer().GetTeam() )
+			hide = true
+
+		if ( !hide && Flowstate_IsGame1v1Type() )
+		{
+			if ( DamageHealthBar_IsTargetInSight( GetLocalViewPlayer(), player ) )
+			{
+				file.occludedTimes[player] <- -1.0
+			}
+			else
+			{
+				if ( !( player in file.occludedTimes ) || file.occludedTimes[player] < 0.0 )
+					file.occludedTimes[player] <- Time()
+				if ( Time() - file.occludedTimes[player] >= DamageHealthBar_GetLosHideDelay() )
+					hide = true
+			}
+		}
+
+		if ( hide )
+		{
+			Hud_SetVisible( foreground, false )
+			Hud_SetVisible( background, false )
+			foreach ( var shieldElem in shields )
+				Hud_SetVisible( shieldElem, false )
+			continue
+		}
+
+		int shieldTier = EquipmentSlot_GetEquipmentTier( player, "armor" ) - 1
+		bool shouldShowArmor = shieldTier >= 0 && shieldTier < shields.len()
+
+		for ( int i = 0; i < shields.len(); i++ )
+			Hud_SetVisible( shields[i], shouldShowArmor && i == shieldTier )
+
+		Hud_SetVisible( foreground, true )
+		Hud_SetVisible( background, true )
+
+		int maxHealth = player.GetMaxHealth()
+		if ( maxHealth > 0 )
+			Hud_SetHeight( foreground, int( float( player.GetHealth() * FS_HEALTHBAR_BASE_HEIGHT ) / float( maxHealth ) ) )
+
+		int maxShield = player.GetShieldHealthMax()
+		int shieldHeight = 0
+		if ( maxShield > 0 )
+			shieldHeight = int( float( player.GetShieldHealth() * FS_HEALTHBAR_BASE_HEIGHT ) / float( maxShield ) )
+
+		foreach ( var shieldElem in shields )
+			Hud_SetHeight( shieldElem, shieldHeight )
+	}
+}
+
+void function FS_HealthBar_Destroy( entity player )
+{
+	if ( !IsValid( player ) )
+	{
+		if ( player in file.healthBars )
+			delete file.healthBars[player]
+		if ( player in file.onPlayerDamagedTimes )
+			delete file.onPlayerDamagedTimes[player]
+		if ( player in file.occludedTimes )
+			delete file.occludedTimes[player]
+		return
+	}
+
+	if ( !( player in file.healthBars ) )
+		return
+
+	player.Signal( "StopShowingHealthbars" )
+
+	if ( IsValid( file.healthBars[player] ) )
+		file.healthBars[player].Destroy()
+
+	delete file.healthBars[player]
+
+	if ( player in file.onPlayerDamagedTimes )
+		delete file.onPlayerDamagedTimes[player]
+	if ( player in file.occludedTimes )
+		delete file.occludedTimes[player]
+}

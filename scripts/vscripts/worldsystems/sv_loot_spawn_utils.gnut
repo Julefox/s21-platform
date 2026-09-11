@@ -1,0 +1,201 @@
+globalize_all_functions
+
+global struct LootObject
+{
+	vector origin
+	entity ent
+	array<string> refs
+	bool isLootBin
+}
+
+global struct LootArea
+{
+	string label
+	vector position
+	float radius
+	vector color
+	array< LootObject > lootObjects
+}
+
+struct
+{
+	array < LootObject > allLootObjects = []
+}file
+
+////////////////
+// GETTERS /////
+////////////////
+
+array < LootObject > function Internal_GetLootObjects()
+{
+	if ( file.allLootObjects.len() == 0 )
+	{
+		array<entity> lootEnts = []
+		lootEnts.extend( GetEntArrayByClass_Expensive( "prop_survival" ) )
+		lootEnts.extend( GetAllLootBins() )
+		foreach ( entity ent in lootEnts )
+		{
+			file.allLootObjects.append( DEV_LootSpawn_CreateLootObject( ent ) )
+		}
+	}
+	return file.allLootObjects
+}
+
+///////////////
+// CONSTRUCTORS
+///////////////
+
+LootArea function DEV_LootSpawn_CreateLootArea ( vector point, float radius = 4000, string label = "LOOT_AREA", vector color = < 0, 255, 0 > )
+{
+	LootArea lootArea
+	lootArea.position = point
+	lootArea.radius = radius
+	lootArea.label = label
+	lootArea.color = color
+	return lootArea
+}
+
+LootObject function DEV_LootSpawn_CreateLootObject ( entity ent )
+{
+	// initialize LootObject
+	LootObject lootObj
+	lootObj.origin = ent.GetOrigin()
+	lootObj.ent = ent
+
+	if ( ent.GetScriptName() == LOOT_BIN_SCRIPTNAME ) // ent is a loot bin, contains several refs
+	{
+		lootObj.isLootBin = true
+		foreach ( LootRef binRef in LootBin_GetLootRefs( ent, true, true ) )
+		{
+			lootObj.refs.append( binRef.lootData.ref )
+		}
+	}
+	else // ent is just normal ground loot
+	{
+		lootObj.isLootBin = false
+		lootObj.refs.append( SURVIVAL_Loot_GetLootDataByIndex( ent.GetSurvivalInt() ).ref )
+	}
+
+	return lootObj
+}
+
+///////////
+// GET LOOT
+///////////
+
+array< LootObject > function DEV_LootSpawn_GetLootObjectsForLootArea ( LootArea lootArea, array< LootObject > lootInputs = [] )
+{
+	array< LootObject > lootObjects
+
+	// get list of loot to consider
+	array<LootObject> allLootObjects = []
+	if ( lootInputs.len() == 0 )
+		allLootObjects.extend( Internal_GetLootObjects() )
+	else
+		allLootObjects.extend( lootObjects )
+
+	// Assign ground loot entities to areas
+	foreach ( LootObject obj in allLootObjects )
+	{
+		// skip if outside radius
+		if( ! ( Distance( obj.origin, lootArea.position ) <= lootArea.radius ) )
+			continue
+
+		lootObjects.append( obj )
+	}
+
+	return lootObjects
+}
+
+array < LootObject > function DEV_LootSpawn_GetOverlappingLootObjects ( LootArea areaA, LootArea areaB )
+{
+	array < LootObject > overlappingLoot = []
+	foreach ( LootObject object in areaA.lootObjects )
+	{
+		if ( areaB.lootObjects.contains( object ) )
+			overlappingLoot.append( object )
+	}
+	return overlappingLoot
+}
+
+/////////////
+// DEBUG DRAW
+/////////////
+
+void function DEV_LootSpawn_DebugDrawLootArea( LootArea lootArea, array< LootObject > excludedObjects = [] )
+{
+	//DebugDrawCircle( lootArea.position, <0,0,0>, lootArea.radius, lootArea.color, false, 999, 12 )
+	//DebugDrawText( lootArea.position, lootArea.label, false, 999 )
+	DEV_LootSpawn_DebugDrawLootObjects( lootArea.lootObjects, lootArea.color, excludedObjects )
+}
+
+void function DEV_LootSpawn_DebugDrawLootObjects( array< LootObject > lootObjects, vector color, array< LootObject > excludedObjects = [] )
+{
+	foreach ( LootObject lootObj in lootObjects )
+	{
+		if ( excludedObjects.contains( lootObj ) )
+			continue
+
+		//DebugDrawCircle( lootObj.origin, <0,0,0>, 100, color, false, 999, 6 )
+	}
+}
+
+/////////
+// PRINTS
+/////////
+
+void function DEV_LootSpawn_PrintLootAreas ( array< LootArea > lootAreas, void functionref(string) myPrint, array < LootObject > excludedObjects = [] )
+{
+	myPrint( "PRINTING LOOT AROUND POINTS" )
+	foreach ( LootArea lootArea in lootAreas)
+	{
+		myPrint( "Loot counts for " + lootArea.label + ":" )
+		DEV_LootSpawn_PrintLootObjects( lootArea.lootObjects, myPrint, excludedObjects )
+		myPrint( "\t" + "Total Loot :" + lootArea.lootObjects.len() )
+	}
+}
+
+void function DEV_LootSpawn_PrintLootObjects ( array< LootObject > lootObjects, void functionref(string) myPrint, array < LootObject > excludedObjects = [] )
+{
+	table < string, int > refCountMap = {}
+	array < string > refs = []
+	int totalLoot = 0
+
+	// Get all refs
+	foreach ( LootObject lootObj in lootObjects )
+	{
+		if ( excludedObjects.contains( lootObj ) )
+			continue
+
+		foreach( string ref in lootObj.refs )
+		{
+			if ( !refs.contains( ref ) )
+				refs.append( ref )
+			if ( ! (ref in refCountMap ) )
+				refCountMap[ref] <- 1
+			else
+				refCountMap[ref]++
+			totalLoot++
+		}
+	}
+
+	// alphabetize refs and print list
+	refs.sort( SortStringAlphabetize )
+	foreach ( string ref in refs )
+	{
+		myPrint( "\t" + refCountMap[ref] + " : " + ref )
+	}
+}
+
+////////////////////
+// SORTING FUNCTIONS
+////////////////////
+
+int function LootAreaCompareMostLootToLeast ( LootArea a, LootArea b )
+{
+	if ( a.lootObjects.len() > b.lootObjects.len() )
+		return 1
+	if ( a.lootObjects.len() < b.lootObjects.len() )
+		return -1
+	return 0
+}

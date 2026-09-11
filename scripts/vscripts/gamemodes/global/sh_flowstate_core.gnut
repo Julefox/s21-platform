@@ -1,0 +1,271 @@
+// Flowstate capability framework for S21 bridge custom modes.
+// String playlist / RegisterGamemode only — no R5V ePlaylists enums.
+// Master plan: RE/FLOWSTATE_S21_PORT_FRAMEWORK_SPEC.md
+
+global function FS_Core_SharedInit
+global function FS_IsFlowstatePlaylist
+global function FS_IsActiveMode
+global function FS_HasCap
+global function FS_GetCaps
+global function FS_NeverEliminate
+
+// Capability bits (OR together)
+global const int FS_CAP_DUEL_REALMS           = 0x0001
+global const int FS_CAP_DUEL_QUEUE            = 0x0002
+global const int FS_CAP_NO_BR_DEATH_SCREEN    = 0x0004
+global const int FS_CAP_NO_ELIMINATION        = 0x0008
+global const int FS_CAP_NO_SPECTATOR_THREAD   = 0x0010
+global const int FS_CAP_SURVIVAL_INVENTORY_UI = 0x0020
+global const int FS_CAP_CUSTOM_SCOREBOARD     = 0x0040
+global const int FS_CAP_NO_FLINCH             = 0x0080
+global const int FS_CAP_REST_ROOM             = 0x0100
+global const int FS_CAP_IBMM                  = 0x0200
+global const int FS_CAP_FORCE_PLAYING_SHELL   = 0x0400
+
+// Duel family preset: 1v1 / lgduels / vamp / headshots / coaching
+global const int FS_PRESET_DUEL =
+	FS_CAP_DUEL_REALMS |
+	FS_CAP_DUEL_QUEUE |
+	FS_CAP_NO_BR_DEATH_SCREEN |
+	FS_CAP_NO_ELIMINATION |
+	FS_CAP_NO_SPECTATOR_THREAD |
+	FS_CAP_SURVIVAL_INVENTORY_UI |
+	FS_CAP_CUSTOM_SCOREBOARD |
+	FS_CAP_NO_FLINCH |
+	FS_CAP_REST_ROOM |
+	FS_CAP_IBMM |
+	FS_CAP_FORCE_PLAYING_SHELL
+
+// Aim trainer / freeroam-like
+global const int FS_PRESET_TRAINER =
+	FS_CAP_NO_BR_DEATH_SCREEN |
+	FS_CAP_NO_ELIMINATION |
+	FS_CAP_NO_SPECTATOR_THREAD |
+	FS_CAP_SURVIVAL_INVENTORY_UI |
+	FS_CAP_FORCE_PLAYING_SHELL
+
+// Instagib FFA. Keeps the stock BR death screen: players respawn, so the recap
+// and spectate tabs are the right post-death UI.
+global const int FS_PRESET_INSTAGIB =
+	FS_CAP_NO_ELIMINATION |
+	FS_CAP_NO_SPECTATOR_THREAD |
+	FS_CAP_CUSTOM_SCOREBOARD |
+	FS_CAP_FORCE_PLAYING_SHELL
+
+// FreeDM FFA: Flowstate leaderboard, no fullmap, persist-on-empty / mid-join.
+global const int FS_PRESET_FREEDM_FFA =
+	FS_CAP_NO_ELIMINATION |
+	FS_CAP_NO_SPECTATOR_THREAD |
+	FS_CAP_CUSTOM_SCOREBOARD |
+	FS_CAP_FORCE_PLAYING_SHELL
+
+struct
+{
+	bool inited = false
+	int caps = 0
+	string playlistName = ""
+} file
+
+bool function FS_IsFlowstatePlaylist()
+{
+	string pl = GetCurrentPlaylistName()
+	if ( pl.len() < 3 )
+		return false
+	return pl.slice( 0, 3 ) == "fs_"
+}
+
+bool function FS_IsActiveMode( string modeName )
+{
+	if ( modeName == "" )
+		return false
+	if ( GetCurrentPlaylistName() == modeName )
+		return true
+	int id = GameMode_FindByDevName( modeName )
+	if ( id == eGameModes.invalid )
+		return false
+	return GameMode_IsActive( id )
+}
+
+bool function FS_HasCap( int cap )
+{
+	int caps = file.caps
+	if ( !file.inited )
+		caps = FS_ResolvePresetForPlaylist( GetCurrentPlaylistName() )
+	return ( caps & cap ) != 0
+}
+
+int function FS_GetCaps()
+{
+	return file.caps
+}
+
+bool function FS_NeverEliminate( entity player )
+{
+	return false
+}
+
+int function FS_ResolvePresetForPlaylist( string pl )
+{
+	if ( GetCurrentPlaylistVarBool( "freedm_ffa_active", false ) )
+		return FS_PRESET_FREEDM_FFA
+
+	switch ( pl )
+	{
+		case "fs_1v1":
+		case "fs_lgduels_1v1":
+		case "fs_vamp_1v1":
+		case "fs_1v1_headshots_only":
+		case "fs_1v1_coaching":
+			return FS_PRESET_DUEL
+
+		case "fs_aimtrainer":
+		case "fs_aimtrainer_freeroam":
+			return FS_PRESET_TRAINER
+
+		case "fs_instagib":
+			return FS_PRESET_INSTAGIB
+	}
+
+	// Any other fs_* playlist: safe non-BR death defaults
+	if ( pl.len() >= 3 && pl.slice( 0, 3 ) == "fs_" )
+	{
+		return FS_CAP_NO_BR_DEATH_SCREEN |
+			FS_CAP_NO_ELIMINATION |
+			FS_CAP_NO_SPECTATOR_THREAD |
+			FS_CAP_FORCE_PLAYING_SHELL
+	}
+
+	return 0
+}
+
+void function FS_Core_SharedInit()
+{
+	if ( file.inited )
+		return
+	file.inited = true
+
+	file.playlistName = GetCurrentPlaylistName()
+	file.caps = FS_ResolvePresetForPlaylist( file.playlistName )
+
+	// Playlist overrides (optional fs_cap_* ints)
+	if ( GetCurrentPlaylistVarBool( "fs_cap_no_elim", FS_HasCap( FS_CAP_NO_ELIMINATION ) ) )
+		file.caps = file.caps | FS_CAP_NO_ELIMINATION
+	else
+		file.caps = file.caps & ~FS_CAP_NO_ELIMINATION
+
+	if ( GetCurrentPlaylistVarBool( "fs_cap_inventory", FS_HasCap( FS_CAP_SURVIVAL_INVENTORY_UI ) ) )
+		file.caps = file.caps | FS_CAP_SURVIVAL_INVENTORY_UI
+
+	if ( GetCurrentPlaylistVarBool( "fs_cap_no_death_screen", FS_HasCap( FS_CAP_NO_BR_DEATH_SCREEN ) ) )
+		file.caps = file.caps | FS_CAP_NO_BR_DEATH_SCREEN
+
+	printt( "[FS-CORE] pl='" + file.playlistName + "' caps=0x" + format( "%x", file.caps ) + " fsPl=" + string( FS_IsFlowstatePlaylist() ) )
+
+	#if SERVER
+		FS_ArenaWalls_Init()
+		if ( FS_IsFlowstatePlaylist() )
+		{
+			if ( !FlagExists( "DeathCircleActive" ) )
+				FlagInit( "DeathCircleActive" )
+			if ( !FlagExists( "SUR_DeathFieldShrinking" ) )
+				FlagInit( "SUR_DeathFieldShrinking" )
+		}
+	#endif
+
+	// Remotes + loot enums (eEquipmentSlotType, LOOT_DATATABLE) are SERVER/CLIENT only.
+	// UI also loads this file; registering here hard-fails UI compile and blocks boot.
+	#if SERVER || CLIENT
+		// In-game _sh_init only calls this on lobby. Survival shared is the other
+		// in-map caller, which custom modes never run.
+		ShApexScreens_Init()
+		printt( "[FS-CORE] ShApexScreens_Init" )
+
+		FS_Core_EnsureBleedoutSignals()
+
+		// The survival combat HUD signals these whether or not the mode ever
+		// surfaces an inventory menu; only the remotes belong behind the cap.
+		FS_Core_EnsureLootThrowSignals()
+
+		if ( FS_HasCap( FS_CAP_SURVIVAL_INVENTORY_UI ) )
+			FS_Core_RegisterInventoryRemotes()
+	#endif
+
+	#if SERVER
+		if ( FS_HasCap( FS_CAP_NO_ELIMINATION ) )
+			SetPlayerEliminationCheck( FS_NeverEliminate )
+	#endif
+
+	#if CLIENT
+		if ( FS_HasCap( FS_CAP_NO_BR_DEATH_SCREEN ) )
+			AddCallback_ShouldShowDeathScreen( FS_Core_ShouldShowDeathScreen )
+
+		FS_Core_EnsureInventorySignals()
+	#endif
+}
+
+#if SERVER || CLIENT
+void function FS_Core_EnsureBleedoutSignals()
+{
+	RegisterSignal( "BleedOut_StopBleeding" )
+	RegisterSignal( "BleedOut_OnReviveStart" )
+	RegisterSignal( "BleedOut_OnRevive" )
+	RegisterSignal( "BleedOut_OnReviveStop" )
+	RegisterSignal( "BleedOut_OnStartDying" )
+	RegisterSignal( "BleedOut_ReviveForceStop" )
+	RegisterSignal( "OnContinousUseStopped" )
+	RegisterSignal( "ReviveInterrupted" )
+}
+
+void function FS_Core_EnsureLootThrowSignals()
+{
+	if ( !IsValidSignal( "OnPickup" ) )
+		RegisterSignal( "OnPickup" )
+	if ( !IsValidSignal( "OnFirstCollision" ) )
+		RegisterSignal( "OnFirstCollision" )
+}
+
+// Same signatures as sh_gamemode_survival.nut -- handlers live in _gamemode_survival.nut (always SERVER-loaded).
+void function FS_Core_RegisterInventoryRemotes()
+{
+	var dt = GetDataTable( LOOT_DATATABLE )
+	int numRows = GetDataTableRowCount( dt )
+
+	Remote_RegisterServerFunction( "ClientCallback_Sur_DropBackpackItem", "int", -1, numRows, "int", 0, INT_MAX )
+	Remote_RegisterServerFunction( "ClientCallback_Sur_DropBackpackItem_Box", "int", -1, numRows, "int", 0, INT_MAX, "int", INT_MIN, INT_MAX )
+	Remote_RegisterServerFunction( "ClientCallback_Sur_DropEquipment", "int", 0, eEquipmentSlotType.COUNT )
+	Remote_RegisterServerFunction( "ClientCallback_Sur_EquipOrdnance", "int", -1, numRows )
+	Remote_RegisterServerFunction( "ClientCallback_Sur_EquipGadget", "int", -1, numRows )
+	Remote_RegisterServerFunction( "ClientCallback_Sur_EquipAttachment", "int", -1, numRows, "int", -1, INT_MAX )
+	Remote_RegisterServerFunction( "ClientCallback_Sur_UnequipAttachment", "int", -1, numRows, "int", -1, INT_MAX, "bool" )
+	Remote_RegisterServerFunction( "ClientCallback_Sur_TransferAttachment", "int", -1, numRows, "int", WEAPON_INVENTORY_SLOT_PRIMARY_0, WEAPON_INVENTORY_SLOT_PRIMARY_1 )
+	// Heal: UseHealthPack is no-op when WeaponDrivenConsumablesEnabled; CancelHeal still needed.
+	Remote_RegisterServerFunction( "ClientCallback_Sur_UseHealthPack", "int", -1, numRows )
+	Remote_RegisterServerFunction( "ClientCallback_Sur_CancelHeal" )
+
+	printt( "[FS-CORE] survival inventory remotes registered (lootRows=" + string( numRows ) + ")" )
+}
+#endif // SERVER || CLIENT
+
+#if CLIENT
+bool function FS_Core_ShouldShowDeathScreen()
+{
+	return false
+}
+
+// SharedInit runs before Sh_InitToolTips; full Cl_Survival_InventoryInit
+// crashes on AddCallback_OnUpdateTooltip (style table empty). Signals only here;
+// mode client init calls full inventory init after tooltips are ready.
+void function FS_Core_EnsureInventorySignals()
+{
+	if ( !IsValidSignal( "ResetInventoryMenu" ) )
+		RegisterSignal( "ResetInventoryMenu" )
+	if ( !IsValidSignal( "BackpackClosed" ) )
+		RegisterSignal( "BackpackClosed" )
+	if ( !IsValidSignal( "GroundListClosed" ) )
+		RegisterSignal( "GroundListClosed" )
+	if ( !IsValidSignal( "OpenSwapForItem" ) )
+		RegisterSignal( "OpenSwapForItem" )
+
+	printt( "[FS-CORE] inventory signals registered (full init deferred to client mode)" )
+}
+#endif

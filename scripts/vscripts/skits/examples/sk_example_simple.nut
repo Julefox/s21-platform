@@ -1,0 +1,47 @@
+/*
+	Skit Example - "Simple"
+
+	To Show:
+		The very bare-bones "hello world" version of a skit.
+
+	Does:
+		Prints a message to the screen, waits 5 seconds, prints another message, and shuts down.
+*/
+
+
+#if SERVER
+global function LaunchTestSkit_Simple
+
+
+SkitInstance ornull function InitThisSkit()
+{
+	SkitInstance si = Skit_AllocInstance( Runtime, null )
+	return si
+}
+
+void function Runtime( SkitInstance si )
+{
+	BroadcastTestMsg( "Skit starting.", FILE_NAME() )
+	wait 5.0
+	BroadcastTestMsg( "Skit finishing.", FILE_NAME() )
+
+	printf( "Skit is done: %s", FILE_NAME() )
+}
+
+//////////////////////
+
+
+void function LaunchTestSkit_Simple()
+{
+	SkitInstance ornull siRaw = InitThisSkit()
+	if ( siRaw == null )
+	{
+		Warning( "%s() - Couldn't init skit.", FUNC_NAME() )
+		return
+	}
+
+	expect SkitInstance( siRaw )
+	Skit_LaunchInstance( siRaw )
+}
+
+#endif // #if SERVER

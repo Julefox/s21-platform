@@ -1,0 +1,15 @@
+# Extra maps for the R5Flowstate launcher picker.
+#
+# Same format as r5f_map_names.txt:  <map stem> = <name>
+# A blank name shows the stem alone. # and // start comments.
+#
+# This is NOT the ship allowlist. Stems listed here are offered in
+# addition to that list, when the map files are on disk (vpk/, paks/,
+# or maps/). A player pack update does not ship or wipe this file.
+#
+# To offer every on-disk mp_rr_* without listing it here, use Settings >
+# "Show unlisted maps".
+#
+# Edit and Reload playlists (or relaunch). No launcher rebuild.
+#
+# mp_rr_my_wip                    = My Work In Progress

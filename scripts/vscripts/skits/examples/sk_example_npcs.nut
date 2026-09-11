@@ -1,0 +1,102 @@
+/*
+	Skit Example - "NPCs"
+
+	To Show:
+		How to spawn NPCs that belong to a skit, and that when a skit ends it automatically releases any AI it still has to be garbage collected.
+
+	Does:
+		Creates 3 AI randomly on the navmesh around player #0. Ends the skit after at least 2 of them die.
+		If any AI are left after the skit is over, they are automatically tagged for garbage collection.
+*/
+
+
+#if SERVER
+global function LaunchTestSkit_NPCs
+
+struct MyVars
+{
+	array<vector> origins
+	int kills
+	array<entity> guys
+}
+
+const int SPAWN_COUNT = 3
+
+table<SkitInstance, MyVars> s_siToVars
+SkitInstance ornull function InitThisSkit()
+{
+	array<vector> origins = NavMesh_RandomPositions_LargeArea( GetPlayerArray()[0].GetOrigin(), HULL_HUMAN, SPAWN_COUNT, 512, 1024 )
+	if ( origins.len() == 0 )
+	{
+		BroadcastTestMsg( "Can't start - no navmesh spots to spawn NPCS.", FILE_NAME() )
+		return null
+	}
+
+	SkitInstance si = Skit_AllocInstance( Runtime, Cleanup )
+	MyVars vars
+	s_siToVars[si] <- vars
+	vars.origins = origins
+
+	return si
+}
+void function Cleanup( SkitInstance si )
+{
+	delete s_siToVars[si]
+}
+
+void function Runtime( SkitInstance si )
+{
+	MyVars vars = s_siToVars[si]
+
+                   
+	for ( int idx = 0; idx < SPAWN_COUNT; ++idx )
+	{
+		vector pos = vars.origins[idx % vars.origins.len()]
+		entity npc = SkNPC_SpawnNPC( si, eNPC.SPECTRE, pos, <0,0,0> )
+
+		entity wp = CreateWaypoint_ObjectiveEnt( npc, "" )
+		wp.SetParent( npc )
+
+		vars.guys.append( npc )
+		AddEntityCallback_OnKilled( npc, void function ( entity npc, var damageInfo ) : ( vars )
+		{
+			vars.guys.fastremovebyvalue( npc )
+			vars.kills += 1
+		} )
+	}
+                         
+
+	const int KILL_GOAL = 2
+	int lastKills = 0
+	for( ;; )
+	{
+		if ( vars.kills != lastKills )
+			BroadcastTestMsg( format( "Killed:%d, Goal:%d.", vars.kills, KILL_GOAL ), FILE_NAME() )
+		if ( vars.kills >= KILL_GOAL )
+			break
+
+		lastKills = vars.kills
+		WaitFrame()
+	}
+
+	BroadcastTestMsg( format( "Ending skit, leaving %d NPCs as orphans.", vars.guys.len() ), FILE_NAME() )
+	printf( "Skit is done: %s", FILE_NAME() )
+}
+
+//////////////////////
+
+
+void function LaunchTestSkit_NPCs()
+{
+	SkitInstance ornull siRaw = InitThisSkit()
+	if ( siRaw == null )
+	{
+		Warning( "%s() - Couldn't init skit.", FUNC_NAME() )
+		return
+	}
+
+	expect SkitInstance( siRaw )
+	Skit_LaunchInstance( siRaw )
+}
+
+#endif // #if SERVER

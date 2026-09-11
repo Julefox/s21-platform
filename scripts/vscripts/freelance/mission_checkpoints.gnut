@@ -1,0 +1,295 @@
+global function MissionCheckpoints_Init
+global function MissionCheckpoints_RegisterNetworking
+
+global function MissionCheckpoints_GetRespawnsLeftForPlayer
+
+#if SERVER
+global function MissionCheckpoints_SetRespawnsLeftForPlayer
+global function MissionCheckpoints_AddGlobalRespawnPoint
+global function MissionCheckpoints_SetGlobalRespawnPoint
+global function MissionCheckpoints_SetGlobalRespawnPointDeathfieldFailsafe
+global function MissionCheckpoints_TrySetGlobalRespawnPointFromPOI
+#endif // SERVER
+
+
+bool function CheckpointSystemIsEnabled()
+{
+	if ( IsPVEMode() )
+		return true
+	return false
+}
+
+void function MissionCheckpoints_Init()
+{
+	if ( !CheckpointSystemIsEnabled() )
+		return
+
+	#if SERVER
+		//Survival_AddCallback_OnSquadEliminated( OnSquadEliminated )
+		//Survival_AddCallback_IsSquadReallyEliminated( IsSquadEliminated )
+
+		Survival_AddCallback_OnSquadEliminated( void function( int team ) : ()
+		{
+			//printf( "Team #%d was wiped out.", team )
+		} )
+
+		Survival_AddCallback_IsSquadReallyEliminated( bool function( int team ) : ()
+		{
+			foreach ( player in GetPlayerArrayOfTeam( team ) )
+			{
+				if ( MissionCheckpoints_GetRespawnsLeftForPlayer( player ) > 0 )
+					return false
+			}
+
+			return true
+		} )
+
+		RespawnWatcherThread()
+
+		RegisterSignal( "PlayerRespawningAtCheckpoint" )
+	#endif // SERVER
+}
+
+const string NV_LIVESLEFT = "MC_LIVESLEFT"
+void function MissionCheckpoints_RegisterNetworking()
+{
+	if ( !CheckpointSystemIsEnabled() )
+		return
+
+	RegisterNetworkedVariable( NV_LIVESLEFT, SNDC_PLAYER_GLOBAL, SNVT_INT, 0 )
+
+	#if CLIENT
+		//RegisterNetVarIntChangeCallback( NV_LIVESLEFT, OnNVModeChanged )
+	#endif // CLIENT
+}
+
+int function MissionCheckpoints_GetRespawnsLeftForPlayer( entity player )
+{
+	if ( !CheckpointSystemIsEnabled() )
+		return 0
+
+	return player.GetPlayerNetInt( NV_LIVESLEFT )
+}
+
+#if SERVER
+void function MissionCheckpoints_SetRespawnsLeftForPlayer( entity player, int count )
+{
+	player.SetPlayerNetInt( NV_LIVESLEFT, count )
+}
+
+array<Point> s_globalRespawnPoints
+Point s_globalRespawnPointDeathfieldFailsafe
+string s_globalRespawnPointReason
+void function MissionCheckpoints_SetGlobalRespawnPoint( string debugReason, vector origin, vector angles )
+{
+	s_globalRespawnPoints.clear()
+	MissionCheckpoints_AddGlobalRespawnPoint( origin, angles )
+	s_globalRespawnPointReason = debugReason
+	printf( "%s() - '%s', at %s", FUNC_NAME(), debugReason, string( origin ) )
+}
+
+void function MissionCheckpoints_AddGlobalRespawnPoint( vector origin, vector angles )
+{
+	Point newPoint
+	newPoint.origin = origin
+	newPoint.angles = angles
+	s_globalRespawnPoints.append( newPoint )
+}
+
+void function MissionCheckpoints_SetGlobalRespawnPointDeathfieldFailsafe( vector origin, vector angles )
+{
+	s_globalRespawnPointDeathfieldFailsafe.origin = origin
+	s_globalRespawnPointDeathfieldFailsafe.angles = angles
+}
+
+
+Point ornull function GetRespawnPointFromPOI( PointOfInterest poi )
+{
+	Assert( ORS_IsValidPOI( poi ) )
+	PointOfInterest respawnPoint
+	array<PointOfInterest> targetedPois = ORS_GetLinkedResources( poi.core ).pois
+	if ( targetedPois.len() == 0 )
+		return null
+
+	foreach( targetedPoi in targetedPois )
+	{
+		if ( targetedPoi.core.keywords.contains( "checkpoint" ) )
+		{
+			respawnPoint = targetedPoi
+			break
+		}
+	}
+	if ( !ORS_IsValidPOI( respawnPoint ) )
+		return null
+
+	Point point
+	point.origin = respawnPoint.core.spawnOrigin
+	point.angles = respawnPoint.core.spawnAngles
+
+	return point
+}
+
+void function MissionCheckpoints_TrySetGlobalRespawnPointFromPOI( string debugString,  PointOfInterest poi )
+{
+	//if POI is targeting another POI with keyword "checkpoint", then go ahead and set the checkpoint
+	Point ornull respawnPoint = GetRespawnPointFromPOI( poi )
+	if ( respawnPoint == null )
+		return
+
+	Point point = expect Point( respawnPoint )
+	MissionCheckpoints_SetGlobalRespawnPoint( debugString, point.origin, point.angles )
+}
+
+Point function GetRespawnPointForPlayer( entity player )
+{
+	Point result
+	result.origin = player.p.deathOrigin
+	result.angles = player.p.deathAngles
+
+	int realm = Survival_GetPlayerRealm( player )
+	array<Point> points = clone( s_globalRespawnPoints )
+	points.sort( int function( Point aa, Point bb ) : (realm, result)
+	{
+		bool aaIsSafe = SURVIVAL_PosInsideDeathField( realm, aa.origin )
+		bool bbIsSafe = SURVIVAL_PosInsideDeathField( realm, bb.origin )
+		if ( aaIsSafe && !bbIsSafe )
+			return -1
+		if ( !aaIsSafe && bbIsSafe )
+			return 1
+
+		float aaDistSqr = DistanceSqr( aa.origin, result.origin )
+		float bbDistSqr = DistanceSqr( bb.origin, result.origin )
+		if ( aaDistSqr < bbDistSqr )
+			return -1
+		if ( aaDistSqr > bbDistSqr )
+			return 1
+		return 0
+	} )
+	if ( points.len() > 0 )
+	{
+		result.origin = points[0].origin
+		result.angles = points[0].angles
+	}
+
+	// Deathfield fallback:
+	if ( !SURVIVAL_PosInsideDeathField( realm, result.origin ) && (s_globalRespawnPointDeathfieldFailsafe.origin != <0, 0, 0>) )
+	{
+		result.origin = s_globalRespawnPointDeathfieldFailsafe.origin
+		result.angles = s_globalRespawnPointDeathfieldFailsafe.angles
+		return result
+	}
+
+	return result
+
+}
+
+bool function TryRespawnPlayerNow( entity player )
+{
+	Point pt = GetRespawnPointForPlayer( player )
+	player.SetOrigin( pt.origin )
+	player.SetAngles( pt.angles )
+
+	PVE_CommonPlayerRespawn( player )
+	PlayRespawnedFX( player )
+
+	SURVIVAL_AutoEquipOrdnanceFromInventory( player, false )
+	Remote_CallFunction_Replay( player, "ServerCallback_RefreshInventoryAndWeaponInfo" )
+
+	                             
+		if ( IsPlayerShadowZombie( player ) )
+			GiveShadowZombieAbilities( player )
+                                    
+
+	thread RespawnGracePeriodForPlayer( player )
+	return true
+}
+
+void function RespawnGracePeriodForPlayer( entity player)
+{
+	if ( !IsValid( player ) )
+		return
+
+	player.EndSignal( "OnDeath" )
+	player.Signal( "PlayerRespawningAtCheckpoint" )
+	player.EndSignal( "PlayerRespawningAtCheckpoint" )
+
+	if ( !SURVIVAL_PosInsideDeathField( Survival_GetPlayerRealm( player ), player.GetOrigin() ) )
+	{
+		player.SetPlayerNetBool( "hasDeathFieldImmunity", true )
+	}
+
+	player.SetNoTarget( true )
+	wait GetCurrentPlaylistVarFloat( "freelance_respawn_notarget_grace_period", 3.0 )
+	player.SetNoTarget( false )
+
+	float timeOut = GetCurrentPlaylistVarFloat( "freelance_respawn_in_deathfield_grace_period", 2.0 )
+	float startTime = Time()
+
+	while( !SURVIVAL_PosInsideDeathField( Survival_GetPlayerRealm( player ), player.GetOrigin() ) )
+	{
+		wait 0.5
+		if ( ( Time() - startTime ) > timeOut )
+			break
+	}
+
+
+	OnThreadEnd(
+		function() : ( player )
+		{
+			if ( !IsValid( player ) )
+				return
+
+			player.SetNoTarget( false )
+			player.SetPlayerNetBool( "hasDeathFieldImmunity", false )
+		}
+	)
+}
+
+void function RespawnWatcherThread()
+{
+	thread function() : ()
+	{
+		for ( ;; )
+		{
+			Wait( 1.0 )
+
+			int modePhase = FreelanceMode_GetCurrentPhase()
+			if ( modePhase < eFreelanceModePhase.Exploration )
+				continue
+			if ( modePhase >= eFreelanceModePhase.GameOver )
+				continue
+
+			array<entity> players = GetPlayerArray()
+			foreach( entity player in players )
+			{
+				if ( !IsValid( player ) )
+					continue
+				if ( IsAlive( player ) )
+					continue
+
+				int livesLeft = MissionCheckpoints_GetRespawnsLeftForPlayer( player )
+				if ( livesLeft <= 0 )
+					continue
+
+				float timeSinceKilled = (Time() - player.p.lastKilledTime)
+				if ( timeSinceKilled < 5.0 )
+					continue
+
+				if ( TryRespawnPlayerNow( player ) )
+				{
+					MissionCheckpoints_SetRespawnsLeftForPlayer( player, (livesLeft - 1) )
+					thread function() : (player)
+					{
+						player.EndSignal( "OnDeath" )
+						Wait( 2.0 )
+						DoFreelanceModeSplashToPlayer( player, eModeSplash.CheckpointRetriesLeft )
+					}()
+				}
+
+				WaitFrame()
+			}
+		}
+	}()
+}
+
+#endif // SERVER

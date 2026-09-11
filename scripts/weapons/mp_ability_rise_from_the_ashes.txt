@@ -1,0 +1,130 @@
+"WeaponData"
+{
+	"printname" "#SHADOW_ARMY_RISE_FROM_THE_ASHES"
+	"shortprintname" "#SHADOW_ARMY_RISE_FROM_THE_ASHES"
+	"description" "#SHADOW_ARMY_RISE_FROM_THE_ASHES_DESC"
+	"longdesc" "#SHADOW_ARMY_RISE_FROM_THE_ASHES_DESC"
+	"menu_icon" "rui/hud/ultimate_icons/ultimate_rise_from_ashes"
+	"hud_icon" "rui/hud/ultimate_icons/ultimate_rise_from_ashes"
+	"viewmodel" "mdl/weapons/empty_handed/ptpov_revenant_shadow_form.rmdl"
+	"playermodel" "mdl/weapons/empty_handed/w_empty_handed_human.rmdl"
+	"projectilemodel" "mdl/dev/empty_model.rmdl"
+	"OnWeaponActivate" "OnWeaponActivate_ability_rise_from_the_ashes"
+	"OnWeaponTossReleaseAnimEvent" "OnWeaponTossReleaseAnimEvent_ability_rise_from_the_ashes"
+	"OnWeaponRegenEnd" "OnWeaponRegenEndGeneric"
+	"fire_mode" "offhand"
+	"offhand_default_inventory_slot" "1"
+	"offhand_interupts_weapon_anims" "1"
+	"offhand_hold_enabled" "0"
+	"offhand_keep_primary_in_hand" "1"
+	"offhand_holster_primary" "0"
+	"offhand_allow_swap_to_on_zipline" "0"
+	"zoom_effects" "0"
+	"is_toss_weapon" "1"
+	"toss_pullout_time" "0.100000"
+	"toss_time" "1.000000"
+	"toss_overhead_time" "1.000000"
+	"max_cook_time" "0"
+	"instant_swap_to" "0"
+	"damage_type" "none"
+	"explosion_damage_heavy_armor" "0"
+	"damage_near_distance" "0"
+	"damage_far_distance" "0"
+	"damage_near_value" "0"
+	"damage_far_value" "0"
+	"cooldown_type" "ammo_instant"
+	"ammo_suck_behavior" "offhand_weapons"
+	"ammo_display" "count"
+	"ammo_clip_size" "120"
+	"ammo_default_total" "0"
+	"ammo_min_to_fire" "120"
+	"ammo_per_shot" "120"
+	"ammo_stockpile_max" "0"
+	"fire_duration" "25.000000"
+	"regen_ammo_refill_rate" "0.000000"
+	"regen_ammo_refill_start_delay" "0.000000"
+	"fire_rate" "1.000000"
+	"holster_time" "0.100000"
+	"deploy_time" "0.100000"
+	"lower_time" "0.100000"
+	"raise_time" "0.100000"
+	"no_ammo_used_on_primary_attack" "1"
+	"allow_empty_fire" "0"
+	"allow_empty_click" "0"
+	"reload_enabled" "0"
+	"empty_reload_only" "0"
+	"trigger_snipercam" "0"
+	"allow_headshots" "0"
+	"breaks_cloak" "0"
+	"primary_fire_does_not_block_sprint" "1"
+	"aimassist_disable_hipfire" "1"
+	"aimassist_disable_ads" "1"
+	"weapon_type_flags" "WPT_ULTIMATE"
+	"OnWeaponRegenBegin" "Ultimate_OnWeaponRegenBegin"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "Survival_UI_Ultimate_Ready"
+	"drops_on_death" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"ability_used_mod"
+		{
+			"activitymodifier1p" "ability_used"
+
+		}
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "0.000000"
+
+		}
+
+		"upgrade_ult_one"
+		{
+			"ammo_clip_size" "90"
+			"ammo_default_total" "0"
+			"ammo_min_to_fire" "90"
+			"ammo_per_shot" "90"
+
+		}
+
+		"ultimates_charge_over_time_disabled"
+		{
+			"regen_ammo_refill_rate" "0"
+
+		}
+
+		"copycat_mod"
+		{
+			"weapon_type_flags" "WPT_SURVIVAL"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+	}
+}

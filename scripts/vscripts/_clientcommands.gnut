@@ -1,0 +1,993 @@
+untyped
+
+//=========================================================
+//	_clientcommands.gnut
+//=========================================================
+
+global function ClientCommands_Init
+global function DevToggle_AlertAll
+// Always-shipped (sh_dev_utility is When:DEV only). Called from ShouldPlayerBeEliminated.
+global function DevRespawnGetPlayerEliminationOverride
+// Legacy names still called from freelance / sh_dev_tests.
+global function DEV_RespawnPlayersBySpecifiers
+global function DevRespawnPlayer
+
+const float DEV_AUTO_RESPAWN_DELAY = 3.0
+
+struct
+{
+	// Server-wide: splash feedback for noclip/god/ammo/3p toggles.
+	bool alertMsgsEnabled = true
+	// Server-wide: killed players autorespawn after DEV_AUTO_RESPAWN_DELAY.
+	bool autoRespawnEnabled = false
+	bool autoRespawnCallbackInstalled = false
+	// Map OOB/hurt/slip/etc triggers active (Disable/Enable, never Destroy).
+	bool mapTriggersEnabled = true
+	// set_respawn_override: off | allow | deny | bots (sh_dev_utility was DEV-only).
+	string respawnBehaviourOverride = "off"
+	// Unique name suffix for CreateFakePlayer DevMenu spawns.
+	int fakeBotSerial = 0
+	bool deathFieldEnabled = false
+} file
+
+void function ClientCommands_Init()
+{
+	RegisterSignal( "DevAutoRespawn" )
+	RegisterSignal( "DevInfiniteAbilities" )
+
+	AddClientCommandCallback( "noclip", ClientCommand_noclip )
+	AddClientCommandCallback( "infinite_ammo", ClientCommand_infinite_ammo )
+	AddClientCommandCallback( "finite_ammo", ClientCommand_finite_ammo )
+	AddClientCommandCallback( "infinite_abilities", ClientCommand_infinite_abilities )
+	AddClientCommandCallback( "auto_respawn", ClientCommand_auto_respawn )
+	AddClientCommandCallback( "kill_self", ClientCommand_kill_self )
+	AddClientCommandCallback( "ToggleThirdPerson", ClientCommand_ToggleThirdPerson )
+	AddClientCommandCallback( "ToggleHUD", ClientCommand_ToggleHUD )
+	AddClientCommandCallback( "recharge", ClientCommand_recharge )
+	AddClientCommandCallback( "demigod", ClientCommand_demigod )
+	AddClientCommandCallback( "toggle_dev_alerts", ClientCommand_toggle_dev_alerts )
+	AddClientCommandCallback( "toggle_map_triggers", ClientCommand_toggle_map_triggers )
+	// DevMenu Respawn Player(s) -- always ship (sh_dev_utility is When:DEV only).
+	AddClientCommandCallback( "respawn", ClientCommand_respawn )
+	AddClientCommandCallback( "set_respawn_override", ClientCommand_set_respawn_override )
+	// DevMenu: CreateFakePlayer at issuer crosshair (issuer-bound, not gp()[0]).
+	AddClientCommandCallback( "spawn_fake_player", ClientCommand_spawn_fake_player )
+	AddClientCommandCallback( "spawnbots", ClientCommand_spawnbots )
+	AddClientCommandCallback( "spawnbots_ally", ClientCommand_spawnbots_ally )
+	AddClientCommandCallback( "dev_deathfield", ClientCommand_dev_deathfield )
+	// Lab armory: spawn a loot ref at the caller, never at player 0.
+	AddClientCommandCallback( "lab_spawn", ClientCommand_lab_spawn )
+	AddClientCommandCallback( "lab_carepackage", ClientCommand_lab_carepackage )
+	AddClientCommandCallback( "lab_summon", ClientCommand_lab_summon )
+	AddClientCommandCallback( "lab_skybox", ClientCommand_lab_skybox )
+}
+
+// Lab > Armory ground delivery. The ref must name a real loot entry, and the
+// item lands on the caller, so a client cannot aim this at anyone else.
+void function ClientCommand_lab_spawn( entity player, array<string> args )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+	{
+		printt( format( "[Lab] spawn denied (sv_cheats %d) from %s", GetConVarInt( "sv_cheats" ), player.GetPlayerName() ) )
+		return
+	}
+
+	if ( args.len() < 1 )
+		return
+
+	string ref = args[0]
+	if ( !( ref in SURVIVAL_Loot_GetLootDataTable() ) )
+	{
+		printt( format( "[Lab] spawn denied, unknown ref '%s' from %s", ref, player.GetPlayerName() ) )
+		return
+	}
+
+	LootData data = SURVIVAL_Loot_GetLootDataByRef( ref )
+	int count = data.countPerDrop > 0 ? data.countPerDrop : 1
+
+	SpawnGenericLoot( ref, player.GetOrigin(), < -1, -1, -1 >, count )
+	printt( format( "[Lab] %s spawned %s x%d", player.GetPlayerName(), ref, count ) )
+}
+
+// Lab > Match care package. Host seat only, dropped on the caller.
+void function ClientCommand_lab_carepackage( entity player, array<string> args )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+	{
+		printt( format( "[Lab] care package denied (sv_cheats %d) from %s", GetConVarInt( "sv_cheats" ), player.GetPlayerName() ) )
+		return
+	}
+
+	array<entity> players = GetPlayerArray()
+	if ( players.len() == 0 || players[0] != player )
+	{
+		printt( format( "[Lab] care package denied, %s is not the host seat", player.GetPlayerName() ) )
+		return
+	}
+
+	int round = 0
+	if ( args.len() > 0 )
+		round = int( args[0] )
+	round = int( clamp( float( round ), 0.0, 2.0 ) )
+
+	thread AirdropForRound( player.GetOrigin(), player.GetAngles(), round )
+	printt( format( "[Lab] %s dropped care package round %d", player.GetPlayerName(), round ) )
+}
+
+// Lab > Match. Pulls every living player to the caller. Host seat only, so a
+// client cannot move anyone by sending this itself.
+void function ClientCommand_lab_summon( entity player, array<string> args )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+	{
+		printt( format( "[Lab] summon denied (sv_cheats %d) from %s", GetConVarInt( "sv_cheats" ), player.GetPlayerName() ) )
+		return
+	}
+
+	array<entity> players = GetPlayerArray()
+	if ( players.len() == 0 || players[0] != player )
+	{
+		printt( format( "[Lab] summon denied, %s is not the host seat", player.GetPlayerName() ) )
+		return
+	}
+
+	int moved = 0
+	foreach ( entity other in GetPlayerArray_Alive() )
+	{
+		if ( !IsValid( other ) || other == player )
+			continue
+
+		other.SetOrigin( player.GetOrigin() )
+		other.SetVelocity( RandomVec( 250.0 ) )
+		moved++
+	}
+
+	printt( format( "[Lab] %s summoned %d players", player.GetPlayerName(), moved ) )
+}
+
+// Lab > Player skybox view. Acts on the caller only.
+void function ClientCommand_lab_skybox( entity player, array<string> args )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+	{
+		printt( format( "[Lab] skybox denied (sv_cheats %d) from %s", GetConVarInt( "sv_cheats" ), player.GetPlayerName() ) )
+		return
+	}
+
+	thread Lab_ToggleSkyboxView( player )
+}
+
+const float LAB_SKYBOX_SCALE = 0.001
+
+void function Lab_ToggleSkyboxView( entity player )
+{
+	player.EndSignal( "OnDestroy" )
+
+	entity skyboxCam = GetEnt( "skybox_cam_level" )
+	if ( !IsValid( skyboxCam ) )
+	{
+		printt( "[Lab] skybox view: this map has no skybox_cam_level" )
+		return
+	}
+
+	vector skyOrigin = skyboxCam.GetOrigin()
+	vector lift = < 0.0, 0.0, 60.0 - ( 60.0 * LAB_SKYBOX_SCALE ) >
+
+	if ( !( "labSkyboxView" in player.s ) )
+		player.s.labSkyboxView <- false
+
+	if ( !player.s.labSkyboxView )
+	{
+		if ( !player.IsNoclipping() )
+		{
+			RunClientCommandOnPlayer( player, "noclip" )
+			wait 0.25
+		}
+
+		RunClientCommandOnPlayer( player, "sv_noclipspeed 0.1" )
+		player.s.labSkyboxView = true
+		player.SetOrigin( skyOrigin + player.GetOrigin() * LAB_SKYBOX_SCALE - lift )
+	}
+	else
+	{
+		RunClientCommandOnPlayer( player, "sv_noclipspeed 5" )
+		player.s.labSkyboxView = false
+		vector offset = ( player.GetOrigin() - skyOrigin + lift ) * ( 1.0 / LAB_SKYBOX_SCALE )
+		player.SetOrigin( ClampToWorldspace( offset ) )
+	}
+}
+
+void function ClientCommand_spawnbots( entity player, array<string> args )
+{
+	int amount = 1
+	if ( args.len() > 0 )
+		amount = int( args[0] )
+	printt( format( "[SpawnBots] clientcmd from %s amount=%d", IsValid( player ) ? player.GetPlayerName() : "?", amount ) )
+	SpawnBots( amount )
+}
+
+void function ClientCommand_spawnbots_ally( entity player, array<string> args )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+	{
+		printt( format( "[SpawnBots] ally spawn denied (sv_cheats %d) from %s", GetConVarInt( "sv_cheats" ), player.GetPlayerName() ) )
+		return
+	}
+
+	int amount = 1
+	if ( args.len() > 0 )
+		amount = int( args[0] )
+	printt( format( "[SpawnBots] ally clientcmd from %s amount=%d", IsValid( player ) ? player.GetPlayerName() : "?", amount ) )
+	SpawnAllyBots( amount )
+}
+
+// Broadcast dev-toggle splash to every connected player (gated by file.alertMsgsEnabled).
+void function DevToggle_AlertAll( string ref )
+{
+	if ( !file.alertMsgsEnabled )
+		return
+
+	foreach ( entity p in GetPlayerArray() )
+	{
+		if ( IsValid( p ) && p.IsPlayer() )
+			LocalEventMsg( p, ref )
+	}
+}
+
+void function ClientCommand_dev_deathfield( entity player, array<string> args )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+	{
+		printt( format( "[DeathField] denied (sv_cheats %d) from %s", GetConVarInt( "sv_cheats" ), player.GetPlayerName() ) )
+		LocalSplashMsgAll( "Death Field: need DEDI sv_cheats 1", 4.0 )
+		return
+	}
+
+	if ( args.len() >= 1 )
+	{
+		string a = args[0].tolower()
+		if ( a == "here" || a == "end" || a == "endpoint" )
+		{
+			thread SURVIVAL_DevSetDeathFieldEndAtPlayer( player )
+			LocalSplashMsgAll( "Death Field end: player", 3.0 )
+			return
+		}
+	}
+
+	bool wantOn = !file.deathFieldEnabled
+	if ( args.len() >= 1 )
+	{
+		string a = args[0].tolower()
+		if ( a == "0" || a == "off" || a == "pause" )
+			wantOn = false
+		else if ( a == "1" || a == "on" || a == "enable" )
+			wantOn = true
+	}
+
+	if ( !FlagExists( "DeathCircleActive" ) )
+		FlagInit( "DeathCircleActive" )
+	if ( !FlagExists( "DeathFieldPaused" ) )
+		FlagInit( "DeathFieldPaused", true )
+
+	// Idempotent: re-enable would re-thread SURVIVAL_DevEnableDeathField and tear the mover down.
+	if ( wantOn && Flag( "DeathCircleActive" ) && !Flag( "DeathFieldPaused" ) )
+	{
+		LocalSplashMsgAll( "Death Field: already running", 3.0 )
+		return
+	}
+	if ( !wantOn && ( !Flag( "DeathCircleActive" ) || Flag( "DeathFieldPaused" ) ) )
+	{
+		LocalSplashMsgAll( "Death Field: already paused", 3.0 )
+		return
+	}
+
+	file.deathFieldEnabled = wantOn
+	thread SURVIVAL_DevEnableDeathField( player, wantOn )
+	LocalSplashMsgAll( wantOn ? "Death Field: ON" : "Death Field: OFF", 3.0 )
+}
+
+void function ClientCommand_toggle_dev_alerts( entity player, array<string> args )
+{
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	file.alertMsgsEnabled = !file.alertMsgsEnabled
+
+	// Always confirm the meta-toggle itself (even when alerts are now off).
+	string text = file.alertMsgsEnabled ? "Dev Alert Msgs: ON" : "Dev Alert Msgs: OFF"
+	LocalSplashMsgAll( text, 3.0 )
+}
+
+// CreateFakePlayer at the issuer's crosshair.
+// Args: [name] [team]  OR  enemy [name] [team]
+// CodeCallback strips the command token; args[0] is the first real arg.
+void function ClientCommand_spawn_fake_player( entity player, array<string> args )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+	{
+		printt( "[Dev] spawn_fake_player: invalid issuer" )
+		return
+	}
+
+	// Server-authoritative: client-side sv_cheats can be 1 while dedi is 0.
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+	{
+		printt( format( "[Dev] spawn_fake_player denied (sv_cheats %d) from %s -- set on DEDI", GetConVarInt( "sv_cheats" ), player.GetPlayerName() ) )
+		LocalSplashMsgAll( "Spawn Fake Player: need DEDI sv_cheats 1", 4.0 )
+		return
+	}
+
+	bool asEnemy = ( args.len() >= 1 && args[0] == "enemy" )
+	int argBase = asEnemy ? 1 : 0
+
+	file.fakeBotSerial++
+	string botName = asEnemy ? format( "EnemyBot%d", file.fakeBotSerial ) : format( "Bot%d", file.fakeBotSerial )
+	int myTeam = player.GetTeam()
+	int team = myTeam
+
+	if ( asEnemy )
+	{
+		if ( Is2TeamPvPGame() )
+		{
+			team = GetEnemyTeam( myTeam )
+		}
+		else if ( myTeam >= TEAM_MULTITEAM_FIRST )
+		{
+			int maxTeams = GetCurrentPlaylistVarInt( "max_teams", MAX_TEAMS )
+			team = myTeam + 1
+			if ( team >= TEAM_MULTITEAM_FIRST + maxTeams )
+				team = TEAM_MULTITEAM_FIRST
+		}
+		else if ( myTeam == TEAM_IMC )
+		{
+			team = TEAM_MILITIA
+		}
+		else
+		{
+			team = TEAM_IMC
+		}
+	}
+
+	if ( args.len() > argBase && args[argBase].len() > 0 )
+		botName = args[argBase]
+	if ( args.len() > argBase + 1 )
+		team = int( args[argBase + 1] )
+
+	printt( format( "[Dev] spawn_fake_player begin name=%s team=%d enemy=%s humans=%d bots=%d max=%d",
+		botName, team, string( asEnemy ), GetNumHumanPlayers(), GetNumFakeClients(), GetCurrentPlaylistVarInt( "max_players", 60 ) ) )
+
+	int edict = CreateFakePlayer( botName, team )
+	if ( edict < 0 )
+	{
+		printt( format( "[Dev] spawn_fake_player CreateFakePlayer failed name=%s team=%d (full or inactive?)", botName, team ) )
+		LocalSplashMsgAll( "Spawn Fake Player: CreateFakePlayer failed", 4.0 )
+		return
+	}
+
+	entity bot = GetEntByIndex( edict )
+	if ( !IsValid( bot ) || !bot.IsPlayer() )
+	{
+		foreach ( entity p in GetPlayerArray() )
+		{
+			if ( IsValid( p ) && p.IsBot() && p.GetPlayerName() == botName )
+			{
+				bot = p
+				break
+			}
+		}
+	}
+
+	if ( !IsValid( bot ) || !bot.IsPlayer() )
+	{
+		printt( format( "[Dev] spawn_fake_player: no entity for edict=%d name=%s", edict, botName ) )
+		LocalSplashMsgAll( format( "Spawn Fake Player: no entity (edict %d)", edict ), 4.0 )
+		return
+	}
+
+	vector origin = GetPlayerCrosshairOrigin( player )
+	vector eyeAngles = player.EyeAngles()
+	vector angles = <0.0, (eyeAngles.y + 180.0), 0.0>
+	if ( !TrySetOriginInWorld( bot, origin ) )
+	{
+		if ( !TrySetOriginInWorld( bot, player.GetOrigin() ) )
+		{
+			printt( format( "[Dev] spawn_fake_player: illegal origin %s", string( origin ) ) )
+			return
+		}
+	}
+	bot.SetAngles( angles )
+
+	printt( format( "[Dev] spawn_fake_player ok name=%s edict=%d team=%d alive=%s origin=%s",
+		botName, edict, team, string( IsAlive( bot ) ), string( origin ) ) )
+	thread Dev_AssignRandomCharacterToFakePlayer( bot )
+}
+
+// Same class list as legacy Flowstate_CheckForMapTriggersRemoval, but Enable/Disable only.
+array<entity> function Dev_CollectMapTriggers()
+{
+	array<entity> triggers
+	triggers.extend( GetEntArrayByClass_Expensive( "trigger_out_of_bounds" ) )
+	triggers.extend( GetEntArrayByClass_Expensive( "trigger_hurt" ) )
+	triggers.extend( GetEntArrayByClass_Expensive( "trigger_slip" ) )
+	triggers.extend( GetEntArrayByClass_Expensive( "trigger_no_zipline" ) )
+	triggers.extend( GetEntArrayByClass_Expensive( "trigger_no_grapple" ) )
+	triggers.extend( GetEntArrayByClass_Expensive( "trigger_multiple" ) )
+	triggers.extend( GetEntArrayByClass_Expensive( "trigger_cylinder_heavy" ) )
+	triggers.extend( GetEntArrayByScriptName( "WallTrigger_Killzone" ) )
+	triggers.extend( GetEntArrayByScriptName( "WallTrigger_oob_timer" ) )
+	return triggers
+}
+
+void function Dev_SetMapTriggersEnabled( bool enabled )
+{
+	int n = 0
+	foreach ( entity trigger in Dev_CollectMapTriggers() )
+	{
+		if ( !IsValid( trigger ) )
+			continue
+
+		if ( enabled )
+			trigger.Enable()
+		else
+			trigger.Disable()
+		n++
+	}
+
+	// Under-map kill loop honors this flag even when playlist kill_players_under_map is on.
+	SetIgnoreKillPlayersUnderMap( !enabled )
+
+	file.mapTriggersEnabled = enabled
+	printt( "[MapTriggers]", enabled ? "ENABLED" : "DISABLED", n, "triggers" )
+}
+
+void function ClientCommand_toggle_map_triggers( entity player, array<string> args )
+{
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	Dev_SetMapTriggersEnabled( !file.mapTriggersEnabled )
+
+	string text = file.mapTriggersEnabled ? "Map Triggers: ON" : "Map Triggers: OFF"
+	LocalSplashMsgAll( text, 3.0 )
+}
+
+void function ClientCommand_noclip( entity player, array<string> args )
+{
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	if ( IsValid( player.GetParent() ) )
+		return
+
+	if ( player.IsPhaseShifted() )
+		return
+
+	if ( player.IsNoclipping() )
+	{
+		player.SetPhysics( MOVETYPE_WALK )
+		DevToggle_AlertAll( "#FS_NOCLIP_OFF" )
+	}
+	else
+	{
+		player.SetPhysics( MOVETYPE_NOCLIP )
+		DevToggle_AlertAll( "#FS_NOCLIP_ON" )
+	}
+}
+
+void function ClientCommand_demigod( entity player, array<string> args )
+{
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	if ( IsDemigod( player ) )
+	{
+		DisableDemigod( player )
+		DevToggle_AlertAll( "#FS_GODMODE_OFF" )
+	}
+	else
+	{
+		EnableDemigod( player )
+		DevToggle_AlertAll( "#FS_GODMODE_ON" )
+	}
+}
+
+void function ClientCommand_ToggleThirdPerson( entity player, array<string> args )
+{
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	if ( player.IsThirdPersonShoulderModeOn() )
+	{
+		player.SetThirdPersonShoulderModeOff()
+		DevToggle_AlertAll( "#FS_THIRDPERSON_OFF" )
+	}
+	else
+	{
+		player.SetThirdPersonShoulderModeOn()
+		DevToggle_AlertAll( "#FS_THIRDPERSON_ON" )
+	}
+}
+
+void function ClientCommand_ToggleHUD( entity player, array<string> args )
+{
+	if( !IsValid( player ) )
+		return
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	if ( !( "hudVisible" in player.s ) )
+		player.s.hudVisible <- true
+
+	player.s.hudVisible = !player.s.hudVisible
+
+	array<int> flagsForHudVisibilityControl = [
+		CE_FLAG_HIDE_MAIN_HUD_INSTANT,
+		CE_FLAG_HIDE_PERMANENT_HUD
+	]
+
+	if ( player.s.hudVisible )
+	{
+		foreach ( flag in flagsForHudVisibilityControl )
+			RemoveCinematicFlag( player, flag )
+	} else
+	{
+		foreach ( flag in flagsForHudVisibilityControl )
+			AddCinematicFlag( player, flag )
+	}
+}
+
+// Toggles infinite reserve ammo for the calling player (bridge sidecar path).
+// Do not use survival_infinite_ammo mods -- S3 has no native infinite from those.
+void function ClientCommand_infinite_ammo( entity player, array<string> args )
+{
+	if ( !IsValid( player ) )
+		return
+
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	bool enable = !player.p.infiniteAmmo
+	SetInfiniteAmmoForPlayer( player, enable, [], true, true )
+	DevToggle_AlertAll( enable ? "#FS_INFINITE_AMMO_ON" : "#FS_INFINITE_AMMO_OFF" )
+}
+
+void function ClientCommand_finite_ammo( entity player, array<string> args )
+{
+	if ( !IsValid( player ) )
+		return
+
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	SetInfiniteAmmoForPlayer( player, false, [], true, true )
+	DevToggle_AlertAll( "#FS_INFINITE_AMMO_OFF" )
+}
+
+// Legacy flowstate kill_self -- suicide for testing autorespawn / death flow.
+void function ClientCommand_kill_self( entity player, array<string> args )
+{
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	if ( !IsValid( player ) || !IsAlive( player ) )
+		return
+
+	float cooldown = GetCurrentPlaylistVarFloat( "killself_cooldown", 1.0 )
+	if ( player.p.lastDeathTime > 0.0 && ( Time() - player.p.lastDeathTime ) < cooldown )
+		return
+
+	ClearRecentDamageHistory( player )
+	ClearLastAttacker( player )
+	player.Die( null, null, { damageSourceId = eDamageSourceId.damagedef_suicide } )
+}
+
+// Server-wide: after kill, wait 3s then force-respawn (bypasses BR elimination cycle).
+void function ClientCommand_auto_respawn( entity player, array<string> args )
+{
+	if ( !IsValid( player ) )
+		return
+
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	file.autoRespawnEnabled = !file.autoRespawnEnabled
+
+	if ( file.autoRespawnEnabled && !file.autoRespawnCallbackInstalled )
+	{
+		AddCallback_OnPlayerKilled( DevAutoRespawn_OnPlayerKilled )
+		file.autoRespawnCallbackInstalled = true
+	}
+
+	DevToggle_AlertAll( file.autoRespawnEnabled ? "#FS_AUTO_RESPAWN_ON" : "#FS_AUTO_RESPAWN_OFF" )
+
+	// Pick up anyone already dead when the toggle flips on.
+	if ( file.autoRespawnEnabled )
+	{
+		foreach ( entity p in GetPlayerArray() )
+		{
+			if ( IsValid( p ) && p.IsPlayer() && !IsAlive( p ) )
+				thread DevAutoRespawn_AfterDelay( p )
+		}
+	}
+}
+
+void function DevAutoRespawn_OnPlayerKilled( entity victim, entity attacker, var damageInfo )
+{
+	if ( !file.autoRespawnEnabled )
+		return
+
+	if ( !IsValid( victim ) || !victim.IsPlayer() )
+		return
+
+	if ( victim.GetTeam() == TEAM_SPECTATOR )
+		return
+
+	thread DevAutoRespawn_AfterDelay( victim )
+}
+
+void function DevAutoRespawn_AfterDelay( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+
+	// One active countdown per player (toggle-on + kill races).
+	player.Signal( "DevAutoRespawn" )
+	player.EndSignal( "DevAutoRespawn" )
+	player.EndSignal( "OnDestroy" )
+	player.EndSignal( "OnRespawned" )
+
+	// Let elimination / death-screen systems finish their first write.
+	WaitFrame()
+
+	if ( !IsValid( player ) || IsAlive( player ) || !file.autoRespawnEnabled )
+		return
+
+	float endTime = Time() + DEV_AUTO_RESPAWN_DELAY
+
+	// Death HUD: "#RESPAWNING_IN" + timer (dropship status + freeDM overlay).
+	player.SetPlayerNetInt( "respawnStatus", eRespawnStatus.WAITING_FOR_DROPPOD )
+	player.SetPlayerNetTime( "respawnStatusEndTime", endTime )
+	Remote_CallFunction_NonReplay( player, "ServerCallback_RespawnPodStarted", endTime )
+	Remote_CallFunction_NonReplay( player, "ServerCallback_DevAutoRespawnOverlay", endTime )
+
+	wait DEV_AUTO_RESPAWN_DELAY
+
+	if ( !IsValid( player ) || IsAlive( player ) || !file.autoRespawnEnabled )
+		return
+
+	player.SetPlayerNetInt( "respawnStatus", eRespawnStatus.NONE )
+	// Inline of DevRespawnPlayer (sh_dev_utility is When:DEV-only; this always ships).
+	player.p.DEV_hasDevRespawned = true
+	player.p.respawnPodLanded = true
+	player.p.hasMatchParticipationEnded = false
+	player.p.lastDeathTime = -1.0
+	ClearPlayerEliminated( player )
+	thread DevAutoRespawn_ClearPodLandedFlag( player )
+	DecideRespawnPlayer( player, false )
+}
+
+void function DevAutoRespawn_ClearPodLandedFlag( entity player )
+{
+	player.EndSignal( "OnDestroy" )
+	WaitEndFrame()
+	if ( IsValid( player ) )
+		player.p.respawnPodLanded = false
+}
+
+// Instantly fills a player's abilities
+void function ClientCommand_recharge( entity player, array<string> args )
+{
+	if( !IsValid( player ) )
+		return
+
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	DevAbilities_FillSlots( player, false )
+}
+
+// Continuous tac/ult clip + grapple (character abilities, not main weapons / not ordnance).
+// Research: ability cooldowns are offhand weapon clips + regen_ammo_refill_rate;
+// stock dev_mod_low_recharge only exists on one ability txt so is incomplete;
+// SetInfiniteAmmoState(INFINITEAMMO_CLIPS) is the engine no-drain path used by infinite ammo.
+void function ClientCommand_infinite_abilities( entity player, array<string> args )
+{
+	if ( !IsValid( player ) )
+		return
+
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+
+	bool enable = !player.p.infiniteAbilities
+	player.p.infiniteAbilities = enable
+
+	if ( enable )
+	{
+		DevAbilities_FillSlots( player, true )
+		thread DevInfiniteAbilities_Think( player )
+	}
+	else
+	{
+		player.Signal( "DevInfiniteAbilities" )
+		DevAbilities_ClearInfiniteState( player )
+	}
+
+	DevToggle_AlertAll( enable ? "#FS_INFINITE_ABILITIES_ON" : "#FS_INFINITE_ABILITIES_OFF" )
+}
+
+void function DevAbilities_FillSlots( entity player, bool setInfiniteClips )
+{
+	if ( !IsValid( player ) )
+		return
+
+	// Tac (OFFHAND_LEFT) + ult (OFFHAND_INVENTORY) -- same slots as recharge.
+	array<int> slots = [ OFFHAND_TACTICAL, OFFHAND_ULTIMATE ]
+	foreach ( int slot in slots )
+	{
+		entity weapon = player.GetOffhandWeapon( slot )
+		if ( !IsValid( weapon ) )
+			continue
+
+		int clipMax = weapon.GetWeaponPrimaryClipCountMax()
+		if ( clipMax > 0 && weapon.GetWeaponPrimaryClipCount() < clipMax )
+			weapon.SetWeaponPrimaryClipCount( clipMax )
+
+		if ( setInfiniteClips )
+			weapon.SetInfiniteAmmoState( INFINITEAMMO_CLIPS )
+	}
+
+	// Grapple suit power (Pathfinder / recharge path).
+	player.SetSuitGrapplePower( 100 )
+}
+
+void function DevAbilities_ClearInfiniteState( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+
+	array<int> slots = [ OFFHAND_TACTICAL, OFFHAND_ULTIMATE ]
+	foreach ( int slot in slots )
+	{
+		entity weapon = player.GetOffhandWeapon( slot )
+		if ( !IsValid( weapon ) )
+			continue
+
+		if ( weapon.GetInfiniteAmmoState() != INFINITEAMMO_NONE )
+			weapon.SetInfiniteAmmoState( INFINITEAMMO_NONE )
+	}
+}
+
+// Re-apply after fire / character swap / respawn while flag stays on.
+void function DevInfiniteAbilities_Think( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+
+	player.Signal( "DevInfiniteAbilities" )
+	player.EndSignal( "DevInfiniteAbilities" )
+	player.EndSignal( "OnDestroy" )
+
+	while ( IsValid( player ) && player.p.infiniteAbilities )
+	{
+		if ( IsAlive( player ) )
+			DevAbilities_FillSlots( player, true )
+
+		wait 0.25
+	}
+}
+
+// -----------------------------------------------------------------------------
+// DevMenu respawn (from sh_dev_utility; always-loaded so non-DEV dedi works)
+// Specifiers: me, all, alldead, random, randomdead, bots, deadbots, allies, enemies
+// -----------------------------------------------------------------------------
+
+// Used by ShouldPlayerBeEliminated under #if DEVELOPER; also exported for non-DEV force paths.
+bool ornull function DevRespawnGetPlayerEliminationOverride( entity player )
+{
+	switch ( file.respawnBehaviourOverride )
+	{
+		case "allow":
+			return false
+		case "deny":
+			return true
+		case "bots":
+			if ( player.IsBot() )
+				return false
+			break
+	}
+	return null
+}
+
+void function DevRespawnPlayer( entity player, bool shouldForce, void functionref( entity, int ) devCallbackFunc = null, int devIndex = -1 )
+{
+	if ( !IsValid( player ) )
+		return
+
+	if ( shouldForce && IsAlive( player ) )
+	{
+		player.SetHealth( 0 )
+		wait 1.0
+	}
+
+	if ( !IsValid( player ) )
+		return
+
+	if ( !IsAlive( player ) )
+	{
+		player.p.DEV_hasDevRespawned = true
+		player.p.respawnPodLanded = true
+		thread DevMenu_DelayUnsetRespawnPodLanded( player )
+		player.p.hasMatchParticipationEnded = false
+		player.p.lastDeathTime = -1.0
+		ClearPlayerEliminated( player )
+		if ( shouldForce )
+			RespawnTitanPilot( player )
+		else
+			DecideRespawnPlayer( player, false )
+	}
+
+	if ( devCallbackFunc != null )
+		devCallbackFunc( player, devIndex )
+}
+
+void function DevMenu_DelayUnsetRespawnPodLanded( entity player )
+{
+	player.EndSignal( "OnDestroy" )
+	WaitEndFrame()
+	if ( IsValid( player ) )
+		player.p.respawnPodLanded = false
+}
+
+void function DEV_RespawnPlayersBySpecifiers( array<string> specifiers, entity primaryPlayer = null, void functionref( entity, int ) devCallbackFunc = null )
+{
+	if ( specifiers.len() == 0 )
+		specifiers.append( "me" )
+
+	if ( primaryPlayer == null )
+	{
+		array<entity> all = GetPlayerArray()
+		if ( all.len() == 0 )
+			return
+		primaryPlayer = all[0]
+	}
+
+	array<entity> playersToRespawnList = []
+	foreach ( string specifier in specifiers )
+	{
+		switch ( specifier )
+		{
+			case "me":
+				playersToRespawnList.append( primaryPlayer )
+				break
+
+			case "all":
+				foreach ( entity player in GetPlayerArray() )
+					playersToRespawnList.append( player )
+				break
+
+			case "alldead":
+				foreach ( entity player in GetPlayerArray() )
+				{
+					if ( !IsAlive( player ) )
+						playersToRespawnList.append( player )
+				}
+				break
+
+			case "random":
+			{
+				array<entity> randomCandidates = []
+				foreach ( entity player in GetPlayerArray() )
+				{
+					if ( !playersToRespawnList.contains( player ) )
+						randomCandidates.append( player )
+				}
+				if ( randomCandidates.len() > 0 )
+					playersToRespawnList.append( randomCandidates[ RandomInt( randomCandidates.len() ) ] )
+				break
+			}
+
+			case "randomdead":
+			{
+				array<entity> randomCandidates = []
+				foreach ( entity player in GetPlayerArray() )
+				{
+					if ( !IsAlive( player ) && !playersToRespawnList.contains( player ) )
+						randomCandidates.append( player )
+				}
+				if ( randomCandidates.len() > 0 )
+					playersToRespawnList.append( randomCandidates[ RandomInt( randomCandidates.len() ) ] )
+				break
+			}
+
+			case "bots":
+				foreach ( entity player in GetPlayerArray() )
+				{
+					if ( player.IsBot() )
+						playersToRespawnList.append( player )
+				}
+				break
+
+			case "deadbots":
+				foreach ( entity player in GetPlayerArray() )
+				{
+					if ( !IsAlive( player ) && player.IsBot() )
+						playersToRespawnList.append( player )
+				}
+				break
+
+			case "allies":
+				foreach ( entity player in GetPlayerArrayOfTeam( primaryPlayer.GetTeam() ) )
+					playersToRespawnList.append( player )
+				break
+
+			case "enemies":
+				foreach ( entity player in GetPlayerArrayOfEnemies( primaryPlayer.GetTeam() ) )
+					playersToRespawnList.append( player )
+				break
+
+			default:
+				printt( "[DevMenu] invalid respawn specifier:", specifier )
+				break
+		}
+	}
+
+	table<entity, bool> already
+	int idx = 0
+	foreach ( entity player in playersToRespawnList )
+	{
+		if ( !IsValid( player ) )
+			continue
+		if ( player in already )
+			continue
+		already[player] <- true
+		idx++
+		thread DevRespawnPlayer( player, true, devCallbackFunc, idx )
+	}
+
+	printt( "[DevMenu] respawn requested for", idx, "player(s)" )
+}
+
+void function ClientCommand_respawn( entity commandPlayer, array<string> argList )
+{
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+	if ( !IsValid( commandPlayer ) )
+		return
+
+	thread DEV_RespawnPlayersBySpecifiers( argList, commandPlayer )
+}
+
+void function ClientCommand_set_respawn_override( entity commandPlayer, array<string> al )
+{
+	if ( GetConVarInt( "sv_cheats" ) != 1 )
+		return
+	if ( al.len() != 1 || !( al[0] == "off" || al[0] == "allow" || al[0] == "deny" || al[0] == "bots" ) )
+	{
+		printt( "[DevMenu] set_respawn_override usage: off | allow | deny | bots" )
+		return
+	}
+
+	file.respawnBehaviourOverride = al[0]
+	printt( "[DevMenu] respawn behaviour override =", file.respawnBehaviourOverride )
+
+	foreach ( entity player in GetPlayerArray() )
+		thread DevRespawnPlayer( player, false )
+}

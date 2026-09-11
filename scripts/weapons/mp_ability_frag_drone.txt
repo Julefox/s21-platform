@@ -1,0 +1,303 @@
+"WeaponData"
+{
+	"printname" "#ABL_ULT_FRAG_DRONE"
+	"shortprintname" "#ABL_ULT_FRAG_DRONE_SHORT"
+	"description" "#ABL_ULT_FRAG_DRONE_DESC"
+	"longdesc" "#ABL_ULT_FRAG_DRONE_LONGDESC"
+	"menu_icon" "rui/hud/ultimate_icons/ultimate_overdrive"
+	"hud_icon" "rui/hud/ultimate_icons/ultimate_overdrive"
+	"readymessage" "#HUD_BURNMETER_READY_DEFENSIVE_BOMBARDMENT"
+	"readyhint" "#HUD_BURNMETER_READY_DEFENSIVE_BOMBARDMENT_HINT"
+	"fx_muzzle_flash_attach" "muzzle_flash"
+	"fire_mode" "offhand"
+	"offhand_cancelled_by_melee" "1"
+	"is_toss_weapon" "1"
+	"minimap_reveal_distance" "32000"
+	"leveled_pickup" "1"
+	"offhand_default_inventory_slot" "0"
+	"offhand_interupts_weapon_anims" "1"
+	"offhand_toss_activates_on_attack" "1"
+	"offhand_toss_hold_is_resumable" "1"
+	"grenade_orient_to_velocity" "1"
+	"grenade_touch_triggers_on_impact" "1"
+	"primary_fire_does_not_block_sprint" "1"
+	"offhand_switch_on_attack" "0"
+	"does_not_interrupt_cloak" "1"
+	"fire_in_real_world_while_phased" "1"
+	"projectile_ricochet_max_count" "2"
+	"OnWeaponToss" "OnWeaponToss_FragDrone"
+	"OnWeaponTossReleaseAnimEvent" "OnWeaponTossReleaseAnimEvent_ability_frag_drone"
+	"OnWeaponRegenEnd" "OnWeaponRegenEndGeneric"
+	"viewmodel" "mdl/weapons/overdrive_clacker/ptpov_overdrive_ult_clacker.rmdl"
+	"playermodel" "mdl/props/overdrive_clacker_01/overdrive_clacker_01.rmdl"
+	"projectilemodel" "mdl/props/overdrive_ult_drone/overdrive_ult_drone_w.rmdl"
+	"show_grenade_indicator" "0"
+	"show_grenade_indicator_to_owner" "0"
+	"zoom_effects" "0"
+	"projectile_adjust_to_gun_barrel" "1"
+	"projectile_adjust_to_hand" "0"
+	"grenade_disc_throw" "1"
+	"stick_pilot" "0"
+	"stick_titan" "0"
+	"stick_npc" "0"
+	"stick_drone" "0"
+	"critical_hit" "0"
+	"battle_chatter_event" "bc_super"
+	"idle_sound_player_1p" "Overdrive_Ult_Clacker_DrawIdle_1P"
+	"damage_type" "burn"
+	"damage_near_distance" "1000"
+	"damage_far_distance" "3000"
+	"damage_near_value" "50"
+	"damage_far_value" "50"
+	"damage_near_value_titanarmor" "50"
+	"damage_far_value_titanarmor" "50"
+	"damage_flags" "DF_RAGDOLL | DF_EXPLOSION | DF_GIB"
+	"explosion_damage" "50"
+	"explosion_damage_heavy_armor" "50"
+	"explosion_inner_radius" "150"
+	"explosionradius" "150"
+	"impulse_force" "500"
+	"impulse_force_explosions" "50000"
+	"explosion_shake_radius" "500"
+	"explosion_shake_amplitude" "60"
+	"explosion_shake_frequency" "45"
+	"explosion_shake_duration" "0.750000"
+	"projectile_killreplay_enabled" "1"
+	"projectile_chasecamOffsetUp" "-3"
+	"projectile_chasecamOffsetRight" "12"
+	"grenade_inherit_owner_velocity" "1"
+	"damage_shield_scale" "1"
+	"ammo_display" "count"
+	"ammo_default_total" "0"
+	"ammo_clip_size" "90"
+	"ammo_stockpile_max" "90"
+	"ammo_min_to_fire" "90"
+	"ammo_per_shot" "90"
+	"regen_ammo_refill_rate" "1"
+	"regen_ammo_refill_start_delay" "0.100000"
+	"ammo_no_remove_from_stockpile" "0"
+	"cooldown_type" "ammo_instant"
+	"max_cook_time" "99999.992188"
+	"grenade_fuse_time" "0.000000"
+	"start_fuse_on_launch" "0"
+	"grenade_ignition_time" "1.200000"
+	"fire_rate" "2"
+	"fire_anim_rate" "2"
+	"deploy_time" "0.200000"
+	"vortex_refire_behavior" "grenade"
+	"allow_empty_fire" "0"
+	"reload_enabled" "0"
+	"allow_empty_click" "1"
+	"empty_reload_only" "0"
+	"trigger_snipercam" "0"
+	"allow_headshots" "0"
+	"aimassist_disable_hipfire" "1"
+	"aimassist_disable_ads" "1"
+	"toss_pullout_time" "0.250000"
+	"toss_time" "1"
+	"toss_overhead_time" "1"
+	"lower_time" "0.150000"
+	"projectile_launch_speed" "1100"
+	"projectile_launch_pitch_offset" "8"
+	"rumble" "3"
+	"vortex_impact_effect" "P_impact_exp_emp_med_default"
+	"vortex_absorb_effect" "wpn_vortex_projectile_frag_FP"
+	"vortex_absorb_effect_third_person" "wpn_vortex_projectile_frag"
+	"vortex_absorb_sound" "Vortex_Shield_AbsorbBulletLarge"
+	"vortex_absorb_sound_1p_vs_3p" "Vortex_Shield_AbsorbBulletLarge_1P_VS_3P"
+	"entity_uses_emissive_events" "1"
+	"bob_cycle_time" "0.400000"
+	"bob_vert_dist" "0.190000"
+	"bob_horz_dist" "0.100000"
+	"bob_max_speed" "150"
+	"viewdrift_hipfire_stand_scale_pitch" "0.325000"
+	"viewdrift_hipfire_crouch_scale_pitch" "0.275000"
+	"viewdrift_hipfire_air_scale_pitch" "0.500000"
+	"viewdrift_hipfire_stand_scale_yaw" "0.120000"
+	"viewdrift_hipfire_crouch_scale_yaw" "0.100000"
+	"viewdrift_hipfire_air_scale_yaw" "0.220000"
+	"viewdrift_hipfire_speed_pitch" "0.600000"
+	"viewdrift_hipfire_speed_yaw" "1.220000"
+	"sway_rotate_attach" "jx_c_pov"
+	"sway_min_x" "-0.300000"
+	"sway_min_y" "-0.500000"
+	"sway_min_z" "-0.500000"
+	"sway_max_x" "0.300000"
+	"sway_max_y" "0.500000"
+	"sway_max_z" "0.100000"
+	"sway_min_pitch" "-3"
+	"sway_min_yaw" "-3.500000"
+	"sway_min_roll" "-1"
+	"sway_max_pitch" "3"
+	"sway_max_yaw" "3.500000"
+	"sway_max_roll" "2"
+	"sway_translate_gain" "4"
+	"sway_rotate_gain" "7"
+	"sway_move_forward_translate_x" "0"
+	"sway_move_forward_translate_z" "-0.500000"
+	"sway_move_back_translate_x" "-2"
+	"sway_move_back_translate_z" "-1"
+	"sway_move_left_translate_y" "-1"
+	"sway_move_left_translate_z" "-0.250000"
+	"sway_move_left_rotate_roll" "-1"
+	"sway_move_right_translate_y" "1"
+	"sway_move_right_translate_z" "-0.250000"
+	"sway_move_right_rotate_roll" "2"
+	"sway_move_up_translate_z" "-1"
+	"sway_move_down_translate_z" "1"
+	"sway_turn_left_rotate_yaw" "-2"
+	"sway_turn_right_rotate_yaw" "2"
+	"sway_turn_up_rotate_pitch" "2"
+	"sway_turn_down_rotate_pitch" "-2"
+	"sway_turn_angle_factor" "-0.500000"
+	"sway_turn_origin_factor" "0"
+	"sway_move_angle_factor" "0.500000"
+	"sway_move_origin_factor" "0.500000"
+	"sway_gain" "15.000000"
+	"active_crosshair_count" "1"
+	"rui_crosshair_index" "0"
+	"ordnance_crosshair_always_on_start_index" "1"
+	"weapon_type_flags" "WPT_ULTIMATE"
+	"OnWeaponRegenBegin" "Ultimate_OnWeaponRegenBegin"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "Survival_UI_Ultimate_Ready"
+	"drops_on_death" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"upgrade_core_ult_cooldown_reduction"
+		{
+			"ammo_clip_size" "90"
+			"ammo_stockpile_max" "90"
+			"ammo_min_to_fire" "90"
+			"ammo_per_shot" "90"
+
+		}
+
+		"upgrade_core_ult_charge"
+		{
+			"ammo_clip_size" "180"
+			"ammo_stockpile_max" "180"
+
+		}
+
+		"frag_drone_cooldown_mult"
+		{
+			"regen_ammo_refill_rate" "*5"
+			"menu_icon" "rui/menu/event_ability/ult_cooldown_reduction_reward_icon"
+			"hud_icon" "rui/menu/event_ability/ult_cooldown_reduction_reward_icon"
+
+		}
+
+		"ultimates_charge_over_time_disabled"
+		{
+			"regen_ammo_refill_rate" "0"
+
+		}
+
+		"arenas_ammo_regen_off"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_armor_cooldown_v2_mod"
+		{
+			"regen_ammo_refill_rate" "*1.33"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+
+		"matchmod_bonus_speed"
+		{
+			"move_speed_modifier" "*2.0"
+			"reload_time" "*0.50"
+			"reload_time_late1" "*0.50"
+			"reload_time_late2" "*0.50"
+			"reload_time_late3" "*0.50"
+			"reload_time_late4" "*0.50"
+			"reload_time_late5" "*0.50"
+			"reloadempty_time" "*0.50"
+			"reloadempty_time_late1" "*0.50"
+			"reloadempty_time_late2" "*0.50"
+			"reloadempty_time_late3" "*0.50"
+			"reloadempty_time_late4" "*0.50"
+			"reloadempty_time_late5" "*0.50"
+			"charge_cooldown_time" "*0.50"
+			"charge_overheat_cooldown_time" "*0.50"
+			"charge_overheat_cooldown_time_late1" "*0.50"
+			"charge_overheat_cooldown_time_late2" "*0.50"
+			"charge_overheat_cooldown_time_late3" "*0.50"
+
+		}
+
+		"matchmod_quick_charge"
+		{
+			"regen_ammo_refill_rate" "*2"
+
+		}
+	}
+
+	"RUI_CrosshairData"
+	{
+
+		"DefaultArgs"
+		{
+			"adjustedSpread" "weapon_spread"
+			"adsFrac" "player_zoomFrac"
+			"isSprinting" "player_is_sprinting"
+			"isReloading" "weapon_is_reloading"
+			"teamColor" "crosshair_team_color"
+			"isAmped" "weapon_is_amped"
+			"crosshairMovementX" "crosshair_movement_x"
+			"crosshairMovementY" "crosshair_movement_y"
+
+		}
+
+		"Crosshair_1"
+		{
+			// not in ui.dll; original: "ui/crosshair_frag_drone"
+			"ui" "ui/crosshair_ordnance"
+
+			"Args"
+			{
+				"regenRate" "eWeaponVar.regen_ammo_refill_rate"
+				"ammoFrac" "progress_weapon_clip_ammo_frac"
+				"dryfireTime" "weapon_latest_dryfire_time"
+
+			}
+		}
+	}
+}

@@ -1,0 +1,114 @@
+global function ShPassiveSquadwipeSquadCount_Init
+
+#if CLIENT
+global function ServerToClient_NearbySquads_Obit
+#endif
+
+const float NEARBY_SQUAD_RANGE_CRYPTO = 7913 //200m
+const float NEARBY_SQUAD_RANGE_ASH    = 5905 //150m
+const float NEARBY_SQUAD_RANGE_REV    = 5905 //150m
+
+void function ShPassiveSquadwipeSquadCount_Init()
+{
+	#if SERVER || CLIENT
+		Remote_RegisterClientFunction( "ServerToClient_NearbySquads_Obit", "entity", "int", -1, 2 )
+	#endif
+
+	#if SERVER
+		AddCallback_OnPlayerKilled( SquadwipeBoost_TryApply )
+	#endif
+}
+
+#if SERVER
+float function GetNearbySquadRange( entity player )
+{
+	if ( PlayerHasPassive( player, ePassives.PAS_ASH) )
+		return GetCurrentPlaylistVarFloat( "ash_surrounding_squad_count_range", NEARBY_SQUAD_RANGE_ASH )
+
+	if ( PlayerHasPassive( player, ePassives.PAS_REVENANT_REWORK) )
+		return GetCurrentPlaylistVarFloat( "ash_surrounding_squad_count_range", NEARBY_SQUAD_RANGE_REV )
+
+	return NEARBY_SQUAD_RANGE_CRYPTO
+}
+
+void function SquadwipeBoost_TryApply( entity victim, entity attacker, var damageInfo )
+{
+	if ( !IsValid( victim ) )
+		return
+	if ( !IsValid( attacker ) )
+		return
+	if ( !attacker.IsPlayer() || !IsAlive( attacker ) || Bleedout_IsBleedingOut( attacker ) )
+		return
+
+	if( !attacker.HasPassive( ePassives.PAS_SQUADWIPE_SQUAD_COUNT ) )
+		return
+
+	int victimTeam = victim.GetTeam()
+	if ( GetPlayerArrayOfTeam_Alive( victimTeam ).len() > 0 )
+		return
+
+	thread AnnounceNearbySquads_Thread( attacker )
+}
+
+void function AnnounceNearbySquads_Thread( entity player )
+{
+	if ( !IsValid( player ) )
+		return
+	EndSignal( player, "OnDestroy", "OnDeath" )
+
+	wait 0.5
+
+	int squadCount = GetNumberOfEnemySquadsInRange( player )
+	squadCount = minint( squadCount, 2 )
+	string voice = GetPlayerVoice( player )
+
+	PlayBattleChatterLineToTeamButNotSpeaker( player, "bc_" + voice + "_SquadLeft_" + squadCount )
+	thread PlayBattleChatterLineDelayedToPlayer( player, "bc_" + voice + "_SquadLeft_" + squadCount, 0.5 )
+
+	wait 0.25
+
+	foreach ( teammate in GetPlayerArrayOfTeam( player.GetTeam() ) )
+		Remote_CallFunction_Replay( teammate, "ServerToClient_NearbySquads_Obit", player, squadCount )
+}
+
+int function GetNumberOfEnemySquadsInRange( entity owner )
+{
+	array<entity> players = GetPlayerArrayEx( "any", TEAM_ANY, TEAM_ANY, owner.GetOrigin(), GetNearbySquadRange( owner ) )
+
+	int ownerTeam = owner.GetTeam()
+	IntSet nearbyEnemyTeams
+	foreach ( player in players )
+	{
+		if ( !player.DoesShareRealms( owner ) )
+			continue
+
+		if ( player == owner )
+			continue
+
+		if ( !IsAlive( player ) )
+			continue
+
+		// Defensive fix for R5DEV-177090 -- don't have exact repro, but this should be good regardless
+		if ( player.IsObserver() )
+			continue
+
+		int playerTeam = player.GetTeam()
+		if ( IsFriendlyTeam( ownerTeam, playerTeam ) )
+			continue
+
+		if ( playerTeam == 0 || playerTeam == 1 )
+			continue
+
+		nearbyEnemyTeams[playerTeam] <- IN_SET
+	}
+
+	return nearbyEnemyTeams.len()
+}
+#endif
+
+#if CLIENT
+void function ServerToClient_NearbySquads_Obit( entity player, int squadCount )
+{
+	Obituary_Print_Localized( Localize( "#UPGRADE_ALERT_ENEMY_SQUADS_" + string( squadCount ), player.GetPlayerName() ), GetPlayerInfoColor( player ), OBITUARY_COLOR_ENEMY )
+}
+#endif

@@ -1,0 +1,172 @@
+#if SERVER
+global function InitSkit_ShackGarrison
+global function SkitTestAAA
+global function SkitTestBBB
+
+
+struct SimpleSquadInfo
+{
+	array<InfantrySpawn> spawnPoints
+	array<entity> ents
+	int npcType
+	int spawnCredits
+}
+
+struct MyVars
+{
+	ResourceGroup& shackGroup
+
+	SimpleSquadInfo outsideSquad
+	SimpleSquadInfo insideSquad
+}
+
+table<SkitInstance, MyVars> s_siToVars
+SkitInstance ornull function InitSkit_ShackGarrison( ResourceGroup shackGroup )
+{
+	SkitInstance si = Skit_AllocInstance( Runtime, Cleanup )
+	MyVars vars
+	s_siToVars[si] <- vars
+
+	vars.shackGroup = shackGroup
+
+	return si
+}
+void function Cleanup( SkitInstance si )
+{
+	delete s_siToVars[si]
+}
+
+void function Runtime( SkitInstance si )
+{
+	MyVars vars = s_siToVars[si]
+
+	Skit_RegisterFunc_OnNPCGarbageCollected( si, OnGC )
+
+	//
+	vars.insideSquad.spawnPoints = ORS_Find_( vars.shackGroup, 0, [eORType.INFANTRY_SPAWN], [RES_KEYWORD_INDOORS], [] ).infantrySpawns
+	vars.insideSquad.spawnCredits = 3
+//	vars.insideSquad.npcType = eNPC.SHOTGUNNER
+                           
+                                                
+     
+	vars.insideSquad.npcType = eNPC.DEATH_SPECTRE
+      
+
+	vars.outsideSquad.spawnPoints = ORS_Find_( vars.shackGroup, 0, [eORType.INFANTRY_SPAWN], [], [RES_KEYWORD_INDOORS] ).infantrySpawns
+	vars.outsideSquad.spawnCredits = 2
+//	vars.outsideSquad.npcType = eNPC.RIFLEMAN
+	vars.outsideSquad.npcType = eNPC.SPECTRE
+
+	int zoneId = MapZones_GetZoneForOrigin( vars.shackGroup.core.spawnOrigin )
+	SkTools_WatchZonePopulationForThreshold( si, zoneId, eZonePop.PLAYERS_NEARBY, OnNearbyStarted, OnNearbyFinished )
+	SkTools_WatchZonePopulationForThreshold( si, zoneId, eZonePop.PLAYERS_INSIDE, OnInsideStarted, OnInsideFinished )
+
+	//wait 5
+	WaitForever()
+}
+
+void function OnGC( SkitInstance si, entity npc )
+{
+	MyVars vars = s_siToVars[si]
+	if ( vars.insideSquad.ents.contains( npc ) )
+		vars.insideSquad.spawnCredits++
+	else if ( vars.outsideSquad.ents.contains( npc ) )
+		vars.outsideSquad.spawnCredits++
+}
+
+void function DoSpawnsForPlayerArrival( SkitInstance si, SimpleSquadInfo squad )
+{
+	MyVars vars = s_siToVars[si]
+
+	foreach ( entity npc in squad.ents )
+	{
+		if ( !IsAlive( npc ) )
+			continue
+		GarbageCollection_ClearMarkFromNPC( npc )
+	}
+
+	int count = minint( squad.spawnCredits, squad.spawnPoints.len() )
+	for ( int idx = 0; idx < count; ++idx )
+	{
+		InfantrySpawn spawn = squad.spawnPoints[idx]
+		squad.ents.append( SkNPC_SpawnNPC( si, squad.npcType, spawn.core.spawnOrigin, spawn.core.spawnAngles ) )
+		squad.spawnCredits--
+	}
+}
+
+void function MarkAllForCleanup( SimpleSquadInfo squad )
+{
+	foreach ( entity npc in squad.ents )
+	{
+		if ( !IsAlive( npc ) )
+			continue
+		GarbageCollection_MarkNPC( npc )
+	}
+}
+
+void function OnNearbyStarted( SkitInstance si )
+{
+	printf( "%s()", FUNC_NAME() )
+	MyVars vars = s_siToVars[si]
+	DoSpawnsForPlayerArrival( si, vars.outsideSquad )
+}
+void function OnNearbyFinished( SkitInstance si )
+{
+	printf( "%s()", FUNC_NAME() )
+	MyVars vars = s_siToVars[si]
+	MarkAllForCleanup( vars.outsideSquad )
+}
+
+void function OnInsideStarted( SkitInstance si )
+{
+	printf( "%s()", FUNC_NAME() )
+	MyVars vars = s_siToVars[si]
+	DoSpawnsForPlayerArrival( si, vars.insideSquad )
+}
+void function OnInsideFinished( SkitInstance si )
+{
+	printf( "%s()", FUNC_NAME() )
+	MyVars vars = s_siToVars[si]
+	MarkAllForCleanup( vars.insideSquad )
+}
+
+//////////////////////
+
+
+void function SkitTestAAA( int index )
+{
+	array<ResourceGroup> shackGroups = ORS_Find_( ORS_GetGlobalGroup(), 0, [eORType.GROUP], ["garrison_shack"], [] ).groups
+	ResourceGroup shackGroup = shackGroups[index]
+
+	SkitInstance ornull siRaw = InitSkit_ShackGarrison( shackGroup )
+	printf( "%s() - %s", FUNC_NAME(), string( siRaw ) )
+	if ( siRaw == null )
+		return
+	expect SkitInstance( siRaw )
+	SkRes_MarkResourceInUse( shackGroup.core, siRaw )
+	Skit_LaunchInstance( siRaw )
+}
+
+
+void function SkitTestBBB()
+{
+	array<ResourceGroup> shackGroups = ORS_Find_( ORS_GetGlobalGroup(), 0, [eORType.GROUP], ["garrison_shack"], [] ).groups
+
+	printf( "Found %d shack groups.", shackGroups.len() )
+	foreach( ResourceGroup group in shackGroups )
+	{
+		printf( "Launching for group: %s", ORS_GetLongDesc( group.core ) )
+		SkitInstance ornull siRaw = InitSkit_ShackGarrison( group )
+		if ( siRaw == null )
+		{
+			printf( "   ...failed to launch." )
+			return
+		}
+
+		expect SkitInstance( siRaw )
+		SkRes_MarkResourceInUse( group.core, siRaw )
+		Skit_LaunchInstance( siRaw )
+	}
+}
+
+#endif // #if SERVER

@@ -1,0 +1,107 @@
+global function ShPassiveKnockTacReset_Init
+
+const float TAC_RESET_ASSIST_WINDOW = 3.0
+
+// Relevant upgrades:
+// upgrade_pathfinder_tac_knock_reset
+// upgrade_revenant_knock_refresh
+
+void function ShPassiveKnockTacReset_Init()
+{
+	#if SERVER
+		Bleedout_AddCallback_OnPlayerStartBleedout( KnockTacReset_OnDowned )
+		AddCallback_OnPlayerKilled( KnockTacReset_OnKilled ) // Handle Kills on Non-Bleeding Out Targets
+	#endif
+}
+
+#if SERVER
+bool function ValidityChecks( entity victim, entity attacker )
+{
+	if ( !IsValid( victim ) )
+		return false
+	if ( !IsValid( attacker ) )
+		return false
+	if ( !attacker.IsPlayer() || !IsAlive( attacker ) || Bleedout_IsBleedingOut( attacker ) )
+		return false
+
+	return true
+}
+
+void function RefreshTacCharge( entity attacker )
+{
+	entity tacWeapon = attacker.GetOffhandWeapon( OFFHAND_LEFT )
+	if ( IsValid( tacWeapon ) )
+	{
+		int oneCharge = tacWeapon.GetWeaponSettingInt( eWeaponVar.ammo_min_to_fire )
+		tacWeapon.SetWeaponPrimaryClipCount( oneCharge )
+		Remote_CallFunction_Replay( attacker, "ServerCallback_UpdateOffhandRuis" )
+	}
+}
+
+void function KnockTacReset_OnDowned( entity victim, entity attacker, var damageInfo )
+{
+	if ( !ValidityChecks( victim, attacker ) )
+		return
+
+	// Knock
+	if ( attacker.HasPassive( ePassives.PAS_KNOCK_TAC_RESET ) )
+	{
+		RefreshTacCharge( attacker )
+		return
+	}
+
+	if ( !GetCurrentPlaylistVarBool( "assist_tac_refresh", true ) )
+		return
+
+	// Assisted Knock
+	victim.p.playerToTimeThatAssistCreditLastsTable = GetLatestAssistingPlayersFromSameTeam( victim, attacker )
+	foreach ( entity assistCreditPlayer, float assistTime in victim.p.playerToTimeThatAssistCreditLastsTable )
+	{
+		if ( !IsValid( assistCreditPlayer ) )
+			continue
+
+		float maxAssistGap = GetCurrentPlaylistVarFloat( "max_assist_time_gap", MAX_ASSIST_TIME_GAP )
+		float reducedAssistTime = maxAssistGap - GetCurrentPlaylistVarFloat( "tac_reset_assist_window", TAC_RESET_ASSIST_WINDOW )
+		float curAssistTime = assistTime - reducedAssistTime
+		if( Time() > curAssistTime )
+			continue
+
+		if ( PlayerHasPassive( assistCreditPlayer, ePassives.PAS_KNOCK_TAC_RESET ) )
+			RefreshTacCharge( assistCreditPlayer )
+	}
+}
+
+void function KnockTacReset_OnKilled( entity victim, entity attacker, var damageInfo )
+{
+	if ( !ValidityChecks( victim, attacker ) )
+		return
+
+	if ( Bleedout_IsBleedingOut( victim ) )
+		return
+
+	// Kills on Non-Bleeding Out Targets
+	if ( attacker.HasPassive( ePassives.PAS_KNOCK_TAC_RESET ) )
+		RefreshTacCharge( attacker )
+
+	if ( !GetCurrentPlaylistVarBool( "assist_tac_refresh", true ) )
+		return
+
+	// Assists on Non-Bleeding Out Targets
+	victim.p.playerToTimeThatAssistCreditLastsTable = GetLatestAssistingPlayersFromSameTeam( victim, attacker )
+	foreach ( entity assistCreditPlayer, float assistTime in victim.p.playerToTimeThatAssistCreditLastsTable )
+	{
+		if ( !IsValid( assistCreditPlayer ) )
+			continue
+
+		float maxAssistGap = GetCurrentPlaylistVarFloat( "max_assist_time_gap", MAX_ASSIST_TIME_GAP )
+		float reducedAssistTime = maxAssistGap - GetCurrentPlaylistVarFloat( "tac_reset_assist_window", TAC_RESET_ASSIST_WINDOW )
+		float curAssistTime = assistTime - reducedAssistTime
+		printt( "curTime: " + Time() + ", curAssistTime: " + curAssistTime )
+		if( Time() > curAssistTime )
+			continue
+
+		if ( PlayerHasPassive( assistCreditPlayer, ePassives.PAS_KNOCK_TAC_RESET ) )
+			RefreshTacCharge( assistCreditPlayer )
+	}
+}
+#endif

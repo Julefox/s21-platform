@@ -1,0 +1,36 @@
+untyped
+
+global function HealthBarStyle_CL_Init
+global function HealthBarStyle_CL_Get
+
+global enum eHealthBarStyle
+{
+	RECON,
+	VGUI,
+	DISABLED
+}
+
+int function HealthBarStyle_CL_Get()
+{
+	int setting = GetConVarInt( "hud_setting_healthbar_style" )
+	if ( setting == 1 )
+		return eHealthBarStyle.VGUI
+	if ( setting == 2 )
+		return eHealthBarStyle.DISABLED
+	return eHealthBarStyle.RECON
+}
+
+void function HealthBarStyle_CL_Init()
+{
+	AddCallback_OnSettingsUpdated( HealthBarStyle_CL_Apply )
+	HealthBarStyle_CL_Apply()
+	printt( format( "[HealthBar] CL init style=%d", HealthBarStyle_CL_Get() ) )
+}
+
+void function HealthBarStyle_CL_Apply()
+{
+	int style = HealthBarStyle_CL_Get()
+	FS_HealthBar_SetEnabled( style == eHealthBarStyle.VGUI )
+	if ( style != eHealthBarStyle.RECON )
+		ClDamageHealthBar_ForceHideAll()
+}

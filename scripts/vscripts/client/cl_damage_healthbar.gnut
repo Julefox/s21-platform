@@ -1,0 +1,277 @@
+untyped
+
+global function ClDamageHealthBar_Init
+global function ClDamageHealthBar_SetEnabled
+global function ClDamageHealthBar_ForceHideAll
+global function DamageHealthBar_IsTargetInSight
+global function DamageHealthBar_GetLosHideDelay
+
+struct
+{
+	bool showOnDummies = false
+	table<entity, bool> activeBars
+} file
+
+const float DMG_HEALTHBAR_SHOW_DURATION = 3.0
+const float DMG_HEALTHBAR_DUMMY_SHOW_DURATION = 2.5
+const float DMG_HEALTHBAR_LOS_HIDE_DELAY = 0.05
+const float DMG_HEALTHBAR_LOS_HIDE_DELAY_MAX = 2.0
+// Fixed height above entity ORIGIN (not HEAD -- head bob/strafe wobbles the bar)
+const float DMG_HEALTHBAR_DUMMY_Z_OFFSET = 75.0
+
+void function ClDamageHealthBar_Init()
+{
+	RegisterSignal( "DmgHealthBar_Revealed" )
+	PrecacheModel( $"mdl/dev/empty_model.rmdl" )
+	PrecacheModel( $"mdl/dev/editor_ref.rmdl" )
+
+	AddLocalPlayerDidDamageCallback( DamageHealthBar_OnLocalPlayerDidDamage )
+	thread DamageHealthBar_SuppressNativeTargetInfo()
+}
+
+// The engine draws its own overhead panel per target (name, title, health bar) from
+// the AI settings row, independent of recon_scan_target -- two bars on one dummy.
+void function DamageHealthBar_SuppressNativeTargetInfo()
+{
+	while ( !IsValid( GetLocalViewPlayer() ) )
+		WaitFrame()
+
+	if ( !GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_FIRING_RANGE ) && !GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_TRAINING ) )
+		return
+
+	HudTargetInfo_Enable( false )
+	printt( "[DmgHealthBar] native target-info panel disabled" )
+}
+
+// DevMenu "Recon Health Bars" -- dummies only, players keep theirs.
+void function ClDamageHealthBar_SetEnabled( bool enabled )
+{
+	file.showOnDummies = enabled
+	if ( !enabled )
+		ClDamageHealthBar_ForceHideAll()
+	printt( format( "[DmgHealthBar] dummy bars=%s", string( enabled ) ) )
+}
+
+void function ClDamageHealthBar_ForceHideAll()
+{
+	array<entity> keys
+	foreach ( entity ent, bool ignored in file.activeBars )
+		keys.append( ent )
+
+	foreach ( entity ent in keys )
+	{
+		if ( IsValid( ent ) )
+			ent.Signal( "DmgHealthBar_Revealed" )
+	}
+}
+
+bool function DamageHealthBar_IsSupportedVictim( entity victim )
+{
+	if ( HealthBarStyle_CL_Get() != eHealthBarStyle.RECON )
+		return false
+
+	if ( !IsValid( victim ) )
+		return false
+
+	if ( Flowstate_IsGame1v1Type() )
+	{
+		if ( !victim.IsPlayer() )
+			return false
+
+		entity localPlayer = GetLocalClientPlayer()
+		if ( !IsValid( localPlayer ) )
+			return false
+
+		int st = localPlayer.GetPlayerNetInt( "FS_1v1_PlayerState" )
+		if ( st != e1v1State.IN_MATCH && st != e1v1State.SEQUENCE )
+			return false
+
+		entity enemy = localPlayer.GetPlayerNetEnt( "FSDM_1v1_Enemy" )
+		if ( victim != enemy )
+			return false
+
+		return true
+	}
+
+	if ( victim.IsPlayer() || victim.IsPlayerDecoy() )
+		return true
+
+	if ( file.showOnDummies && victim.IsNPC() && IsTrainingDummie( victim ) )
+		return true
+
+	return false
+}
+
+float function DamageHealthBar_GetLosHideDelay()
+{
+	float delay = GetCurrentPlaylistVarFloat( "fs_1v1_healthbar_los_hide", DMG_HEALTHBAR_LOS_HIDE_DELAY )
+	if ( delay < 0.0 )
+		return 0.0
+	if ( delay > DMG_HEALTHBAR_LOS_HIDE_DELAY_MAX )
+		return DMG_HEALTHBAR_LOS_HIDE_DELAY_MAX
+	return delay
+}
+
+bool function DamageHealthBar_TraceVisible( vector start, vector end, entity looker, entity target )
+{
+	TraceResults trace = TraceLine( start, end, [ looker ], TRACE_MASK_VISIBLE, TRACE_COLLISION_GROUP_NONE )
+	if ( trace.fraction >= 0.99 )
+		return true
+	if ( trace.hitEnt == target )
+		return true
+	return false
+}
+
+bool function DamageHealthBar_IsTargetInSight( entity looker, entity target )
+{
+	if ( !IsValid( looker ) || !IsValid( target ) )
+		return false
+	if ( !looker.DoesShareRealms( target ) )
+		return false
+	if ( target.IsPlayer() && target.IsPhaseShifted() )
+		return false
+
+	vector eye = looker.EyePosition()
+
+	if ( DamageHealthBar_TraceVisible( eye, target.EyePosition(), looker, target ) )
+		return true
+	if ( DamageHealthBar_TraceVisible( eye, target.GetWorldSpaceCenter(), looker, target ) )
+		return true
+	if ( DamageHealthBar_TraceVisible( eye, target.GetOrigin() + <0, 0, 40.0>, looker, target ) )
+		return true
+
+	return false
+}
+
+void function DamageHealthBar_OnLocalPlayerDidDamage( entity attacker, entity victim, vector damagePosition, int damageType, float damageAmount )
+{
+	if ( !IsValid( victim ) || !IsAlive( victim ) || victim == attacker )
+		return
+
+	if ( !DamageHealthBar_IsSupportedVictim( victim ) )
+		return
+
+	if ( !Flowstate_IsGame1v1Type() && IsFriendlyTeam( victim.GetTeam(), attacker.GetTeam() ) )
+		return
+
+	thread DamageHealthBar_ShowThread( attacker, victim )
+}
+
+void function DamageHealthBar_ShowThread( entity localPlayer, entity victim )
+{
+	Assert( IsNewThread(), "Must be threaded off." )
+
+	// Collapses repeat hits on the same victim into one extended window instead of
+	// stacking RUIs -- same restart idiom mp_ability_sonic_blast.nut's
+	// ServerToClient_ShowHealthRUI_Thread uses via "PlayerHealthRevealed".
+	victim.Signal( "DmgHealthBar_Revealed" )
+	victim.EndSignal( "DmgHealthBar_Revealed" )
+	victim.EndSignal( "OnDestroy" )
+	victim.EndSignal( "OnDeath" )
+
+	bool isDummy = victim.IsNPC() && IsTrainingDummie( victim )
+	// Table so OnThreadEnd sees the proxy after assignment (Squirrel captures by value).
+	table proxyState
+	proxyState.ent <- null
+
+	file.activeBars[victim] <- true
+
+	OnThreadEnd(
+		function() : ( localPlayer, victim, proxyState )
+		{
+			if ( victim in file.activeBars )
+				delete file.activeBars[victim]
+			ReconScan_RemoveHudForTarget( localPlayer, victim )
+			if ( proxyState.ent != null )
+			{
+				entity cleanupProxy = expect entity( proxyState.ent )
+				if ( IsValid( cleanupProxy ) )
+					cleanupProxy.Destroy()
+			}
+		}
+	)
+
+	var rui = ReconScan_ShowHudForTarget( localPlayer, victim, false )
+	if ( rui == null )
+		return
+
+	RuiSetBool( rui, "isVisible", true )
+
+	// Do not RuiSet* extra args on recon_scan_target after ShowHudForTarget for dummies --
+	// re-setting armorTiers/shieldHealthMax/isEvolvingShield errors on client for npc_dummie.
+	// ReconScan tracks health/shield. For dummies it uses ABSORIGIN; we lift pos with a proxy.
+
+	if ( isDummy )
+	{
+		entity proxy = DamageHealthBar_CreateDummyPosProxy( victim )
+		proxyState.ent = proxy
+		if ( IsValid( proxy ) )
+			RuiTrackFloat3( rui, "pos", proxy, RUI_TRACK_ABSORIGIN_FOLLOW )
+	}
+
+	float duration = isDummy ? DMG_HEALTHBAR_DUMMY_SHOW_DURATION : DMG_HEALTHBAR_SHOW_DURATION
+	if ( isDummy || !Flowstate_IsGame1v1Type() )
+	{
+		wait duration
+		return
+	}
+
+	float revealEnd = Time() + duration
+	float occludedSince = -1.0
+	bool visible = true
+	float hideDelay = DamageHealthBar_GetLosHideDelay()
+
+	while ( Time() < revealEnd )
+	{
+		WaitFrame()
+
+		if ( !IsValid( victim ) || !IsAlive( victim ) )
+			break
+
+		entity viewPlayer = GetLocalViewPlayer()
+		if ( DamageHealthBar_IsTargetInSight( viewPlayer, victim ) )
+		{
+			occludedSince = -1.0
+			if ( !visible )
+			{
+				RuiSetBool( rui, "isVisible", true )
+				visible = true
+			}
+			continue
+		}
+
+		if ( occludedSince < 0.0 )
+			occludedSince = Time()
+
+		if ( ( Time() - occludedSince ) < hideDelay )
+			continue
+
+		if ( visible )
+		{
+			RuiSetBool( rui, "isVisible", false )
+			visible = false
+		}
+	}
+}
+
+// Parent empty prop to entity origin + fixed Z (not HEAD -- head bob looks like a 2nd bar).
+entity function DamageHealthBar_CreateDummyPosProxy( entity victim )
+{
+	if ( !IsValid( victim ) )
+		return null
+
+	entity proxy = CreateClientSidePropDynamic( victim.GetOrigin(), victim.GetAngles(), $"mdl/dev/empty_model.rmdl" )
+	if ( !IsValid( proxy ) )
+	{
+		// Fallback model if empty_model failed
+		proxy = CreateClientSidePropDynamic( victim.GetOrigin(), victim.GetAngles(), $"mdl/dev/editor_ref.rmdl" )
+		if ( !IsValid( proxy ) )
+			return null
+	}
+
+	proxy.kv.solid = 0
+	proxy.SetParent( victim )
+	proxy.SetLocalOrigin( <0, 0, DMG_HEALTHBAR_DUMMY_Z_OFFSET> )
+	proxy.SetLocalAngles( <0, 0, 0> )
+	return proxy
+}

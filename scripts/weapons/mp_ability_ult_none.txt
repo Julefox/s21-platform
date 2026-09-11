@@ -1,0 +1,79 @@
+"WeaponData"
+{
+	"printname" "#WPN_ABILITY_NONE"
+	"shortprintname" "#WPN_ABILITY_NONE"
+	"description" "#WPN_ABILITY_NONE_DESC"
+	"longdesc" "#WPN_ABILITY_NONE_DESC"
+	"menu_icon" "rui/hud/ultimate_icons/ultimate_none"
+	"hud_icon" "rui/hud/ultimate_icons/ultimate_none"
+	"weapon_type_flags" "WPT_ULTIMATE"
+	"weaponClass" "human"
+	"weaponType" "tactical"
+	"menu_category" "ordnance"
+	"dev_menu_type" "offhand"
+	"fire_mode" "offhandHybrid"
+	"OnWeaponAttemptOffhandSwitch" "OnWeaponAttemptOffhandSwitch_Never"
+	"reload_enabled" "0"
+	"ammo_clip_size" "1"
+	"ammo_default_total" "1"
+	"ammo_display" "count"
+	"ammo_min_to_fire" "1"
+	"ammo_per_shot" "1"
+	"ammo_stockpile_max" "1"
+	"regen_ammo_refill_rate" "100"
+	"regen_ammo_refill_start_delay" "0.000000"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"offhand_default_inventory_slot" "4"
+	"OnWeaponRegenBegin" "Ultimate_OnWeaponRegenBegin"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_weapon_ready" "Survival_UI_Ultimate_Ready"
+	"offhand_interupts_weapon_anims" "1"
+	"drops_on_death" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"ultimates_charge_over_time_disabled"
+		{
+			"regen_ammo_refill_rate" "0"
+
+		}
+
+		"copycat_mod"
+		{
+			"weapon_type_flags" "WPT_SURVIVAL"
+
+		}
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+	}
+}

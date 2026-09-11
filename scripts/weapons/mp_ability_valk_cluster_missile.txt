@@ -1,0 +1,176 @@
+"WeaponData"
+{
+	"printname" "#ABL_CLUSTER_MISSILE"
+	"shortprintname" "#ABL_CLUSTER_MISSILE"
+	"description" "#ABL_CLUSTER_MISSILE_DESC"
+	"longdesc" "#ABL_CLUSTER_MISSILE_LONGDESC"
+	"menu_icon" "rui/pilot_loadout/ordnance/electric_smoke_menu"
+	"hud_icon" "rui/hud/tactical_icons/tactical_valk"
+	"fire_mode" "offhand"
+	"fire_rate" "25"
+	"is_semi_auto" "1"
+	"anim_stop_start_gesture_on_attack" "1"
+	"alt_fire_anim_count" "1"
+	"offhand_switch_slot" "1"
+	"burst_fire_count" "12"
+	"burst_fire_delay" "0.500000"
+	"cooldown_type" "ammo_instant"
+	"ammo_clip_size" "300"
+	"ammo_default_total" "300"
+	"ammo_display" "bar"
+	"ammo_min_to_fire" "25"
+	"ammo_per_shot" "25"
+	"ammo_stockpile_max" "300"
+	"regen_ammo_refill_rate" "12"
+	"regen_ammo_refill_start_delay" "0.000000"
+	"reload_enabled" "0"
+	"play_offhand_start_end_anim" "1"
+	"deploy_time" "0.300000"
+	"damage_near_distance" "0"
+	"damage_near_value" "8"
+	"explosionradius" "80"
+	"damage_far_distance" "0"
+	"damage_far_value" "0"
+	"OnWeaponRegenEnd" "OnWeaponRegenEndGeneric"
+	"OnWeaponAttemptOffhandSwitch" "OnWeaponAttemptOffhandSwitch_ability_valk_cluster_missile"
+	"OnWeaponActivate" "OnWeaponActivate_ability_valk_cluster_missile"
+	"OnWeaponDeactivate" "OnWeaponDeactivate_ability_valk_cluster_missile"
+	"OnWeaponPrimaryAttack" "OnWeaponPrimaryAttack_valk_cluster_missile"
+	"OnProjectileCollision" "OnProjectileCollision_ability_valk_cluster_missile"
+	"OnClientAnimEvent" "OnClientAnimEvent_ability_valk_cluster_missile"
+	"fire_sound_1_player_1p" ""
+	"fire_sound_1_player_3p" ""
+	"fire_sound_2_player_1p" ""
+	"fire_sound_2_player_3p" ""
+	"zoom_effects" "0"
+	"sound_zoom_in" ""
+	"sound_zoom_out" "Weapon_Car_ADS_Out"
+	"fx_muzzle_flash_view" "P_valk_rckt_mflash_FP"
+	"fx_muzzle_flash_world" "P_valk_rckt_mflash"
+	"fx_muzzle_flash_attach" "muzzle_flash_01"
+	"fx_muzzle_flash2_view" "P_valk_rckt_mflash_FP"
+	"fx_muzzle_flash2_world" "P_valk_rckt_mflash"
+	"fx_muzzle_flash2_attach" "muzzle_flash_02"
+	"looping_sounds" "1"
+	"burst_or_looping_fire_sound_start_1p" ""
+	"burst_or_looping_fire_sound_middle_1p" ""
+	"burst_or_looping_fire_sound_end_1p" ""
+	"burst_or_looping_fire_sound_start_3p" ""
+	"burst_or_looping_fire_sound_middle_3p" ""
+	"burst_or_looping_fire_sound_end_3p" ""
+	"burst_or_looping_fire_sound_start_npc" ""
+	"burst_or_looping_fire_sound_middle_npc" ""
+	"burst_or_looping_fire_sound_end_npc" ""
+	"sound_grenade_projectile" ""
+	"impact_effect_table" "none"
+	"grenade_arc_indicator_show_from_hip" "0"
+	"grenade_arc_indicator_bounce_count" "1"
+	"grenade_arc_indicator_ignore_base_velocity" "0"
+	"projectile_launch_speed" "4000"
+	"projectile_launch_pitch_offset" "0"
+	"projectile_first_person_offset_fraction" "0"
+	"projectile_inherit_owner_velocity_scale" "1.000000"
+	"projectile_adjust_to_gun_barrel" "1"
+	"projectile_adjust_to_hand" "0"
+	"projectile_gravity_scale" "1.000000"
+	"projectile_air_friction" "1268"
+	"projectile_gravity_scale_time_2" "0.504000"
+	"viewmodel" "mdl/weapons/valkyrie_rockets/valkyrie_rockets.rmdl"
+	"projectilemodel" "mdl/humans_r5/pilots_r5/pilot_valkyrie/w_valkyrie_rocket_cannister_projectile.rmdl"
+	"damage_type" "burn"
+	"weaponType" "tactical"
+	"weapon_type_flags" "WPT_TACTICAL"
+	"offhand_default_inventory_slot" "1"
+	"sound_disabledfire" "Survival_UI_Ability_NotReady_Silenced"
+	"sound_dryfire" "Survival_UI_Ability_NotReady"
+	"sound_weapon_ready" "survival_ui_tactical_ready"
+	"update_player_last_fire_time" "0"
+	"offhand_match_player_skin" "1"
+
+	"Mods"
+	{
+
+		"upgrade_core_valk_pas_air_control"
+		{
+
+		}
+
+		"upgrade_core_valk_pas_decrease_fuel_usage"
+		{
+
+		}
+
+		"upgrade_core_valk_pas_cleanse_slow_effects"
+		{
+
+		}
+
+		"upgrade_core_tac_cooldown_reduction"
+		{
+			"ammo_clip_size" "300"
+			"ammo_default_total" "300"
+			"ammo_min_to_fire" "25"
+			"ammo_per_shot" "25"
+			"ammo_stockpile_max" "300"
+
+		}
+
+		"upgrade_core_valk_tac_increase_missiles_1"
+		{
+			"ammo_clip_size" "450"
+			"ammo_default_total" "450"
+			"ammo_stockpile_max" "450"
+			"regen_ammo_refill_rate" "15"
+			"burst_fire_count" "15"
+
+		}
+
+		"upgrade_core_valk_tac_increase_missiles_2"
+		{
+			"ammo_clip_size" "375"
+			"ammo_default_total" "375"
+			"ammo_stockpile_max" "375"
+			"ammo_min_to_fire" "25"
+			"ammo_per_shot" "25"
+			"regen_ammo_refill_rate" "15"
+			"burst_fire_count" "15"
+
+		}
+
+		"copycat_mod"
+		{
+			"weapon_type_flags" "WPT_SURVIVAL"
+
+		}
+
+		"survival_armor_cooldown_mod"
+		{
+			"regen_ammo_refill_rate" "*1.25"
+
+		}
+
+		"survival_armor_cooldown_extra_mod"
+		{
+			"regen_ammo_refill_rate" "*1.5"
+
+		}
+
+		"survival_ammo_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"ability_in_effect_regen_paused"
+		{
+			"regen_ammo_refill_rate" "*0.0"
+
+		}
+
+		"survival_ammo_regen_staging"
+		{
+			"regen_ammo_refill_rate" "*5.0"
+
+		}
+	}
+}

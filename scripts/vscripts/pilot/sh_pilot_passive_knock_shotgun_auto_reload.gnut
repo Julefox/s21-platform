@@ -1,0 +1,91 @@
+global function ShPassiveKnockShotgunAutoReload_Init
+
+void function ShPassiveKnockShotgunAutoReload_Init()
+{
+	#if SERVER
+	Bleedout_AddCallback_OnPlayerStartBleedout( KnockShotgunAutoReload_OnDowned )
+	AddCallback_OnPlayerKilled( KnockShotgunAutoReload_OnKilled ) //Handle Kills on Non-Bleeding Out Targets
+	#endif
+}
+
+#if SERVER
+void function KnockShotgunAutoReload_OnDowned( entity victim, entity attacker, var damageInfo )
+{
+	if ( !IsValid( victim ) )
+		return
+	if ( !IsValid( attacker ) )
+		return
+	if ( !attacker.IsPlayer() || !IsAlive( attacker ) || Bleedout_IsBleedingOut( attacker ) )
+		return
+
+	if( !attacker.HasPassive( ePassives.PAS_SHOTGUN_KNOCK_AUTO_RELOAD ) )
+		return
+
+	AutoLoadShotguns( attacker, damageInfo )
+}
+
+void function KnockShotgunAutoReload_OnKilled( entity victim, entity attacker, var damageInfo )
+{
+	if ( !IsValid( victim ) )
+		return
+	if ( !IsValid( attacker ) )
+		return
+	if ( !attacker.IsPlayer() || !IsAlive( attacker ) || Bleedout_IsBleedingOut( attacker ) )
+		return
+
+	if ( Bleedout_IsBleedingOut( victim ) )
+		return
+
+	if( !attacker.HasPassive( ePassives.PAS_SHOTGUN_KNOCK_AUTO_RELOAD ) )
+		return
+
+	AutoLoadShotguns( attacker, damageInfo )
+}
+
+void function AutoLoadShotguns( entity player, var damageInfo )
+{
+	entity weapon = DamageInfo_GetWeapon( damageInfo )
+	string ammoType = GetWeaponAmmoTypeFromWeaponEnt( weapon )
+	LootData weaponData = SURVIVAL_GetLootDataFromWeapon( weapon )
+
+	// Mozam is considered a pistol but it should still auto-reload given its ammo type
+	if ( ammoType == SHOTGUN_AMMO || weaponData.lootTags.contains( "shotgun" ) )
+	{
+		AutoLoadWeapon( player, weapon, weaponData )
+	}
+}
+
+void function AutoLoadWeapon( entity player, entity weapon, LootData weaponData )
+{
+	bool isCrateWeap = weaponData.baseMods.contains( WEAPON_LOCKEDSET_MOD_CRATE )
+	int ammoPoolType = weapon.GetWeaponAmmoPoolType()
+	int clipCount = weapon.GetWeaponPrimaryClipCount()
+	int clipCountMax = weapon.GetWeaponPrimaryClipCountMax()
+	int ammoPoolCount = isCrateWeap ? weapon.GetWeaponPrimaryAmmoCount( AMMOSOURCE_STOCKPILE ) : player.AmmoPool_GetCount( ammoPoolType )
+	bool infiniteAmmo = GetInfiniteAmmo( weapon )
+
+	if( ammoPoolCount > 0 && clipCount < clipCountMax )
+	{
+		int newClipCount = ClampInt( clipCount + ammoPoolCount, 0, clipCountMax )
+		weapon.SetWeaponPrimaryClipCount( newClipCount ) //Apply the new clip count
+
+		int ammoPoolMax = isCrateWeap ? weapon.GetWeaponPrimaryAmmoCountMax( AMMOSOURCE_STOCKPILE) : player.AmmoPool_GetCapacity()
+		int newAmmoPoolSize = ClampInt( ammoPoolCount - ( newClipCount - clipCount ), 0, ammoPoolMax )
+
+		if ( isCrateWeap )
+		{
+			if ( infiniteAmmo )
+				weapon.SetWeaponPrimaryAmmoCount( AMMOSOURCE_STOCKPILE, ammoPoolMax )
+			else
+				weapon.SetWeaponPrimaryAmmoCount( AMMOSOURCE_STOCKPILE, newAmmoPoolSize )
+		}
+		else if( !infiniteAmmo )
+		{
+			player.AmmoPool_SetCount( ammoPoolType, newAmmoPoolSize )
+		}
+
+		EmitSoundOnEntityOnlyToPlayer( player, player, "UI_InGame_GoldMag_Reload" )
+		Remote_CallFunction_Replay( player, "ServerCallback_AutoReloadComplete", weapon )
+	}
+}
+#endif

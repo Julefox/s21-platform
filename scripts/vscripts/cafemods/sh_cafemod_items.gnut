@@ -1,0 +1,115 @@
+// Shared Items Weapon profile catalog (SERVER + CLIENT + UI).
+// Each profile is a spawn kind the fire-hook can emit from the held gun.
+
+global function CafeItems_GetCount
+global function CafeItems_GetId
+global function CafeItems_GetName
+global function CafeItems_GetKind
+global function CafeItems_GetLootRef
+global function CafeItems_FindIndex
+global function CafeItems_GetDefaultWeapon
+
+// Spawn kind
+global const int CAFE_ITEM_KIND_MODEL   = 0 // prop model (physics optional)
+global const int CAFE_ITEM_KIND_LOOT    = 1 // real survival loot (battery etc.)
+global const int CAFE_ITEM_KIND_JUMPPAD = 2 // working Octane jump pad
+global const int CAFE_ITEM_KIND_MAGGIE  = 3 // wrecking-ball body (physics prop)
+
+// Default give-weapon (R-301)
+global const string CAFE_ITEMS_DEFAULT_WEAPON = "mp_weapon_rspn101"
+
+int function CafeItems_GetCount()
+{
+	return 12
+}
+
+string function CafeItems_GetId( int index )
+{
+	switch ( index )
+	{
+		case 0:  return "nessie"
+		case 1:  return "battery"
+		case 2:  return "cell"
+		case 3:  return "medkit"
+		case 4:  return "syringe"
+		case 5:  return "phoenix"
+		case 6:  return "maggie_mine"
+		case 7:  return "maggie_ball"
+		case 8:  return "jumppad"
+		case 9:  return "rock"
+		case 10: return "smoke_can"
+		case 11: return "wrecking_piece"
+	}
+	return ""
+}
+
+string function CafeItems_GetName( int index )
+{
+	switch ( index )
+	{
+		case 0:  return "Nessie (April Fools)"
+		case 1:  return "Shield Battery"
+		case 2:  return "Shield Cell"
+		case 3:  return "Med Kit"
+		case 4:  return "Syringe"
+		case 5:  return "Phoenix Kit"
+		case 6:  return "Maggie Mine"
+		case 7:  return "Maggie Ball"
+		case 8:  return "Jump Pad (working)"
+		case 9:  return "Rock"
+		case 10: return "Bangalore Canister"
+		case 11: return "Wrecking Piece"
+	}
+	return ""
+}
+
+int function CafeItems_GetKind( int index )
+{
+	switch ( index )
+	{
+		case 0:  return CAFE_ITEM_KIND_MODEL
+		case 1:  return CAFE_ITEM_KIND_LOOT
+		case 2:  return CAFE_ITEM_KIND_LOOT
+		case 3:  return CAFE_ITEM_KIND_LOOT
+		case 4:  return CAFE_ITEM_KIND_LOOT
+		case 5:  return CAFE_ITEM_KIND_LOOT
+		case 6:  return CAFE_ITEM_KIND_MODEL
+		case 7:  return CAFE_ITEM_KIND_MAGGIE
+		case 8:  return CAFE_ITEM_KIND_JUMPPAD
+		case 9:  return CAFE_ITEM_KIND_MODEL
+		case 10: return CAFE_ITEM_KIND_MODEL
+		case 11: return CAFE_ITEM_KIND_MODEL
+	}
+	return CAFE_ITEM_KIND_MODEL
+}
+
+// Loot refs for CAFE_ITEM_KIND_LOOT only.
+string function CafeItems_GetLootRef( int index )
+{
+	switch ( index )
+	{
+		case 1: return "health_pickup_combo_large"
+		case 2: return "health_pickup_combo_small"
+		case 3: return "health_pickup_health_large"
+		case 4: return "health_pickup_health_small"
+		case 5: return "health_pickup_combo_full"
+	}
+	return ""
+}
+
+int function CafeItems_FindIndex( string id )
+{
+	string key = id.tolower()
+	int count = CafeItems_GetCount()
+	for ( int i = 0; i < count; i++ )
+	{
+		if ( CafeItems_GetId( i ) == key )
+			return i
+	}
+	return -1
+}
+
+string function CafeItems_GetDefaultWeapon()
+{
+	return CAFE_ITEMS_DEFAULT_WEAPON
+}

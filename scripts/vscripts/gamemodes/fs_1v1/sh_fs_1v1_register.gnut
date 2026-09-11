@@ -1,0 +1,28 @@
+// fs_1v1 registration: name + shared/server/client inits.
+
+global function FS_1v1_RegisterMode
+
+void function FS_1v1_RegisterMode()
+{
+	int modeId = RegisterGamemode( "fs_1v1" )
+	if ( modeId == eGameModes.invalid )
+	{
+		printt( "[FS-1V1] RegisterMode FAILED" )
+		return
+	}
+
+	#if SERVER || CLIENT
+		GameMode_AddSharedInitByName( "fs_1v1", FS_1v1_SharedInit )
+		GameMode_AddSharedInitByName( "fs_1v1", Sh_Gamemode1v1_Init )
+	#endif
+
+	#if SERVER
+		GameMode_AddServerInitByName( "fs_1v1", _Gamemode1v1Standalone_Init )
+	#endif
+
+	#if CLIENT
+		GameMode_AddClientInitByName( "fs_1v1", Cl_Gamemode1v1_Init )
+	#endif
+
+	printt( "[FS-1V1] RegisterMode id=" + string( modeId ) + " inits wired" )
+}
