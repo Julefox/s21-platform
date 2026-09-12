@@ -1400,6 +1400,7 @@ entity function FlowstateDummy_SpawnAt( entity player, vector origin, vector ang
 
 	npc.EnableNPCFlag( NPC_IGNORE_ALL | NPC_DISABLE_SENSING | NPC_NO_WEAPON_DROP )
 	npc.SetTitle( "" )
+	npc.SetAimAssistAllowed( true )
 	Dummy_SetStraferSkin( npc )
 	FlowstateDummy_ApplyOwnerPrefs( player, npc )
 	StartBotStrafeMovementPattern( npc, 0.0, player, waitMin, waitMax, smartHard )
@@ -1767,6 +1768,7 @@ void function AimFreeroam_TargetSwitchLoop( entity player )
 				AddToUltimateRealm( player, npc )
 			npc.EnableNPCFlag( NPC_IGNORE_ALL | NPC_DISABLE_SENSING | NPC_NO_WEAPON_DROP )
 			npc.SetTitle( "" )
+			npc.SetAimAssistAllowed( true )
 			npc.SetShieldHealthMax( AIM_FREEROAM_TS_SHIELD )
 			npc.SetShieldHealth( AIM_FREEROAM_TS_SHIELD )
 			// Keep SetNPCShieldLevel blue skin (Dummy_SetStraferSkin would randomize it away).
@@ -2014,6 +2016,7 @@ entity function AimFreeroam_SpawnPopcornDummy( entity player, array<entity> live
 		return null
 	}
 	npc.SetAngles( angles )
+	npc.SetAimAssistAllowed( true )
 	npc.EnableNPCFlag( NPC_IGNORE_ALL | NPC_DISABLE_SENSING | NPC_NO_WEAPON_DROP )
 	npc.SetTitle( "" )
 	Dummy_SetStraferSkin( npc )
@@ -2196,6 +2199,7 @@ bool function AimFreeroam_RegisterOwnedDummy( entity player, entity npc )
 
 	if ( IsValid( player ) )
 		AddToUltimateRealm( player, npc )
+		npc.SetAimAssistAllowed( true )
 
 	npc.EnableNPCFlag( NPC_IGNORE_ALL | NPC_DISABLE_SENSING | NPC_NO_WEAPON_DROP )
 	npc.SetTitle( "" )

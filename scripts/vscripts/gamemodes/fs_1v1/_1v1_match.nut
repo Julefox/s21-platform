@@ -2711,6 +2711,7 @@ void function Gamemode1v1_RespawnForMatch( entity player, int respawnSlotIndex =
 	}
 
 	ClearInvincible( player )
+	player.SetAimAssistAllowed( true )
 
 	if( Equipment_GetDefaultShieldHP() > 0 && !Flowstate_IsLGDuels() )
 	{

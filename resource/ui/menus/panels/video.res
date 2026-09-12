@@ -104,7 +104,7 @@
         navUp					SldBrightness
         navDown					SwchFOVAbilityScaling
         minValue				1.0
-        maxValue				1.55
+        maxValue				1.6875
         stepSize				0.0275
         inverseFill				0
     }
