@@ -29,7 +29,6 @@ playlists
                 ///////////////////////////////////////////////////////////////////////////////////
 
                 //======= Hide from Normal Use =======
-                items_with_playlist_availability "character_dummie character_valkyrie character_newcastle"
                 character_dummie hide
                 character_valkyrie hide
                 character_newcastle hide
@@ -43,7 +42,6 @@ playlists
                 helmet_lv2 0.5
                 helmet_lv3 0.35
                 helmet_lv4 0.35
-                fortify_v2 1
 
                 ///////////////////////////////////////////////////////////////////////////////////
                 ///////// Loot Group Overrides
@@ -113,7 +111,6 @@ playlists
                 //// Ranked Tuning Var
                 ///////////////////////////////////////////////////////////////////////////////////
 
-                challenge_negative_value_check 0
                 ranked_level_requirement_0_base 0
 
                 ///////////////////////////////////////////////////////////////////////////////////
@@ -282,9 +279,6 @@ playlists
                 ///////////////////////////////////////////////////////////////////////////////////
                 ui_rules                               ""
                 gamemode_select_v2_enable              0
-                ranked_in_match_check_party            1
-                ranked_in_match_check_party_force_team 0
-                ranked_should_force_stryder_refresh     0
                 waiting_for_players_timeout_seconds    45
                 gamemode_logo BATTLE_ROYALE
                 // Empty map_name makes the load screen name the level it is loading
@@ -417,7 +411,6 @@ playlists
                 max_nofill_players 0
 
                 //Control Parameters
-				is_control_game                                 1
 				control_loadout_changeable_at_anytime           1
 				control_objective_capture_time                  10
 				scorelimit                                      1000
@@ -509,18 +502,9 @@ playlists
                 scoreboard_mode_id                              2
 
                 // Spawn Tuning
-                spawn_rating_dist_near_friendly                 1200.0
-                spawn_rating_dist_far_friendly                  2400.0
                 spawn_rating_scale_friendly                     1.5
-                spawn_rating_dist_near_enemy                    3000.0
-                spawn_rating_dist_far_enemy                     5000.0
                 spawn_rating_scale_enemy                        -2.0
                 spawn_test_los                                  1
-                spawn_restriction_distance                      1200
-                spawn_restriction_los_distance                  0
-                spawn_restriction_los_check_fov                 0
-                spawn_rating_previous_spawn_influence_dist      500
-                spawn_rating_previous_spawn_influence_value     2
 
                 player_death_sound                              "player_death_begin_survival_9sec"
             }
@@ -572,7 +556,6 @@ playlists
                 freedm_airdrops_enabled                 1
                 freedm_airdrops_time_delay              30
                 airdrop_spawn_ordnance_with_weapons     1
-                active_objective_types                  ""
 
                 //Loadout
                 character_loadouts_enabled                  0
@@ -637,20 +620,10 @@ playlists
                 respawns                                -1
                 respawn_cooldown                        8
                 respawn_cooldown_max                    8
-                SpawnFrontlineNPCs                      0
 
-                spawn_rating_dist_near_friendly     1200.0
-                spawn_rating_dist_far_friendly      2400.0
                 spawn_rating_scale_friendly         1.5
-                spawn_rating_dist_near_enemy        1200.0
-                spawn_rating_dist_far_enemy         3200.0
                 spawn_rating_scale_enemy            -2.0
                 spawn_test_los                      1
-                spawn_restriction_distance          800
-                spawn_restriction_los_distance      0
-                spawn_restriction_los_check_fov     0
-                spawn_rating_previous_spawn_influence_dist      500
-                spawn_rating_previous_spawn_influence_value     2
 
                 // Map
                 crafting_enabled                0
@@ -696,7 +669,6 @@ playlists
                 xp_first_kill_amount    50
 
                 // Memory optimizations
-                navmesh_disable         "med_short, extra_large"
                 max_props               300000
                 max_prop_data_dwords    475000
             }
@@ -962,7 +934,6 @@ playlists
 
 				survival_staging_area_enabled 1
 
-				make_room_for_new_players 1
 
 				placement_popup 0
 
@@ -1030,17 +1001,13 @@ playlists
                 bleedout_can_force_bleedout_timeout         1 // Allow players to force bleedout when in a bleeding out state
 
                 // Firing Range v1.1
-                has_combat_dummies 1
                 has_infinite_clips 1
                 has_variable_speed_targets 1
-                firing_range_disable_surplus_dummy 0
                 allow_third_person 1
                 all_characters_unlocked 1
 
                 // FR Settings HUD
                 has_fr_settings_hud 1
-                announce_setting_changes 1
-                settings_display_defaulton 1
 
                 fr_nodeath_characterchange 1
 
@@ -1059,11 +1026,9 @@ playlists
                 has_combatrange_spawning 1
                 has_combatrange_randomweapons 0
                 has_combatrange_announcer 0
-                has_crng_settings_hud 1
 
                 has_skinnedtargets 1
                 has_clootv4 1
-                has_fr_resetdoor_ui 1
                 has_dummies_dontshoot_when_menuopen 1
                 survival_reset_ultimate_on_first_land 0
             }
@@ -1158,10 +1123,8 @@ playlists
                 use_proximity_alliance_members              1
                 max_dist_proximity_alliance_members         -1.0
 
-                is_shield_regen_mode                        0
                 mode_health_regen_active                    1
                 mode_health_regen_amount                    10.0
-                mode_health_regen_tick                      0.25
                 mode_health_regen_delay                      6.0
 
                 show_team_color_obituary                    1
@@ -1289,7 +1252,6 @@ playlists
 
                 triggers_allow_team_filters 1
 
-                navmesh_disable         "med_short, extra_large"
                 max_props               375000
                 max_prop_data_dwords    475000
 
@@ -1609,10 +1571,8 @@ playlists
 
 				matchmake_from_match    1
 
-				is_shield_regen_mode                        0
                 mode_health_regen_active                    1
                 mode_health_regen_amount                    10.0
-                mode_health_regen_tick                      0.25
                 mode_health_regen_delay                     6.0
 
                 auto_pickup_ordnance                        1
@@ -1633,16 +1593,7 @@ playlists
 
                 spawn_rating_scale_friendly        		        1.25
                 spawn_rating_scale_enemy                        -0.75
-                spawn_rating_dist_near_friendly                 500.0
-                spawn_rating_dist_far_friendly                  4000.0
-                spawn_rating_dist_near_enemy                    801.0
-                spawn_rating_dist_far_enemy                     2800.0
                 spawn_test_los                                  1
-                spawn_restriction_distance                      800
-                spawn_restriction_los_distance                  0
-                spawn_restriction_los_check_fov                 0
-                spawn_rating_previous_spawn_influence_dist      1000
-                spawn_rating_previous_spawn_influence_value     0.1
 
 				xp_match_completed_amount                       25
 				xp_match_completed_joined_in_progress_amount    25
@@ -2096,7 +2047,6 @@ playlists
                 min_jip_time                    30
 
                 mode_health_regen_amount            40.0
-                mode_health_regen_tick              0.15
                 mode_health_regen_delay             5.0
 
                 scorelimit 60
@@ -3086,7 +3036,6 @@ playlists
 
                 ai_spider_jungle_evo_pt_percent 0.25
                 ai_prowler_evo_pt_percent 0.25
-                ai_flyer_evo_pt_percent 0.25
 
                 wildlife_ai_spider_lootdrop_percent 0.50
                 wildlife_ai_prowler_lootdrop_percent 0.50
@@ -3278,7 +3227,6 @@ playlists
 		        visible         1
 		        private_match   1
 		        match_teamNoFill 1
-		        recruit_a_squad_enabled 0
 		        require_training 0
 		        require_new_player_orientation 0
 		        treasurebox_drop_chance_high -1.0
@@ -3303,7 +3251,6 @@ playlists
 		        disable_skydive_emotes_postdrop 1
 		        survival_enable_gladiator_intros 0
 		        enable_champion 0
-		        match_pause_enabled 1
 		    }
 		}
 		can_no_ring_pm
@@ -3327,7 +3274,6 @@ playlists
                 visible         1
                 private_match   1
                 match_teamNoFill 1
-                recruit_a_squad_enabled 0
                 require_training 0
                 require_new_player_orientation 0
                 treasurebox_drop_chance_high -1.0
@@ -3352,7 +3298,6 @@ playlists
                 disable_skydive_emotes_postdrop 1
                 survival_enable_gladiator_intros 0
                 enable_champion 0
-                match_pause_enabled 1
             }
         }
         oly_no_ring_pm
@@ -3377,7 +3322,6 @@ playlists
                 visible          1
                 private_match    1
                 match_teamNoFill 1
-                recruit_a_squad_enabled 0
                 require_training 0
                 treasurebox_drop_chance_high -1.0
                 treasurebox_drop_chance_low -1.0
@@ -3402,7 +3346,6 @@ playlists
                 disable_skydive_emotes_postdrop 1
                 survival_enable_gladiator_intros 0
                 enable_champion 0
-                match_pause_enabled 1
             }
         }
         des_no_ring_pm
@@ -3427,7 +3370,6 @@ playlists
                 visible         1
                 private_match   1
                 match_teamNoFill 1
-                recruit_a_squad_enabled 0
                 require_training 0
                 require_new_player_orientation 0
                 treasurebox_drop_chance_high -1.0
@@ -3453,7 +3395,6 @@ playlists
                 disable_skydive_emotes_postdrop 1
                 survival_enable_gladiator_intros 0
                 enable_champion 0
-                match_pause_enabled 1
             }
         }
         moon_no_ring_pm
@@ -3477,7 +3418,6 @@ playlists
                 visible         1
                 private_match   1
                 match_teamNoFill 1
-                recruit_a_squad_enabled 0
                 require_training 0
                 require_new_player_orientation 0
                 treasurebox_drop_chance_high -1.0
@@ -3502,7 +3442,6 @@ playlists
                 disable_skydive_emotes_postdrop 1
                 survival_enable_gladiator_intros 0
                 enable_champion 0
-                match_pause_enabled 1
             }
         }
         tropic_no_ring_pm
@@ -3526,7 +3465,6 @@ playlists
 				visible          1
 				private_match    1
 				match_teamNoFill 1
-				recruit_a_squad_enabled 0
 				require_training 0
 				treasurebox_drop_chance_high -1.0
 				treasurebox_drop_chance_low -1.0
@@ -3552,7 +3490,6 @@ playlists
 		        disable_skydive_emotes_postdrop 1
 		        survival_enable_gladiator_intros 0
 		        enable_champion 0
-		        match_pause_enabled 1
 		    }
 		}
         duo_des_hu_cm
@@ -3564,7 +3501,6 @@ playlists
               visible          1
               private_match    1
               match_teamNoFill 1
-              recruit_a_squad_enabled 0
               require_training 0
               treasurebox_drop_chance_high -1.0
               treasurebox_drop_chance_low -1.0
@@ -3591,7 +3527,6 @@ playlists
               disable_skydive_emotes_postdrop 1
               survival_enable_gladiator_intros 0
               enable_champion 0
-              match_pause_enabled 1
 		  }
 		}
 		duo_oly_mu2_cm
@@ -3603,7 +3538,6 @@ playlists
                 visible          1
                 private_match    1
                 match_teamNoFill 1
-                recruit_a_squad_enabled 0
                 require_training 0
                 treasurebox_drop_chance_high -1.0
                 treasurebox_drop_chance_low -1.0
@@ -3629,7 +3563,6 @@ playlists
                 disable_skydive_emotes_postdrop 1
                 survival_enable_gladiator_intros 0
                 enable_champion 0
-                match_pause_enabled 1
             }
         }
         duo_moon_mu1_cm
@@ -3641,7 +3574,6 @@ playlists
                  visible          1
                  private_match    1
                  match_teamNoFill 1
-                 recruit_a_squad_enabled 0
                  require_training 0
                  treasurebox_drop_chance_high -1.0
                  treasurebox_drop_chance_low -1.0
@@ -3668,7 +3600,6 @@ playlists
                  disable_skydive_emotes_postdrop 1
                  survival_enable_gladiator_intros 0
                  enable_champion 0
-                 match_pause_enabled 1
             }
         }
         duo_tropic_mu2_cm
@@ -3680,7 +3611,6 @@ playlists
                  visible          1
                  private_match    1
                  match_teamNoFill 1
-                 recruit_a_squad_enabled 0
                  require_training 0
                  treasurebox_drop_chance_high -1.0
                  treasurebox_drop_chance_low -1.0
@@ -3706,7 +3636,6 @@ playlists
                  disable_skydive_emotes_postdrop 1
                  survival_enable_gladiator_intros 0
                  enable_champion 0
-                 match_pause_enabled 1
             }
         }
 
@@ -3726,7 +3655,6 @@ playlists
 
                 require_training                0
                 require_new_player_orientation  0
-                recruit_a_squad_enabled         0
             }
         }
 
@@ -3745,7 +3673,6 @@ playlists
 
                 require_training                0
                 require_new_player_orientation  0
-                recruit_a_squad_enabled         0
             }
         }
 
@@ -3764,7 +3691,6 @@ playlists
 
                 require_training                0
                 require_new_player_orientation  0
-                recruit_a_squad_enabled         0
             }
         }
         ///////// Custom Match LTM's/MIX TAPE ////////////
@@ -3777,7 +3703,6 @@ playlists
                 visible                 0
                 private_match           1
                 match_teamNoFill        1
-                recruit_a_squad_enabled 0
                 require_training        0
                 max_teams               4
                 max_players             12
@@ -4005,7 +3930,6 @@ playlists
                 visible         0
                 private_match   1
                 match_teamNoFill 1
-                recruit_a_squad_enabled 0
                 require_training 0
                 cm_public_min_players 6
                 require_new_player_orientation 0
@@ -4205,7 +4129,6 @@ playlists
                 private_match   1
                 match_teamNoFill 1
                 match_jip 0
-                recruit_a_squad_enabled 0
                 require_training 0
                 max_teams 6
                 max_players 18
@@ -4383,7 +4306,6 @@ playlists
                 private_match   1
                 match_teamNoFill 1
                 match_jip 0
-                recruit_a_squad_enabled 0
                 require_training 0
                 max_players         24
                 max_alliances       2
@@ -4552,7 +4474,6 @@ playlists
 
                 require_training                0
                 require_new_player_orientation  0
-                recruit_a_squad_enabled         0
                 matchmake_from_match            0
             }
         }
@@ -4690,7 +4611,6 @@ playlists
 		        private_match   1
 		        match_teamNoFill 1
 		        matchmake_from_match    0
-		        recruit_a_squad_enabled 0
 		        require_training 0
 		        require_new_player_orientation 0
 		        treasurebox_drop_chance_high -1.0
@@ -4703,7 +4623,6 @@ playlists
                 disable_skydive_emotes_postdrop 1
                 survival_enable_gladiator_intros 0
                 enable_champion 0
-                match_pause_enabled 1
                 matchmake_from_match 0
 
                 jump_from_plane_enabled 0
@@ -4738,7 +4657,6 @@ playlists
                 visible         1
                 private_match   1
                 match_teamNoFill 1
-                recruit_a_squad_enabled 0
                 matchmake_from_match    0
                 require_training 0
                 require_new_player_orientation 0
@@ -4752,7 +4670,6 @@ playlists
                 disable_skydive_emotes_postdrop 1
                 survival_enable_gladiator_intros 0
                 enable_champion 0
-                match_pause_enabled 1
                 matchmake_from_match 0
 
                 jump_from_plane_enabled 0
@@ -5034,22 +4951,15 @@ playlists
                 charselect_outro_champion_present_duration 8.0
                 jump_from_plane_enabled                 0
                 match_ending_enabled                    0
-                redish_highlight_los                    1
-                redish_highlight_los_range              2
 
                 // No circle
                 sur_circle_start_paused                 1
 
                 // Replays
                 replay_enabled                          1
-                replay_delay                            5
-                replay_new_ui                           1
 
                 default_shield_hp                       100
-                survival_shields                        1
                 skydive_ziplines_enabled                1
-                ground_loot_enable                      0
-                lootbin_loot_enable                     0
                 survival_loot_enabled                   0
                 survival_block_lootbin_creation         1
                 crafting_enabled                        0
@@ -5060,26 +4970,20 @@ playlists
                 survival_wallrun_enabled                0
 
                 survival_infinite_ammo                  1
-                survival_custom_deploy                  1
 
                 flowstateForceCharacter                 1
                 flowstateChosenCharacter                8
 
-                flowstate_1v1mode                       1
                 solo_mode                               1
 
                 flowstateAutoChangeLevelEnable          1
                 flowstateRoundsBeforeChangeLevel        2
 
                 flowstateAdminTgive                     0
-                flowstate1v1MatchLoadout                0
 
-                flowstate_disable_all_map_triggers      0
-                flowstate_seconds_to_wait_without_players_before_restarting 3600
 
                 flowstateRoundtime                      60
 
-                activate_passive_abilities              1
 
                 // BR evo tree needs survival pilot HUD; 1v1 has neither.
                 passive_upgrade_core_enabled            0
@@ -5090,17 +4994,12 @@ playlists
                 // First-joiner short intro (3s) + matchmaking countdown; 0 = skip RUI beat only.
                 show_short_champion_screen              1
                 flowstateDoorsEnabled                   0
-                flowstateKillshotEnabled                1
                 flowstateReloadTacticalOnRespawn        1
                 flowstateReloadUltimateOnRespawn        1
                 flowstateGiveAllOpticsToPlayer          1
-                flowstateAutoreloadPrimary              1
-                flowstateAutoreloadSecondary            1
-                enable_bullet_slow                      1
+                damage_slowdown_enabled                 0
                 allowSpectatingEnemySquad               1
-                flowstate_modified_movement             0
                 flowstateBattleLogEnable                0
-                flowstateChatLogEnable                  0
                 flowstateKickHighPingPlayer             0
                 flowstateMaxPingAllowed                 300
                 respawn_delay                           5
@@ -5114,8 +5013,6 @@ playlists
                 afk_to_rest_bool                        1
                 enable_ping_kick                        0
                 enable_afk_thread                       0
-                superglide_counter_msg                  0
-                custom_superglide_msg                   "Kewl beans"
 
                 custom_1v1_weapons_primary              ""
                 custom_1v1_weapons_primary_continue     ""
@@ -5147,28 +5044,18 @@ playlists
                 fs_1v1_rotate_mp_rr_thunderdome         1
                 fs_1v1_rotate_mp_rr_freedm_skulltown    1
                 fs_1v1_rotate_mp_rr_divided_moon_mu1    1
-                disable_lag_comp                        0
                 rest_grace                              5.0
 
-                default_start_in_rest_setting           0
-                default_lock1v1_setting                 1
 
                 flowstate_give_random_custom_models_toall 0
                 give_random_legend_on_spawn             0
 
-                enable_voice                            0
-                default_enable_input_banner_setting     1
                 custom_match_ending_title               "Match complete"
                 custom_match_ending_message             "Don't leave. Server is going to change maps."
                 give_weapon_stack_count_amount          3
                 player_collision_enabled                1
 
-                spawnsets_mp_rr_desertlands_64k_x_64k   "1"
-                spawnsets_mp_rr_canyonlands_64k_x_64k   "1"
-                spawnsets_mp_rr_arena_phase_runner      "1"
-                spawnsets_mp_rr_canyonlands_staging     "1"
 
-                spawnpaks_use_random                    0
                 spawnpaks_preferred_pak                 0
                 custom_spawnpak                         ""
                 custom_playlist_spawnpak                ""
@@ -5177,8 +5064,6 @@ playlists
                 // Disk CSV: platform/datatable/fs_spawns_fs_1v1_<map>_set_N.csv
                 fs_spawns_use_rpak                      1
 
-                dodge_dash_enabled                      0
-                super_dash_enabled                      0
             }
             gamemodes { fs_1v1 { maps {
                 mp_rr_aqueduct                          1
@@ -5263,20 +5148,13 @@ playlists
                 charselect_outro_champion_present_duration 8.0
                 jump_from_plane_enabled                 0
                 match_ending_enabled                    0
-                redish_highlight_los                    1
-                redish_highlight_los_range              2
 
                 sur_circle_start_paused                 1
 
                 replay_enabled                          1
-                replay_delay                            5
-                replay_new_ui                           1
 
                 default_shield_hp                       0
-                survival_shields                        1
                 skydive_ziplines_enabled                1
-                ground_loot_enable                      0
-                lootbin_loot_enable                     0
                 survival_loot_enabled                   0
                 survival_block_lootbin_creation         1
                 crafting_enabled                        0
@@ -5287,26 +5165,20 @@ playlists
                 survival_wallrun_enabled                0
 
                 survival_infinite_ammo                  1
-                survival_custom_deploy                  1
 
                 flowstateForceCharacter                 1
                 flowstateChosenCharacter                8
 
-                flowstate_1v1mode                       1
                 solo_mode                               1
 
                 flowstateAutoChangeLevelEnable          1
                 flowstateRoundsBeforeChangeLevel        2
 
                 flowstateAdminTgive                     0
-                flowstate1v1MatchLoadout                0
 
-                flowstate_disable_all_map_triggers      0
-                flowstate_seconds_to_wait_without_players_before_restarting 3600
 
                 flowstateRoundtime                      60
 
-                activate_passive_abilities              1
 
                 passive_upgrade_core_enabled            0
                 character_select_upgrade_tree_enabled   0
@@ -5315,17 +5187,12 @@ playlists
 
                 show_short_champion_screen              1
                 flowstateDoorsEnabled                   0
-                flowstateKillshotEnabled                1
                 flowstateReloadTacticalOnRespawn        1
                 flowstateReloadUltimateOnRespawn        1
                 flowstateGiveAllOpticsToPlayer          1
-                flowstateAutoreloadPrimary              0
-                flowstateAutoreloadSecondary            0
-                enable_bullet_slow                      1
+                damage_slowdown_enabled                 0
                 allowSpectatingEnemySquad               1
-                flowstate_modified_movement             0
                 flowstateBattleLogEnable                0
-                flowstateChatLogEnable                  0
                 flowstateKickHighPingPlayer             0
                 flowstateMaxPingAllowed                 300
                 respawn_delay                           5
@@ -5339,8 +5206,6 @@ playlists
                 afk_to_rest_bool                        1
                 enable_ping_kick                        0
                 enable_afk_thread                       0
-                superglide_counter_msg                  0
-                custom_superglide_msg                   "Kewl beans"
 
                 custom_1v1_weapons_primary              ""
                 custom_1v1_weapons_primary_continue     ""
@@ -5359,35 +5224,23 @@ playlists
                 custom_weapons_challenge_only           1
 
                 rotate_map                              1
-                disable_lag_comp                        0
                 rest_grace                              5.0
 
-                default_start_in_rest_setting           0
-                default_lock1v1_setting                 1
 
                 flowstate_give_random_custom_models_toall 0
                 give_random_legend_on_spawn             0
 
-                enable_voice                            0
-                default_enable_input_banner_setting     1
                 custom_match_ending_title               "Match complete"
                 custom_match_ending_message             "Don't leave. Server is going to change maps."
                 give_weapon_stack_count_amount          3
                 player_collision_enabled                1
 
-                spawnsets_mp_rr_desertlands_64k_x_64k   "1"
-                spawnsets_mp_rr_canyonlands_64k_x_64k   "1"
-                spawnsets_mp_rr_arena_phase_runner      "1"
-                spawnsets_mp_rr_canyonlands_staging     "1"
 
-                spawnpaks_use_random                    0
                 spawnpaks_preferred_pak                 0
                 custom_spawnpak                         ""
                 custom_playlist_spawnpak                ""
                 fs_spawns_use_rpak                      1
 
-                dodge_dash_enabled                      0
-                super_dash_enabled                      0
             }
             gamemodes { fs_1v1 { maps {
                 mp_rr_canyonlands_64k_x_64k             1
@@ -5466,9 +5319,6 @@ playlists
 
                 sur_circle_start_paused                 1
                 default_shield_hp                       0
-                survival_shields                        0
-                ground_loot_enable                      0
-                lootbin_loot_enable                     0
                 survival_loot_enabled                   0
                 survival_block_lootbin_creation         1
                 crafting_enabled                        0
@@ -5477,7 +5327,6 @@ playlists
                 survival_jumpkit_enabled                0
                 survival_wallrun_enabled                0
                 survival_infinite_ammo                  1
-                survival_custom_deploy                  1
                 skydive_ziplines_enabled                0
 
                 replay_enabled                          0
@@ -5490,19 +5339,12 @@ playlists
                 flowstateAutoChangeLevelEnable          1
                 flowstateRoundsBeforeChangeLevel        3
                 flowstateDoorsEnabled                   0
-                flowstateKillshotEnabled                1
                 respawn_delay                           5
                 show_short_champion_screen              1
 
-                respawn_kit_enabled                     1
-                respawn_kit_tactical                    "mp_ability_grapple"
-                respawn_kit_ultimate                    "mp_ability_phase_walk"
 
                 passive_upgrade_core_enabled            0
                 character_select_upgrade_tree_enabled   0
-                activate_passive_abilities              0
-                dodge_dash_enabled                      0
-                super_dash_enabled                      0
                 fullmap_enabled                         0
             }
             gamemodes { fs_instagib { maps {
@@ -5607,7 +5449,6 @@ playlists
                 max_teams 20
                 max_players 60
                 min_players 60
-                max_botonly_teams 16
                 max_nofill_players 0
 
                 survival_takeover_name "#PL_ORIENTATION_MATCH"

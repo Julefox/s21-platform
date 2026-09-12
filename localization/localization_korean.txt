@@ -1,4 +1,4 @@
-"localization_korean"
+﻿"localization_korean"
 {
 	// --- retail hex keys (from rpak via RSX .locl) ---
 	"fca8cf6a685cb818" "얼어붙은 학살"
@@ -28353,6 +28353,10 @@
 	"LAB_TARGETS_STRAFERFAST" "좌우 이동 더미(빠름)"
 	"LAB_TARGETS_STRAFERFAST_DESC" "빠르고 방향 전환이 잦은 같은 더미."
 	"LAB_TARGETS_STRAFER_DESC" "일정한 리듬으로 좌우로 움직이는 더미."
+	"LAB_TARGETS_STRAFESPEED" "Strafer Speed"
+	"LAB_TARGETS_STRAFESPEED_DESC" "How fast strafing dummies move. Applies to live bots and new spawns."
+	"LAB_TARGETS_BOTHEALTH" "Strafer Health"
+	"LAB_TARGETS_BOTHEALTH_DESC" "Slide to infinite and strafing dummies never die."
 
 	// FLOWSTATE
 	"FS_15_KILL_STREAK_SUBSTR" "%s 가 15연속 킬을 달성했습니다!"
@@ -28740,6 +28744,8 @@
 	"FS_START_SPEC" "%&use% 관전 시작"
 	"FS_STAT" "통계"
 	"FS_STATS_NOT_READY" "통계가 아직 로드되지 않았습니다"
+	"FS_STRAFER_GOD_OFF" "Strafer Infinite Health Disabled"
+	"FS_STRAFER_GOD_ON" "Strafer Infinite Health Enabled"
 	"FS_STRAFING_DUMMY" "스트레이프 더미"
 	"FS_STRING_VAR" "%s"
 	"FS_SUCCESS" "성공"

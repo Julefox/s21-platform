@@ -1,4 +1,4 @@
-"localization_arabic"
+﻿"localization_arabic"
 {
 	// --- retail hex keys (from rpak via RSX .locl) ---
 	"fca8cf6a685cb818" "مذبحة متجمدة"
@@ -28353,6 +28353,10 @@
 	"LAB_TARGETS_STRAFERFAST" "دمية جانبية (سريعة)"
 	"LAB_TARGETS_STRAFERFAST_DESC" "نفس الدمية أسرع وتغير الاتجاه كثيرا."
 	"LAB_TARGETS_STRAFER_DESC" "دمية تتحرك يمينا ويسارا بإيقاع ثابت."
+	"LAB_TARGETS_STRAFESPEED" "Strafer Speed"
+	"LAB_TARGETS_STRAFESPEED_DESC" "How fast strafing dummies move. Applies to live bots and new spawns."
+	"LAB_TARGETS_BOTHEALTH" "Strafer Health"
+	"LAB_TARGETS_BOTHEALTH_DESC" "Slide to infinite and strafing dummies never die."
 
 	// FLOWSTATE
 	"FS_15_KILL_STREAK_SUBSTR" "%s حقق سلسلة 15 قتلاً!"
@@ -28740,6 +28744,8 @@
 	"FS_START_SPEC" "%&use% بدء المشاهدة"
 	"FS_STAT" "إحصائية"
 	"FS_STATS_NOT_READY" "الإحصائيات لم تُحمّل بعد"
+	"FS_STRAFER_GOD_OFF" "Strafer Infinite Health Disabled"
+	"FS_STRAFER_GOD_ON" "Strafer Infinite Health Enabled"
 	"FS_STRAFING_DUMMY" "دمية متحركة"
 	"FS_STRING_VAR" "%s"
 	"FS_SUCCESS" "نجاح"

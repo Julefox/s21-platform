@@ -18,6 +18,7 @@ global function AimTrainer_GetDummyCount
 global function AimTrainer_GetBudgetRemaining
 global function AimTrainer_GetDummyOwner
 global function AimTrainer_IsDummyOwnedBy
+global function AimTrainer_GetPlayerDummies
 
 global function DEV_AimTrainer_ToggleAutoReloadOnHit
 global function DEV_AimTrainer_ToggleAutoReloadOnShot
@@ -31,6 +32,8 @@ global function DEV_AimTrainer_Quit
 global function DEV_AimTrainer_PreviewResults
 global function DEV_AimTrainer_PreviewFRCRecap
 global function DEV_AimTrainer_SetChallengeDuration
+global function DEV_AimTrainer_SetStrafeSpeed
+global function DEV_AimTrainer_SetStraferInfiniteHealth
 global function DEV_AimTrainer_SyncDevMenuState
 global function AimTrainer_SV_FinishChallenge
 global function AimTrainer_GetChallengeDurationSec
@@ -157,6 +160,26 @@ void function AimTrainer_DevMenuCmd( entity player, array<string> args )
 			return
 		}
 		DEV_AimTrainer_SetChallengeDuration( player, int( args[1] ) )
+		return
+	}
+	if ( action == "strafe_speed" )
+	{
+		if ( args.len() < 2 )
+		{
+			printt( format( "[AimTrainer] dev_aimtrainer strafe_speed: missing tenth from %s", player.GetPlayerName() ) )
+			return
+		}
+		DEV_AimTrainer_SetStrafeSpeed( player, float( int( args[1] ) ) / 10.0 )
+		return
+	}
+	if ( action == "bot_health" )
+	{
+		if ( args.len() < 2 )
+		{
+			printt( format( "[AimTrainer] dev_aimtrainer bot_health: missing 0/1 from %s", player.GetPlayerName() ) )
+			return
+		}
+		DEV_AimTrainer_SetStraferInfiniteHealth( player, int( args[1] ) != 0 )
 		return
 	}
 	if ( action == "flowstate" )
@@ -315,6 +338,22 @@ entity function AimTrainer_GetDummyOwner( entity npc )
 bool function AimTrainer_IsDummyOwnedBy( entity npc, entity player )
 {
 	return AimTrainer_GetDummyOwner( npc ) == player
+}
+
+// Live strafers owned by this player (autospawn + crosshair spawns).
+array<entity> function AimTrainer_GetPlayerDummies( entity player )
+{
+	array<entity> mine = []
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return mine
+
+	AimTrainer_PruneDeadDummies()
+	foreach ( entity npc in file.dummies )
+	{
+		if ( IsValid( npc ) && AimTrainer_IsDummyOwnedBy( npc, player ) )
+			mine.append( npc )
+	}
+	return mine
 }
 
 void function AimTrainer_UnregisterDummy( entity npc )
@@ -738,7 +777,8 @@ void function AimTrainer_EnterMode( entity player )
 }
 
 // Push server toggle truth to UI DevMenu labels (hit/shot/kill/dyn/bars/duration).
-// Bitfield avoids multi-bool remote packing issues: hit=1, shot=2, kill=4, dyn=8, bars=16.
+// Bitfield avoids multi-bool remote packing issues: hit=1, shot=2, kill=4, dyn=8, bars=16,
+// strafer infinite health=32. Strafe speed rides as tenths (5-20) in its own int.
 void function AimTrainer_SyncDevMenuState( entity player )
 {
 	if ( !IsValid( player ) || !player.IsPlayer() )
@@ -755,8 +795,18 @@ void function AimTrainer_SyncDevMenuState( entity player )
 		flags = flags | 8
 	if ( player.p.aimTrainerReconHealthBars )
 		flags = flags | 16
+	if ( player.p.aimTrainerStraferInfiniteHealth )
+		flags = flags | 32
 
-	Remote_CallFunction_NonReplay( player, "AimTrainer_CL_SyncDevMenuState", flags, AimTrainer_GetChallengeDurationSec( player ) )
+	Remote_CallFunction_NonReplay( player, "AimTrainer_CL_SyncDevMenuState", flags, AimTrainer_GetChallengeDurationSec( player ), AimTrainer_GetStrafeSpeedTenth( player ) )
+}
+
+int function AimTrainer_GetStrafeSpeedTenth( entity player )
+{
+	float mult = AIMTRAINER_STRAFE_SPEED_DEFAULT
+	if ( IsValid( player ) && player.IsPlayer() )
+		mult = player.p.aimTrainerStrafeSpeedMult
+	return int( mult * 10.0 + 0.5 )
 }
 
 void function DEV_AimTrainer_SyncDevMenuState( entity player )
@@ -1058,6 +1108,43 @@ void function DEV_AimTrainer_SetChallengeDuration( entity player, int durationSe
 		printt( format( "[AimTrainer] Challenge duration = unlimited for %s", player.GetPlayerName() ) )
 	else
 		printt( format( "[AimTrainer] Challenge duration = %ds for %s", durationSec, player.GetPlayerName() ) )
+	AimTrainer_SyncDevMenuState( player )
+}
+
+// Lab strafe-speed slider: clamps to the shared range, stores the pref, and
+// pushes it to live strafers (their threads re-read bot.ai every iteration).
+void function DEV_AimTrainer_SetStrafeSpeed( entity player, float mult )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	if ( mult < AIMTRAINER_STRAFE_SPEED_MIN )
+		mult = AIMTRAINER_STRAFE_SPEED_MIN
+	if ( mult > AIMTRAINER_STRAFE_SPEED_MAX )
+		mult = AIMTRAINER_STRAFE_SPEED_MAX
+	player.p.aimTrainerStrafeSpeedMult = mult
+
+	foreach ( entity npc in AimTrainer_GetPlayerDummies( player ) )
+		FlowstateDummy_SetSpeedMult( npc, mult )
+
+	printt( format( "[AimTrainer] Strafe speed = %.1fx for %s", mult, player.GetPlayerName() ) )
+	AimTrainer_SyncDevMenuState( player )
+}
+
+// Lab infinite-health slider: future strafers spawn immortal; live ones flip
+// immediately (damage handlers gate on the per-bot flag, regen exits on clear).
+void function DEV_AimTrainer_SetStraferInfiniteHealth( entity player, bool on )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+
+	player.p.aimTrainerStraferInfiniteHealth = on
+
+	foreach ( entity npc in AimTrainer_GetPlayerDummies( player ) )
+		AimTrainerStrafer_SetGod( npc, on )
+
+	printt( format( "[AimTrainer] Strafer infinite health = %s for %s", string( on ), player.GetPlayerName() ) )
+	LocalEventMsg( player, on ? "#FS_STRAFER_GOD_ON" : "#FS_STRAFER_GOD_OFF" )
 	AimTrainer_SyncDevMenuState( player )
 }
 

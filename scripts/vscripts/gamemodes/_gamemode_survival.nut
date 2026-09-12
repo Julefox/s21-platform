@@ -7717,6 +7717,10 @@ void function Survival_OnReloadPressed( entity player )
 
 bool function Survival_DamageShouldSlowDownPlayer( entity player, var damageInfo )
 {
+	// Bridge: playlist kill switch for the general gun-damage move slow.
+	if ( !GetCurrentPlaylistVarBool( "damage_slowdown_enabled", true ) )
+		return false
+
 	int damageSourceId = DamageInfo_GetDamageSourceIdentifier( damageInfo )
 	int damageFlags    = DamageInfo_GetCustomDamageType( damageInfo )
 

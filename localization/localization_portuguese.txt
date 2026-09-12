@@ -1,4 +1,4 @@
-"localization_portuguese"
+﻿"localization_portuguese"
 {
 	// --- retail hex keys (from rpak via RSX .locl) ---
 	"fca8cf6a685cb818" "Chacina Gélida"
@@ -28353,6 +28353,10 @@
 	"LAB_TARGETS_STRAFERFAST" "Boneco lateral (rapido)"
 	"LAB_TARGETS_STRAFERFAST_DESC" "O mesmo, rapido e trocando mais de direcao."
 	"LAB_TARGETS_STRAFER_DESC" "Boneco que anda de lado a lado em ritmo constante."
+	"LAB_TARGETS_STRAFESPEED" "Strafer Speed"
+	"LAB_TARGETS_STRAFESPEED_DESC" "How fast strafing dummies move. Applies to live bots and new spawns."
+	"LAB_TARGETS_BOTHEALTH" "Strafer Health"
+	"LAB_TARGETS_BOTHEALTH_DESC" "Slide to infinite and strafing dummies never die."
 
 	// FLOWSTATE
 	"FS_15_KILL_STREAK_SUBSTR" "%s conseguiu uma série de 15 eliminações!"
@@ -28740,6 +28744,8 @@
 	"FS_START_SPEC" "%&use% Começar a assistir"
 	"FS_STAT" "Estatística"
 	"FS_STATS_NOT_READY" "Estatísticas ainda não carregadas"
+	"FS_STRAFER_GOD_OFF" "Strafer Infinite Health Disabled"
+	"FS_STRAFER_GOD_ON" "Strafer Infinite Health Enabled"
 	"FS_STRAFING_DUMMY" "Manequim Ziguezague"
 	"FS_STRING_VAR" "%s"
 	"FS_SUCCESS" "SUCESSO"

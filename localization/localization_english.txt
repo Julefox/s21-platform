@@ -1,4 +1,4 @@
-"localization_english"
+﻿"localization_english"
 {
 	// --- retail hex keys (from rpak via RSX .locl) ---
 	"fca8cf6a685cb818" "Frozen Carnage"
@@ -28353,6 +28353,10 @@
 	"LAB_TARGETS_STRAFERFAST" "Strafer Dummy (Fast)"
 	"LAB_TARGETS_STRAFERFAST_DESC" "The same dummy, moving fast and changing direction more often."
 	"LAB_TARGETS_STRAFER_DESC" "A dummy that strafes side to side at a steady pace."
+	"LAB_TARGETS_STRAFESPEED" "Strafer Speed"
+	"LAB_TARGETS_STRAFESPEED_DESC" "How fast strafing dummies move. Applies to live bots and new spawns."
+	"LAB_TARGETS_BOTHEALTH" "Strafer Health"
+	"LAB_TARGETS_BOTHEALTH_DESC" "Slide to infinite and strafing dummies never die."
 
 	// FLOWSTATE
 	"FS_15_KILL_STREAK_SUBSTR" "%s got 15 kill streak!"
@@ -28740,6 +28744,8 @@
 	"FS_START_SPEC" "%&use% Start spectating"
 	"FS_STAT" "Stat"
 	"FS_STATS_NOT_READY" "Stats not loaded yet"
+	"FS_STRAFER_GOD_OFF" "Strafer Infinite Health Disabled"
+	"FS_STRAFER_GOD_ON" "Strafer Infinite Health Enabled"
 	"FS_STRAFING_DUMMY" "Strafing Dummy"
 	"FS_STRING_VAR" "%s"
 	"FS_SUCCESS" "SUCCESS"

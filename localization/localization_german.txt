@@ -1,4 +1,4 @@
-"localization_german"
+﻿"localization_german"
 {
 	// --- retail hex keys (from rpak via RSX .locl) ---
 	"fca8cf6a685cb818" "Eisiges Gemetzel"
@@ -28353,6 +28353,10 @@
 	"LAB_TARGETS_STRAFERFAST" "Strafer-Dummy (schnell)"
 	"LAB_TARGETS_STRAFERFAST_DESC" "Derselbe Dummy, schnell und mit haufigen Richtungswechseln."
 	"LAB_TARGETS_STRAFER_DESC" "Dummy der seitlich hin und her lauft, ruhiges Tempo."
+	"LAB_TARGETS_STRAFESPEED" "Strafer Speed"
+	"LAB_TARGETS_STRAFESPEED_DESC" "How fast strafing dummies move. Applies to live bots and new spawns."
+	"LAB_TARGETS_BOTHEALTH" "Strafer Health"
+	"LAB_TARGETS_BOTHEALTH_DESC" "Slide to infinite and strafing dummies never die."
 
 	// FLOWSTATE
 	"FS_15_KILL_STREAK_SUBSTR" "%s hat eine 15er-Serie!"
@@ -28740,6 +28744,8 @@
 	"FS_START_SPEC" "%&use% Zuschauen starten"
 	"FS_STAT" "Stat"
 	"FS_STATS_NOT_READY" "Statistiken noch nicht geladen"
+	"FS_STRAFER_GOD_OFF" "Strafer Infinite Health Disabled"
+	"FS_STRAFER_GOD_ON" "Strafer Infinite Health Enabled"
 	"FS_STRAFING_DUMMY" "Seitenbewegungs-Dummy"
 	"FS_STRING_VAR" "%s"
 	"FS_SUCCESS" "ERFOLG"

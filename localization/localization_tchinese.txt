@@ -1,4 +1,4 @@
-"localization_tchinese"
+﻿"localization_tchinese"
 {
 	// --- retail hex keys (from rpak via RSX .locl) ---
 	"fca8cf6a685cb818" "冰凍屠殺"
@@ -28353,6 +28353,10 @@
 	"LAB_TARGETS_STRAFERFAST" "橫移假人(快)"
 	"LAB_TARGETS_STRAFERFAST_DESC" "同一個,更快且更頻繁變向。"
 	"LAB_TARGETS_STRAFER_DESC" "勻速左右橫移的假人。"
+	"LAB_TARGETS_STRAFESPEED" "Strafer Speed"
+	"LAB_TARGETS_STRAFESPEED_DESC" "How fast strafing dummies move. Applies to live bots and new spawns."
+	"LAB_TARGETS_BOTHEALTH" "Strafer Health"
+	"LAB_TARGETS_BOTHEALTH_DESC" "Slide to infinite and strafing dummies never die."
 
 	// FLOWSTATE
 	"FS_15_KILL_STREAK_SUBSTR" "%s 達成 15 連殺！"
@@ -28740,6 +28744,8 @@
 	"FS_START_SPEC" "%&use% 開始觀戰"
 	"FS_STAT" "統計"
 	"FS_STATS_NOT_READY" "統計尚未載入"
+	"FS_STRAFER_GOD_OFF" "Strafer Infinite Health Disabled"
+	"FS_STRAFER_GOD_ON" "Strafer Infinite Health Enabled"
 	"FS_STRAFING_DUMMY" "橫移假人"
 	"FS_STRING_VAR" "%s"
 	"FS_SUCCESS" "成功"

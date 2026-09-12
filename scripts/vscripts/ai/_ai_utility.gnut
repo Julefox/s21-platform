@@ -556,6 +556,153 @@ void function StopBotStrafe( entity bot )
 	printt( "[FlowstateDummy] StopBotStrafe on " + string( bot ) )
 }
 
+// Lab strafer sliders. The mult lives on bot.ai so live strafe threads pick it
+// up next iteration without a restart; the god flag gates the damage handlers.
+float function FlowstateDummy_GetSpeedMult( entity bot )
+{
+	if ( !IsValid( bot ) )
+		return 1.0
+	float mult = bot.ai.flowstateStrafeSpeedMult
+	if ( mult <= 0.0 )
+		return 1.0
+	return mult
+}
+
+void function FlowstateDummy_SetSpeedMult( entity npc, float mult )
+{
+	if ( !IsValid( npc ) )
+		return
+	if ( mult < AIMTRAINER_STRAFE_SPEED_MIN )
+		mult = AIMTRAINER_STRAFE_SPEED_MIN
+	if ( mult > AIMTRAINER_STRAFE_SPEED_MAX )
+		mult = AIMTRAINER_STRAFE_SPEED_MAX
+	npc.ai.flowstateStrafeSpeedMult = mult
+}
+
+// Infinite health for strafing bots: real damage path (client hit callbacks
+// still fire), lethal hits land at 1 HP, idle refills to the spawn-time pool.
+void function AimTrainerStrafer_SetGod( entity npc, bool on )
+{
+	if ( !IsValid( npc ) )
+		return
+
+	npc.ai.flowstateInfiniteHealth = on
+	if ( !on )
+		return
+
+	if ( npc.ai.flowstateGodMaxHealth < 1 )
+	{
+		npc.ai.flowstateGodMaxHealth = npc.GetMaxHealth()
+		npc.ai.flowstateGodMaxShield = npc.GetShieldHealthMax()
+		if ( npc.ai.flowstateGodMaxHealth < 1 )
+			npc.ai.flowstateGodMaxHealth = npc.GetHealth()
+	}
+	npc.e.lastDamagedTime = 0.0
+
+	AddEntityCallback_OnDamaged( npc, AimTrainerStrafer_OnDamaged )
+	AddEntityCallback_OnPostDamaged( npc, AimTrainerStrafer_OnPostDamaged )
+	thread AimTrainerStrafer_RegenThink( npc )
+}
+
+void function AimTrainerStrafer_OnDamaged( entity npc, var damageInfo )
+{
+	if ( !IsValid( npc ) || !IsAlive( npc ) )
+		return
+	if ( !npc.ai.flowstateInfiniteHealth )
+		return
+
+	float damage = DamageInfo_GetDamage( damageInfo )
+	if ( damage <= 0 )
+		return
+
+	int health = npc.GetHealth()
+	int shield = npc.GetShieldHealth()
+	float bodyDamage = max( 0.0, damage - float( shield ) )
+	if ( bodyDamage < float( health ) )
+		return
+
+	int needed = int( bodyDamage ) + 1
+	if ( health < needed )
+		npc.SetHealth( needed )
+}
+
+void function AimTrainerStrafer_OnPostDamaged( entity npc, var damageInfo )
+{
+	if ( !IsValid( npc ) || !IsAlive( npc ) )
+		return
+	if ( !npc.ai.flowstateInfiniteHealth )
+		return
+
+	npc.e.lastDamagedTime = Time()
+
+	if ( npc.GetHealth() < 1 )
+		npc.SetHealth( 1 )
+}
+
+void function AimTrainerStrafer_RegenThink( entity npc )
+{
+	EndSignal( npc, "OnDestroy" )
+	EndSignal( npc, "OnDeath" )
+
+	while ( IsValid( npc ) && IsAlive( npc ) )
+	{
+		if ( !npc.ai.flowstateInfiniteHealth )
+			return
+
+		if ( ( Time() - npc.e.lastDamagedTime ) < AIMTRAINER_STRAFER_GOD_REGEN_IDLE )
+		{
+			wait 0.1
+			continue
+		}
+
+		int wantHealth = npc.ai.flowstateGodMaxHealth
+		int wantShield = npc.ai.flowstateGodMaxShield
+		if ( npc.GetHealth() >= wantHealth && npc.GetShieldHealth() >= wantShield )
+		{
+			wait 0.1
+			continue
+		}
+
+		float startTime = Time()
+		float startLastDamage = npc.e.lastDamagedTime
+		int startHealth = npc.GetHealth()
+		int startShield = npc.GetShieldHealth()
+
+		while ( IsValid( npc ) && IsAlive( npc ) && ( Time() - startTime ) < AIMTRAINER_STRAFER_GOD_REGEN_DURATION )
+		{
+			if ( !npc.ai.flowstateInfiniteHealth )
+				return
+			if ( npc.e.lastDamagedTime != startLastDamage )
+				break
+
+			float t = ( Time() - startTime ) / AIMTRAINER_STRAFER_GOD_REGEN_DURATION
+			npc.SetHealth( int( GraphCapped( t, 0.0, 1.0, float( startHealth ), float( wantHealth ) ) ) )
+			npc.SetShieldHealth( int( GraphCapped( t, 0.0, 1.0, float( startShield ), float( wantShield ) ) ) )
+			wait 0.05
+		}
+
+		wait 0.1
+	}
+}
+
+// Copies the owner's Lab slider prefs onto a fresh strafer.
+void function FlowstateDummy_ApplyOwnerPrefs( entity player, entity npc )
+{
+	if ( !IsValid( npc ) )
+		return
+
+	float mult = AIMTRAINER_STRAFE_SPEED_DEFAULT
+	bool god = false
+	if ( IsValid( player ) && player.IsPlayer() )
+	{
+		mult = player.p.aimTrainerStrafeSpeedMult
+		god = player.p.aimTrainerStraferInfiniteHealth
+	}
+	FlowstateDummy_SetSpeedMult( npc, mult )
+	if ( god )
+		AimTrainerStrafer_SetGod( npc, true )
+}
+
 // Yaw-only face -- keeps pitch/roll at 0 so the dummy stays upright on the ground.
 // Skips tiny yaw snaps (SetAngles every brain tick hitch root-motion).
 void function FlowstateDummy_FaceTargetYawOnly( entity bot, entity target )
@@ -744,7 +891,7 @@ int function FlowstateDummy_UnstuckReverse( entity bot, int failedSide, entity t
 		FlowstateDummy_FaceTargetYawOnly( bot, target )
 
 	// Slightly longer than old 0.18-0.4 so reverse actually clears the wall footprint
-	FlowstateDummy_PlayStrafeAct( bot, FlowstateHard_SideAct( other, false ), RandomFloatRange( 0.28, 0.5 ), FLOWSTATE_STRAFE_SPEED, true )
+	FlowstateDummy_PlayStrafeAct( bot, FlowstateHard_SideAct( other, false ), RandomFloatRange( 0.28, 0.5 ), FLOWSTATE_STRAFE_SPEED * FlowstateDummy_GetSpeedMult( bot ), true )
 	return other
 }
 
@@ -783,7 +930,7 @@ int function FlowstateHard_CommitSide( entity bot, int preferredSide, entity tar
 		FlowstateDummy_FaceTargetYawOnly( bot, target )
 
 	float dur = RandomFloatRange( FLOWSTATE_HARD_COMMIT_MIN, FLOWSTATE_HARD_COMMIT_MAX )
-	bool ok = FlowstateDummy_PlayStrafeAct( bot, FlowstateHard_SideAct( side, crouch ), dur, FlowstateHard_PickPlaybackRate(), true )
+	bool ok = FlowstateDummy_PlayStrafeAct( bot, FlowstateHard_SideAct( side, crouch ), dur, FlowstateHard_PickPlaybackRate( bot ), true )
 	if ( !ok && IsValid( bot ) )
 		return FlowstateDummy_UnstuckReverse( bot, side, target )
 	return side
@@ -797,17 +944,18 @@ float function FlowstateHard_PickStrafeDuration()
 	return RandomFloatRange( FLOWSTATE_STRAFE_HARD_WAIT_MIN, FLOWSTATE_STRAFE_HARD_WAIT_MAX )
 }
 
-float function FlowstateHard_PickPlaybackRate()
+float function FlowstateHard_PickPlaybackRate( entity bot )
 {
+	float mult = FlowstateDummy_GetSpeedMult( bot )
 	// Weighted so tempo is readable: slow / normal / fast
 	int roll = RandomInt( 100 )
 	if ( roll < 20 )
-		return RandomFloatRange( FLOWSTATE_RATE_MIN, 0.9 ) // slow track
+		return RandomFloatRange( FLOWSTATE_RATE_MIN, 0.9 ) * mult // slow track
 	if ( roll < 55 )
-		return RandomFloatRange( 0.95, 1.1 ) // normal
+		return RandomFloatRange( 0.95, 1.1 ) * mult // normal
 	if ( roll < 85 )
-		return RandomFloatRange( 1.15, 1.3 ) // fast
-	return RandomFloatRange( 1.3, FLOWSTATE_RATE_MAX ) // spike
+		return RandomFloatRange( 1.15, 1.3 ) * mult // fast
+	return RandomFloatRange( 1.3, FLOWSTATE_RATE_MAX ) * mult // spike
 }
 
 // true when consecutive opposite flips + low net travel = place-buzz ADAD
@@ -854,14 +1002,14 @@ void function BotStrafeMovementPatternThread( entity bot, float forwardMove, ent
 		{
 			if ( FlowstateDummy_ConformToGround( bot ) && IsValid( bot.GetGroundEntity() ) )
 				continue
-			FlowstateDummy_PlayActivityIfChanged( bot, NO_GROUNDENTITY_ANIM, FLOWSTATE_STRAFE_SPEED )
+			FlowstateDummy_PlayActivityIfChanged( bot, NO_GROUNDENTITY_ANIM, FLOWSTATE_STRAFE_SPEED * FlowstateDummy_GetSpeedMult( bot ) )
 			wait FLOWSTATE_STUCK_SLICE
 			FlowstateDummy_ConformToGround( bot )
 			continue
 		}
 
 		side = FlowstateDummy_PickOpenSide( bot, side )
-		bool ok = FlowstateDummy_PlayStrafeAct( bot, FlowstateHard_SideAct( side, false ), RandomFloatRange( waitMin, waitMax ), FLOWSTATE_STRAFE_SPEED, true )
+		bool ok = FlowstateDummy_PlayStrafeAct( bot, FlowstateHard_SideAct( side, false ), RandomFloatRange( waitMin, waitMax ), FLOWSTATE_STRAFE_SPEED * FlowstateDummy_GetSpeedMult( bot ), true )
 		if ( !IsValid( bot ) )
 			break
 
@@ -908,7 +1056,7 @@ void function BotHardStrafeMovementPatternThread( entity bot, entity target )
 		{
 			if ( FlowstateDummy_ConformToGround( bot ) && IsValid( bot.GetGroundEntity() ) )
 				continue
-			FlowstateDummy_PlayActivityIfChanged( bot, NO_GROUNDENTITY_ANIM, FLOWSTATE_STRAFE_SPEED )
+			FlowstateDummy_PlayActivityIfChanged( bot, NO_GROUNDENTITY_ANIM, FLOWSTATE_STRAFE_SPEED * FlowstateDummy_GetSpeedMult( bot ) )
 			wait FLOWSTATE_STUCK_SLICE
 			FlowstateDummy_ConformToGround( bot )
 			continue
@@ -918,7 +1066,7 @@ void function BotHardStrafeMovementPatternThread( entity bot, entity target )
 		if ( FlowstateHard_IsOscillating( bot, oscWindowOrigin, flipStreak ) )
 		{
 			printt( "[FlowstateDummy] hard breakout osc flips=" + string( flipStreak ) )
-			float rate = FlowstateHard_PickPlaybackRate()
+			float rate = FlowstateHard_PickPlaybackRate( bot )
 			if ( FlowstateHard_TryDepthStep( bot, rate ) )
 			{
 				// depth cleared the lateral loop
@@ -941,7 +1089,7 @@ void function BotHardStrafeMovementPatternThread( entity bot, entity target )
 		// Near place-buzz: skip ADAD stutter (depth / holds / commits stay legal)
 		if ( flipStreak >= ( FLOWSTATE_HARD_FLIP_BREAKOUT - 1 ) && roll >= 22 && roll < 26 )
 			roll = 70
-		float rate = FlowstateHard_PickPlaybackRate()
+		float rate = FlowstateHard_PickPlaybackRate( bot )
 		bool ok = true
 		int sideBefore = lastSide
 
@@ -1065,7 +1213,7 @@ void function BotHardStrafeMovementPatternThread( entity bot, entity target )
 			if ( hasTarget && IsValid( target ) )
 				FlowstateDummy_FaceTargetYawOnly( bot, target )
 			side = FlowstateDummy_PickOpenSide( bot, side )
-			ok = FlowstateDummy_PlayStrafeAct( bot, FlowstateHard_SideAct( side, crouch ), FlowstateHard_PickStrafeDuration(), FlowstateHard_PickPlaybackRate(), true )
+			ok = FlowstateDummy_PlayStrafeAct( bot, FlowstateHard_SideAct( side, crouch ), FlowstateHard_PickStrafeDuration(), FlowstateHard_PickPlaybackRate( bot ), true )
 			if ( !ok && IsValid( bot ) )
 			{
 				lastSide = FlowstateDummy_UnstuckReverse( bot, side, target )
@@ -1253,6 +1401,7 @@ entity function FlowstateDummy_SpawnAt( entity player, vector origin, vector ang
 	npc.EnableNPCFlag( NPC_IGNORE_ALL | NPC_DISABLE_SENSING | NPC_NO_WEAPON_DROP )
 	npc.SetTitle( "" )
 	Dummy_SetStraferSkin( npc )
+	FlowstateDummy_ApplyOwnerPrefs( player, npc )
 	StartBotStrafeMovementPattern( npc, 0.0, player, waitMin, waitMax, smartHard )
 	return npc
 }

@@ -89,6 +89,8 @@ struct
 	bool aimTrainerDynStats = false
 	bool aimTrainerReconBars = false
 	int  aimTrainerDurationSec = 60
+	bool aimTrainerStraferGod = false
+	int  aimTrainerStrafeSpeedTenth = 10
 
 	// Main DevMenu toggle labels (UI mirror).
 	bool devNoclip = false
@@ -183,13 +185,15 @@ void function CafeMod_UI_ItemsState( int profileIndex, int physicsOn )
 // Server -> client -> UI: reconcile DevMenu aim-trainer toggle labels.
 // Must live outside #if DEVELOPER: global is always declared; DEVELOPER=0
 // (no -dev) would strip the body and fail UI compile.
-void function AimTrainer_UI_SyncDevMenuState( bool hit, bool shot, bool kill, bool dynStats, bool reconBars, int durationSec )
+void function AimTrainer_UI_SyncDevMenuState( bool hit, bool shot, bool kill, bool dynStats, bool reconBars, int durationSec, bool straferGod, int strafeSpeedTenth )
 {
 	bool changed = ( file.aimTrainerReloadHit != hit
 		|| file.aimTrainerReloadShot != shot
 		|| file.aimTrainerReloadKill != kill
 		|| file.aimTrainerDynStats != dynStats
 		|| file.aimTrainerReconBars != reconBars
+		|| file.aimTrainerStraferGod != straferGod
+		|| ( strafeSpeedTenth > 0 && file.aimTrainerStrafeSpeedTenth != strafeSpeedTenth )
 		|| ( durationSec > 0 && file.aimTrainerDurationSec != durationSec ) )
 
 	file.aimTrainerReloadHit = hit
@@ -197,13 +201,16 @@ void function AimTrainer_UI_SyncDevMenuState( bool hit, bool shot, bool kill, bo
 	file.aimTrainerReloadKill = kill
 	file.aimTrainerDynStats = dynStats
 	file.aimTrainerReconBars = reconBars
+	file.aimTrainerStraferGod = straferGod
+	if ( strafeSpeedTenth > 0 )
+		file.aimTrainerStrafeSpeedTenth = strafeSpeedTenth
 	if ( durationSec > 0 )
 		file.aimTrainerDurationSec = durationSec
 
-	printt( format( "[AimTrainer] UI SyncDevMenu hit=%s shot=%s kill=%s dyn=%s bars=%s dur=%d",
-		string( hit ), string( shot ), string( kill ), string( dynStats ), string( reconBars ), durationSec ) )
+	printt( format( "[AimTrainer] UI SyncDevMenu hit=%s shot=%s kill=%s dyn=%s bars=%s dur=%d god=%s speed=%d",
+		string( hit ), string( shot ), string( kill ), string( dynStats ), string( reconBars ), durationSec, string( straferGod ), strafeSpeedTenth ) )
 
-	LabTargets_SetState( hit, shot, kill, dynStats, reconBars, durationSec )
+	LabTargets_SetState( hit, shot, kill, dynStats, reconBars, durationSec, straferGod, strafeSpeedTenth )
 
 	// Function-ref compare is unreliable -- refresh any open DevMenu page.
 	if ( changed && GetActiveMenu() == GetMenu( "DevMenu" ) )

@@ -99,12 +99,11 @@ resource/ui/menus/panels/serverbrowser.res
 	BtnServerSearch
 	{
 		ControlName				TextEntry
-		zpos 100 // This works around input weirdness when the control is constructed by code instead of VGUI blackbox.
 		xpos 10
 		ypos 0
 		wide 1275
 		tall 40
-		zpos					70
+		zpos					70 // This works around input weirdness when the control is constructed by code instead of VGUI blackbox.
 		allowRightClickMenu		0
 		allowSpecialCharacters	0
 		unicode					1
@@ -363,7 +362,6 @@ resource/ui/menus/panels/serverbrowser.res
 		tall 550
 		xpos 2
 		ypos 0
-		zpos 100
 
 		rui "ui/basic_image.rpak"
 
@@ -511,7 +509,6 @@ resource/ui/menus/panels/serverbrowser.res
 		"labelText"				"#BRIDGE_SB_SERVER_NAME"
 		"xpos"					"-65"
 		"ypos"					"0"
-		"zpos"					"6"
 		"textalignment"			"center"
 		"wide"					"150"
 		"zpos" 					"4"
@@ -531,7 +528,6 @@ resource/ui/menus/panels/serverbrowser.res
 		"labelText"				"#BRIDGE_SB_PLAYERS"
 		"xpos"					"-670"
 		"ypos"					"0"
-		"zpos"					"6"
 		"textalignment"			"center"
 		"wide"					"110"
 		"zpos" 					"4"
@@ -583,6 +579,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerPasswordLine"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"			"ImagePanel"
 		"xpos"					"0"
 		"ypos"					"0"
@@ -601,6 +598,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerNameLine"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"			"ImagePanel"
 		"xpos"					"-50"
 		"ypos"					"0"
@@ -619,6 +617,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCountLine"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"			"ImagePanel"
 		"xpos"					"-660"
 		"ypos"					"0"
@@ -637,6 +636,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlaylistLine"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"			"ImagePanel"
 		"xpos"					"-790"
 		"ypos"					"0"
@@ -655,6 +655,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"MapLine"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"			"ImagePanel"
 		"xpos"					"-1040"
 		"ypos"					"0"
@@ -673,6 +674,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"RightLine"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"			"ImagePanel"
 		"xpos"					"0"
 		"ypos"					"0"
@@ -1193,6 +1195,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked0"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1204,7 +1207,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1219,6 +1222,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked1"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1230,7 +1234,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1245,6 +1249,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked2"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1256,7 +1261,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1271,6 +1276,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked3"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1282,7 +1288,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1297,6 +1303,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked4"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1308,7 +1315,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1323,6 +1330,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked5"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1334,7 +1342,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1349,6 +1357,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked6"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1360,7 +1369,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1375,6 +1384,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked7"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1386,7 +1396,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1401,6 +1411,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked8"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1412,7 +1423,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1427,6 +1438,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked9"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1438,7 +1450,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1453,6 +1465,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked10"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1464,7 +1477,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1479,6 +1492,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked11"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1490,7 +1504,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1505,6 +1519,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked12"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1516,7 +1531,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1531,6 +1546,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked13"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1542,7 +1558,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1557,6 +1573,7 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerLocked14"
 	{
+		"mouseinputenabled"				"0"
 		ControlName				RuiPanel
 		rui                     "ui/basic_image.rpak"
 		"classname"				"ServLocked"
@@ -1568,7 +1585,7 @@ resource/ui/menus/panels/serverbrowser.res
         "drawColor"				"30 30 30 120"
 		"wrap"					"1"
 		"visible"				"1"
-		"zpos"					"0"
+		"zpos"					"5"
 		scaleImage              1
 
         ruiArgs
@@ -1583,11 +1600,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName0"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1603,11 +1620,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName1"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1623,11 +1640,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName2"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1643,11 +1660,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName3"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1663,11 +1680,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName4"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1683,11 +1700,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName5"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1703,11 +1720,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName6"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1723,11 +1740,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName7"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1743,11 +1760,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName8"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1763,11 +1780,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName9"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1783,11 +1800,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName10"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1803,11 +1820,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName11"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1823,11 +1840,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName12"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1843,11 +1860,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName13"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1863,11 +1880,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"ServerName14"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-65"
 		"ypos"						"0"
-		"zpos"						"0"
 		"wide"						"630"
 		"zpos" 						"4"
 		"fontHeight"				"30"
@@ -1883,11 +1900,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist0"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textAlignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -1904,11 +1921,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist1"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -1925,11 +1942,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist2"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -1946,11 +1963,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist3"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -1967,11 +1984,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist4"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -1988,11 +2005,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist5"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -2009,11 +2026,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist6"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -2030,11 +2047,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist7"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -2051,11 +2068,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist8"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -2072,11 +2089,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist9"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -2093,11 +2110,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist10"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -2114,11 +2131,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist11"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -2135,11 +2152,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist12"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -2156,11 +2173,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist13"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -2177,11 +2194,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Playlist14"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-800"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"230"
 		"zpos" 						"4"
@@ -2198,11 +2215,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount0"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textAlignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2219,11 +2236,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount1"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2240,11 +2257,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount2"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2261,11 +2278,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount3"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2282,11 +2299,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount4"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2303,11 +2320,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount5"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2324,11 +2341,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount6"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2345,11 +2362,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount7"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2366,11 +2383,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount8"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2387,11 +2404,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount9"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2408,11 +2425,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount10"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2429,11 +2446,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount11"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2450,11 +2467,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount12"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2471,11 +2488,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount13"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2492,11 +2509,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"PlayerCount14"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-670"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"110"
 		"zpos" 						"4"
@@ -2513,11 +2530,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map0"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2534,11 +2551,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map1"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2555,11 +2572,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map2"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2576,11 +2593,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map3"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2596,11 +2613,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map4"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2617,11 +2634,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map5"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2638,11 +2655,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map6"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2659,11 +2676,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map7"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2680,11 +2697,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map8"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2701,11 +2718,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map9"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2722,11 +2739,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map10"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2743,11 +2760,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map11"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2764,11 +2781,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map12"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2785,11 +2802,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map13"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"
@@ -2806,11 +2823,11 @@ resource/ui/menus/panels/serverbrowser.res
 
 	"Map14"
 	{
+		"mouseinputenabled"				"0"
 		"ControlName"				"Label"
 		"labelText"					""
 		"xpos"						"-1050"
 		"ypos"						"0"
-		"zpos"						"0"
 		"textalignment"				"center"
 		"wide"						"330"
 		"zpos" 						"4"

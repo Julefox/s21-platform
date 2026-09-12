@@ -88,6 +88,9 @@ void function ServerBrowserShared_WireControls( var panel, var menu )
 		Hud_SetVisible( elem, false )
 	}
 
+	for ( int row = 0; row < SERVER_ROWS_PER_PAGE; row++ )
+		ServerBrowserShared_WireRowClickThrough( panel, row )
+
 	file.controlsWired = true
 	ServerBrowserShared_UpdateFilterLists()
 	ServerBrowserShared_ShowEmptyState()
@@ -460,7 +463,14 @@ void function ServerBrowserShared_OnRowClick( var button )
 	if ( !ServerBrowserShared_IsBound() )
 		return
 
-	int row = Hud_GetScriptID( button ).tointeger()
+	ServerBrowserShared_SelectRow( Hud_GetScriptID( button ).tointeger() )
+}
+
+void function ServerBrowserShared_SelectRow( int row )
+{
+	if ( !ServerBrowserShared_IsBound() )
+		return
+
 	int slot = file.pageStart + row
 
 	if ( slot >= file.matches.len() )
@@ -469,6 +479,27 @@ void function ServerBrowserShared_OnRowClick( var button )
 	file.selected = file.matches[slot]
 	ServerBrowserShared_RefreshInfoPane()
 	EmitUISound( "menu_accept" )
+}
+
+void function ServerBrowserShared_WireRowClickThrough( var panel, int row )
+{
+	array<string> names
+	names.append( format( "ServerName%d", row ) )
+	names.append( format( "PlayerCount%d", row ) )
+	names.append( format( "Playlist%d", row ) )
+	names.append( format( "Map%d", row ) )
+	names.append( format( "ServerLocked%d", row ) )
+
+	foreach ( string name in names )
+	{
+		if ( !Hud_HasChild( panel, name ) )
+			continue
+
+		Hud_AddEventHandler( Hud_GetChild( panel, name ), UIE_CLICK, void function( var button ) : ( row )
+		{
+			ServerBrowserShared_SelectRow( row )
+		} )
+	}
 }
 
 void function ServerBrowserShared_Redraw()
@@ -543,14 +574,19 @@ void function ServerBrowserShared_RefreshInfoPane()
 		Hud_SetText( Hud_GetChild( file.panel, "ServerCurrentMapEdit" ), "--" )
 		Hud_SetText( Hud_GetChild( file.panel, "PlaylistInfoEdit" ), "--" )
 		Hud_SetText( Hud_GetChild( file.panel, "ServerDesc" ), "" )
+		ServerBrowserShared_UpdatePreview( "", "", "" )
 		return
 	}
 
 	int index = file.selected
 
+	string map = GetServerMap( index )
+	string playlist = GetServerPlaylist( index )
+
 	Hud_SetText( Hud_GetChild( file.panel, "ServerNameInfoEdit" ), GetServerName( index ) )
-	Hud_SetText( Hud_GetChild( file.panel, "ServerCurrentMapEdit" ), GetUIMapName( GetServerMap( index ) ) )
-	Hud_SetText( Hud_GetChild( file.panel, "PlaylistInfoEdit" ), GetUIPlaylistName( GetServerPlaylist( index ) ) )
+	Hud_SetText( Hud_GetChild( file.panel, "ServerCurrentMapEdit" ), GetUIMapName( map ) )
+	Hud_SetText( Hud_GetChild( file.panel, "PlaylistInfoEdit" ), GetUIPlaylistName( playlist ) )
+	ServerBrowserShared_UpdatePreview( map, playlist, GetServerRegion( index ) )
 
 	string desc = GetServerDescription( index )
 
@@ -563,6 +599,30 @@ void function ServerBrowserShared_RefreshInfoPane()
 		desc = desc + format( "\nRequires %d mod(s)", mods.len() )
 
 	Hud_SetText( Hud_GetChild( file.panel, "ServerDesc" ), desc )
+}
+
+void function ServerBrowserShared_UpdatePreview( string map, string playlist, string region )
+{
+	if ( !ServerBrowserShared_IsBound() )
+		return
+	if ( !Hud_HasChild( file.panel, "ServerMapImg" ) )
+		return
+
+	var rui = Hud_GetRui( Hud_GetChild( file.panel, "ServerMapImg" ) )
+	RuiSetString( rui, "modeNameText", map == "" ? "" : GetUIMapName( map ) )
+	RuiSetString( rui, "modeDescText", playlist == "" ? "" : GetUIPlaylistName( playlist ) )
+	RuiSetString( rui, "playlistName", playlist )
+	RuiSetString( rui, "playlistTypeText", region )
+	RuiSetString( rui, "modeLockedReason", "" )
+	RuiSetBool( rui, "alwaysShowDesc", map != "" || playlist != "" )
+	RuiSetBool( rui, "showLockedIcon", false )
+
+	if ( IsLobby() && IsConnected() && playlist != "" )
+	{
+		string imageKey = GetPlaylistVarString( playlist, "image", "" )
+		RuiSetImage( rui, "modeImage", GetImageFromImageMap( imageKey ) )
+		RuiSetImage( rui, "thumbnailImage", GetThumbnailImageFromImageMap( imageKey ) )
+	}
 }
 
 // ----- connect -----

@@ -544,6 +544,9 @@ global struct ServerPlayerStruct
 	bool aimTrainerReconHealthBars = false
 	// Challenge length in seconds (30/60/90/120/999 unlimited). 0 = use AIMTRAINER_CHALLENGE_DURATION (60).
 	int aimTrainerChallengeDurationSec = 0
+	// Lab strafer sliders: playback-rate multiplier (0.5-2.0) + infinite health for strafing bots.
+	float aimTrainerStrafeSpeedMult = 1.0
+	bool aimTrainerStraferInfiniteHealth = false
 	// 0=none, 1=target switch, 2=popcorn -- so hold-R can kill+respawn the same drill.
 	int aimTrainerFreeroamMode = 0
 	// Drill the finished run was on, so the post-challenge prompt can start it again.
@@ -1128,6 +1131,11 @@ global struct ServerAIStruct
 	// Flowstate dummy: last ScriptedPlay activity + rate (skip re-fire / rate thrash)
 	string flowstateLastAct = ""
 	float flowstateLastPlaybackRate = 1.0
+	// Lab strafer sliders, copied from the owner at spawn and live-updated by the setters.
+	float flowstateStrafeSpeedMult = 1.0
+	bool flowstateInfiniteHealth = false
+	int flowstateGodMaxHealth = 0
+	int flowstateGodMaxShield = 0
 	// Aim trainer freeroam: owning player for budget / kill credit
 	entity aimTrainerOwner = null
        

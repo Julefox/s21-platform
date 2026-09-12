@@ -130,6 +130,34 @@
                 pin_to_sibling_corner	BOTTOM_LEFT
             }
 
+            SldStrafeSpeed
+            {
+                ControlName				SliderControl
+                InheritProperties		SliderControl
+                className               "SettingScrollSizer"
+                minValue				0.5
+                maxValue				2.0
+                stepSize				0.1
+                showLabel               3
+                pin_to_sibling			ButtonFakeEnemy
+                pin_corner_to_sibling	TOP_LEFT
+                pin_to_sibling_corner	BOTTOM_LEFT
+            }
+
+            SldBotHealth
+            {
+                ControlName				SliderControl
+                InheritProperties		SliderControl
+                className               "SettingScrollSizer"
+                minValue				0
+                maxValue				1
+                stepSize				1
+                showLabel               0
+                pin_to_sibling			SldStrafeSpeed
+                pin_corner_to_sibling	TOP_LEFT
+                pin_to_sibling_corner	BOTTOM_LEFT
+            }
+
             ChallengeHeader
             {
                 ControlName				ImagePanel
@@ -137,7 +165,7 @@
                 className               "SettingScrollSizer"
                 xpos					0
                 ypos					6
-                pin_to_sibling			ButtonFakeEnemy
+                pin_to_sibling			SldBotHealth
                 pin_corner_to_sibling	TOP_LEFT
                 pin_to_sibling_corner	BOTTOM_LEFT
             }

@@ -1695,27 +1695,26 @@ void function FS1v1_OnEntitiesDidLoad()
 	}
 	
 	array<LocPair> surveyedWaitingRoomSpawns = FS_1v1_MapWaitingRoomSpawns()
-	if( surveyedWaitingRoomSpawns.len() > 0 )
-	{
-		g_waitingRoomSpawnLocations = surveyedWaitingRoomSpawns
-	}
-	else
+	g_waitingRoomSpawnLocations = surveyedWaitingRoomSpawns
+	if ( g_waitingRoomSpawnLocations.len() < FS_1V1_MIN_GENERATED_WAITING_SPOTS )
 	{
 		LocPair waitLoc = Gamemode1v1_GetWaitingRoomLocation()
 		array<LocPair> generated = SpawnSystem_GenerateRandomSpawns( waitLoc.origin, waitLoc.angles, file.waitingRoomRadius, .22, 24 )
-
-		// The generator only returns spots a player hull fits in. Too few survivors means
-		// the room is not a room -- ship the one origin we know is standable rather than
-		// scatter people through the geometry around it.
 		if ( generated.len() >= FS_1V1_MIN_GENERATED_WAITING_SPOTS )
 		{
 			g_waitingRoomSpawnLocations = generated
+			foreach ( LocPair extra in surveyedWaitingRoomSpawns )
+				g_waitingRoomSpawnLocations.append( extra )
+			printt( "[FS-1V1] waiting room generated " + string( generated.len() ) + " hull-clear spots on " + GetMapName() )
+		}
+		else if ( g_waitingRoomSpawnLocations.len() == 0 )
+		{
+			g_waitingRoomSpawnLocations.append( NewLocPair( waitLoc.origin, waitLoc.angles ) )
+			Warning( "[FS-1V1] waiting room has no surveyed spots and only " + string( generated.len() ) + " generated spots passed the hull test on " + GetMapName() + "; using the single origin " + string( waitLoc.origin ) )
 		}
 		else
 		{
-			g_waitingRoomSpawnLocations = []
-			g_waitingRoomSpawnLocations.append( NewLocPair( waitLoc.origin, waitLoc.angles ) )
-			Warning( "[FS-1V1] waiting room has no surveyed spots and only " + string( generated.len() ) + " generated spots passed the hull test on " + GetMapName() + "; using the single origin " + string( waitLoc.origin ) )
+			printt( "[FS-1V1] waiting room kept " + string( g_waitingRoomSpawnLocations.len() ) + " surveyed spots; generator only produced " + string( generated.len() ) + " on " + GetMapName() )
 		}
 	}
 	FS_1v1_InstallWaitingRoomEngineSpawns()

@@ -1,4 +1,4 @@
-"localization_mspanish"
+﻿"localization_mspanish"
 {
 	// --- retail hex keys (from rpak via RSX .locl) ---
 	"fca8cf6a685cb818" "Carnicería congelada"
@@ -28353,6 +28353,10 @@
 	"LAB_TARGETS_STRAFERFAST" "Muñeco lateral (rapido)"
 	"LAB_TARGETS_STRAFERFAST_DESC" "El mismo, rapido y cambiando mas de direccion."
 	"LAB_TARGETS_STRAFER_DESC" "Un muñeco que se mueve de lado a lado a ritmo parejo."
+	"LAB_TARGETS_STRAFESPEED" "Strafer Speed"
+	"LAB_TARGETS_STRAFESPEED_DESC" "How fast strafing dummies move. Applies to live bots and new spawns."
+	"LAB_TARGETS_BOTHEALTH" "Strafer Health"
+	"LAB_TARGETS_BOTHEALTH_DESC" "Slide to infinite and strafing dummies never die."
 
 	// FLOWSTATE
 	"FS_15_KILL_STREAK_SUBSTR" "%s logro una racha de 15 kills!"
@@ -28740,6 +28744,8 @@
 	"FS_START_SPEC" "%&use% Empezar a spectear"
 	"FS_STAT" "Stat"
 	"FS_STATS_NOT_READY" "Stats aun no cargadas"
+	"FS_STRAFER_GOD_OFF" "Strafer Infinite Health Disabled"
+	"FS_STRAFER_GOD_ON" "Strafer Infinite Health Enabled"
 	"FS_STRAFING_DUMMY" "Dummy con Strafe"
 	"FS_STRING_VAR" "%s"
 	"FS_SUCCESS" "EXITO"

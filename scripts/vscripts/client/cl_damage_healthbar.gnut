@@ -96,8 +96,16 @@ bool function DamageHealthBar_IsSupportedVictim( entity victim )
 	if ( victim.IsPlayer() || victim.IsPlayerDecoy() )
 		return true
 
-	if ( file.showOnDummies && victim.IsNPC() && IsTrainingDummie( victim ) )
-		return true
+	if ( victim.IsNPC() && IsTrainingDummie( victim ) )
+	{
+		if ( file.showOnDummies )
+			return true
+		// Stock firing range has no aimtrainer sync, so its dummies always show.
+		// Aimtrainer sessions keep the Lab toggle even on the range map.
+		if ( !AimTrainer_CL_HudActive() && ( GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_FIRING_RANGE ) || GameModeVariant_IsActive( eGameModeVariants.SURVIVAL_TRAINING ) ) )
+			return true
+		return false
+	}
 
 	return false
 }

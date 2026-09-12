@@ -1,4 +1,4 @@
-"localization_polish"
+﻿"localization_polish"
 {
 	// --- retail hex keys (from rpak via RSX .locl) ---
 	"fca8cf6a685cb818" "Zamrożona rzeź"
@@ -28353,6 +28353,10 @@
 	"LAB_TARGETS_STRAFERFAST" "Manekin boczny (szybki)"
 	"LAB_TARGETS_STRAFERFAST_DESC" "Ten sam, szybki i czesto zmienia kierunek."
 	"LAB_TARGETS_STRAFER_DESC" "Manekin chodzi w bok w stalym tempie."
+	"LAB_TARGETS_STRAFESPEED" "Strafer Speed"
+	"LAB_TARGETS_STRAFESPEED_DESC" "How fast strafing dummies move. Applies to live bots and new spawns."
+	"LAB_TARGETS_BOTHEALTH" "Strafer Health"
+	"LAB_TARGETS_BOTHEALTH_DESC" "Slide to infinite and strafing dummies never die."
 
 	// FLOWSTATE
 	"FS_15_KILL_STREAK_SUBSTR" "%s osiągnął serię 15 zabójstw!"
@@ -28740,6 +28744,8 @@
 	"FS_START_SPEC" "%&use% Rozpocznij obserwowanie"
 	"FS_STAT" "Statystyka"
 	"FS_STATS_NOT_READY" "Statystyki jeszcze nie załadowane"
+	"FS_STRAFER_GOD_OFF" "Strafer Infinite Health Disabled"
+	"FS_STRAFER_GOD_ON" "Strafer Infinite Health Enabled"
 	"FS_STRAFING_DUMMY" "Zmylenie Manekina"
 	"FS_STRING_VAR" "%s"
 	"FS_SUCCESS" "SUKCES"

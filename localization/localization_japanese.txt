@@ -1,4 +1,4 @@
-"localization_japanese"
+﻿"localization_japanese"
 {
 	// --- retail hex keys (from rpak via RSX .locl) ---
 	"fca8cf6a685cb818" "凍てつく殺戮者"
@@ -28353,6 +28353,10 @@
 	"LAB_TARGETS_STRAFERFAST" "左右移動ダミー(速い)"
 	"LAB_TARGETS_STRAFERFAST_DESC" "速く動き、方向転換も多いダミー。"
 	"LAB_TARGETS_STRAFER_DESC" "一定のリズムで左右に動くダミー。"
+	"LAB_TARGETS_STRAFESPEED" "Strafer Speed"
+	"LAB_TARGETS_STRAFESPEED_DESC" "How fast strafing dummies move. Applies to live bots and new spawns."
+	"LAB_TARGETS_BOTHEALTH" "Strafer Health"
+	"LAB_TARGETS_BOTHEALTH_DESC" "Slide to infinite and strafing dummies never die."
 
 	// FLOWSTATE
 	"FS_15_KILL_STREAK_SUBSTR" "%s が15連続キルを達成しました！"
@@ -28740,6 +28744,8 @@
 	"FS_START_SPEC" "%&use% 観戦を開始"
 	"FS_STAT" "統計"
 	"FS_STATS_NOT_READY" "統計がまだ読み込まれていません"
+	"FS_STRAFER_GOD_OFF" "Strafer Infinite Health Disabled"
+	"FS_STRAFER_GOD_ON" "Strafer Infinite Health Enabled"
 	"FS_STRAFING_DUMMY" "ストレイフダミー"
 	"FS_STRING_VAR" "%s"
 	"FS_SUCCESS" "成功"

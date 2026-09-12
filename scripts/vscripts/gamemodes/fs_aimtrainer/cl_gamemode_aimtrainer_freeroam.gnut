@@ -16,6 +16,7 @@ global function AimTrainer_CL_DevPreviewResults
 global function AimTrainer_CL_DevPreviewFRCRecap
 global function AimTrainer_CL_PushChallengeFlagToUI
 global function AimTrainer_CL_SyncDevMenuState
+global function AimTrainer_CL_HudActive
 
 const string AIMTRAINER_SFX_DYNSTAT_RESET = "FiringRangeMu1_UI_Range_Stats_ManualReset_1P"
 const string AIMTRAINER_SFX_DYNSTAT_HOLD = "FiringRangeMu1_UI_Range_Stats_ManualReset_ProgressBar_1P"
@@ -165,23 +166,24 @@ void function AimTrainer_CL_PushChallengeFlagToUI()
 	}
 }
 
-// Server truth for DevMenu ON/OFF labels -- flags bitfield + duration.
-void function AimTrainer_CL_SyncDevMenuState( int flags, int durationSec )
+// Server truth for DevMenu ON/OFF labels -- flags bitfield + duration + strafer sliders.
+void function AimTrainer_CL_SyncDevMenuState( int flags, int durationSec, int strafeSpeedTenth )
 {
 	bool hit = ( flags & 1 ) != 0
 	bool shot = ( flags & 2 ) != 0
 	bool kill = ( flags & 4 ) != 0
 	bool dynStats = ( flags & 8 ) != 0
 	bool reconBars = ( flags & 16 ) != 0
+	bool straferGod = ( flags & 32 ) != 0
 
 	ClDamageHealthBar_SetEnabled( reconBars )
 
-	printt( format( "[AimTrainer] CL SyncDevMenu hit=%s shot=%s kill=%s dyn=%s bars=%s dur=%d",
-		string( hit ), string( shot ), string( kill ), string( dynStats ), string( reconBars ), durationSec ) )
+	printt( format( "[AimTrainer] CL SyncDevMenu hit=%s shot=%s kill=%s dyn=%s bars=%s dur=%d god=%s speed=%d",
+		string( hit ), string( shot ), string( kill ), string( dynStats ), string( reconBars ), durationSec, string( straferGod ), strafeSpeedTenth ) )
 
 	try
 	{
-		RunUIScript( "AimTrainer_UI_SyncDevMenuState", hit, shot, kill, dynStats, reconBars, durationSec )
+		RunUIScript( "AimTrainer_UI_SyncDevMenuState", hit, shot, kill, dynStats, reconBars, durationSec, straferGod, strafeSpeedTenth )
 	}
 	catch ( eUI )
 	{

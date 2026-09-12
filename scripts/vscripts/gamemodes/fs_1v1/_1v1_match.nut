@@ -2047,24 +2047,59 @@ vector function Gamemode1v1_NormalizeAngles( vector angles )
 	return <p, y, r>
 }
 
+vector function Gamemode1v1_SnapTeleportOrigin( entity player, vector origin )
+{
+	if( !IsValid( player ) )
+		return origin
+
+	vector mins = player.GetPlayerMins()
+	vector maxs = player.GetPlayerMaxs()
+	array<entity> ignore = GetPlayerArray_Alive()
+	if ( ignore.len() == 0 )
+		ignore.append( player )
+
+	array<vector> candidates
+	candidates.append( origin )
+	candidates.append( origin + <32, 0, 0> )
+	candidates.append( origin + <-32, 0, 0> )
+	candidates.append( origin + <0, 32, 0> )
+	candidates.append( origin + <0, -32, 0> )
+	candidates.append( origin + <32, 32, 0> )
+	candidates.append( origin + <32, -32, 0> )
+	candidates.append( origin + <-32, 32, 0> )
+	candidates.append( origin + <-32, -32, 0> )
+
+	foreach ( vector cand in candidates )
+	{
+		TraceResults clear = TraceHull( cand, cand, mins, maxs, ignore, TRACE_MASK_PLAYERSOLID, TRACE_COLLISION_GROUP_PLAYER )
+		if ( clear.startSolid )
+			continue
+
+		TraceResults ground = TraceHull( cand, cand - <0, 0, 96.0>, mins, maxs, ignore, TRACE_MASK_PLAYERSOLID, TRACE_COLLISION_GROUP_PLAYER )
+		if ( ground.startSolid || ground.fraction >= 1.0 )
+			continue
+		if ( ( cand.z - ground.endPos.z ) > 48.0 )
+			continue
+
+		if ( Distance( ground.endPos, origin ) > 1.0 )
+			printt( "[FS-1V1] teleport snap " + string( origin ) + " -> " + string( ground.endPos ) )
+		return ground.endPos
+	}
+
+	return origin
+}
+
 void function Gamemode1v1_TeleportPlayer( entity player, LocPair data )
 {
-	// #if DEVELOPER
-	// if( player == gp[0] )
-	// {
-		// DumpStack
-		// printw( "PLAYER TELEPORTED TO", data.origin, data.angles )
-	// }
-	// #endif
-
 	if( !IsValid( player ) )
 		return
 
 	vector angles = Gamemode1v1_NormalizeAngles( data.angles )
+	vector dest = Gamemode1v1_SnapTeleportOrigin( player, data.origin )
 
 	player.SetVelocity( Vector( 0,0,0 ) )
 	player.SettleStance()
-	player.SetOrigin( data.origin )
+	player.SetOrigin( dest )
 	player.SetAngles( angles )
 	player.SetVelocity( Vector( 0,0,0 ) )
 	player.PlantOnGround()

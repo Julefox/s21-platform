@@ -1,4 +1,4 @@
-"localization_french"
+﻿"localization_french"
 {
 	// --- retail hex keys (from rpak via RSX .locl) ---
 	"fca8cf6a685cb818" "Carnage glacial"
@@ -28353,6 +28353,10 @@
 	"LAB_TARGETS_STRAFERFAST" "Mannequin lateral (rapide)"
 	"LAB_TARGETS_STRAFERFAST_DESC" "Le meme, en rapide et changeant souvent de direction."
 	"LAB_TARGETS_STRAFER_DESC" "Un mannequin qui se deplace de gauche a droite a rythme regulier."
+	"LAB_TARGETS_STRAFESPEED" "Strafer Speed"
+	"LAB_TARGETS_STRAFESPEED_DESC" "How fast strafing dummies move. Applies to live bots and new spawns."
+	"LAB_TARGETS_BOTHEALTH" "Strafer Health"
+	"LAB_TARGETS_BOTHEALTH_DESC" "Slide to infinite and strafing dummies never die."
 
 	// FLOWSTATE
 	"FS_15_KILL_STREAK_SUBSTR" "%s a atteint une série de 15 éliminations !"
@@ -28740,6 +28744,8 @@
 	"FS_START_SPEC" "%&use% Commencer à observer"
 	"FS_STAT" "Stat"
 	"FS_STATS_NOT_READY" "Statistiques non encore chargées"
+	"FS_STRAFER_GOD_OFF" "Strafer Infinite Health Disabled"
+	"FS_STRAFER_GOD_ON" "Strafer Infinite Health Enabled"
 	"FS_STRAFING_DUMMY" "Mannequin d'esquive"
 	"FS_STRING_VAR" "%s"
 	"FS_SUCCESS" "SUCCÈS"

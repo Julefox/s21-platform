@@ -1,4 +1,4 @@
-"localization_italian"
+﻿"localization_italian"
 {
 	// --- retail hex keys (from rpak via RSX .locl) ---
 	"fca8cf6a685cb818" "Strage di ghiaccio"
@@ -28353,6 +28353,10 @@
 	"LAB_TARGETS_STRAFERFAST" "Manichino laterale (veloce)"
 	"LAB_TARGETS_STRAFERFAST_DESC" "Lo stesso, veloce e con cambi di direzione frequenti."
 	"LAB_TARGETS_STRAFER_DESC" "Un manichino che si sposta di lato a ritmo costante."
+	"LAB_TARGETS_STRAFESPEED" "Strafer Speed"
+	"LAB_TARGETS_STRAFESPEED_DESC" "How fast strafing dummies move. Applies to live bots and new spawns."
+	"LAB_TARGETS_BOTHEALTH" "Strafer Health"
+	"LAB_TARGETS_BOTHEALTH_DESC" "Slide to infinite and strafing dummies never die."
 
 	// FLOWSTATE
 	"FS_15_KILL_STREAK_SUBSTR" "%s ha raggiunto una serie di 15 uccisioni!"
@@ -28740,6 +28744,8 @@
 	"FS_START_SPEC" "%&use% Inizia a spettare"
 	"FS_STAT" "Stat"
 	"FS_STATS_NOT_READY" "Statistiche non ancora caricate"
+	"FS_STRAFER_GOD_OFF" "Strafer Infinite Health Disabled"
+	"FS_STRAFER_GOD_ON" "Strafer Infinite Health Enabled"
 	"FS_STRAFING_DUMMY" "Manichino di movimento"
 	"FS_STRING_VAR" "%s"
 	"FS_SUCCESS" "SUCCESSO"

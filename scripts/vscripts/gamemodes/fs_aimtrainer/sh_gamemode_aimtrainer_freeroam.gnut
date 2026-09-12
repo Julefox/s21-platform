@@ -27,3 +27,11 @@ global const int AIMTRAINER_FREEROAM_AUTOSPAWN_HARD = 7
 
 // Default freeplay primary if the player has no gun (loadout skin applied on give).
 global const string AIMTRAINER_DEFAULT_WEAPON = "mp_weapon_volt_smg"
+
+// Lab strafer sliders. Speed multiplies Flowstate strafe playback rates;
+// infinite health keeps strafing bots at 1+ HP with idle refill.
+global const float AIMTRAINER_STRAFE_SPEED_MIN = 0.5
+global const float AIMTRAINER_STRAFE_SPEED_MAX = 2.0
+global const float AIMTRAINER_STRAFE_SPEED_DEFAULT = 1.0
+global const float AIMTRAINER_STRAFER_GOD_REGEN_IDLE = 3.0
+global const float AIMTRAINER_STRAFER_GOD_REGEN_DURATION = 1.0

@@ -14,6 +14,9 @@ struct
 
 	table< string, var > rows
 
+	float lastSpeedSent = 1.0
+	bool lastGodSent = false
+
 	bool applyingValues = false
 } file
 
@@ -50,6 +53,7 @@ void function LabTargets_BindRows()
 	array<string> names = [
 		"ButtonDummy", "ButtonSandbag", "ButtonStrafer", "ButtonStraferFast",
 		"ButtonFakePlayer", "ButtonFakeEnemy",
+		"SldStrafeSpeed", "SldBotHealth",
 		"SwitchAimMode", "SwitchDuration", "ButtonChallengeStart", "ButtonChallengeStop",
 		"SwitchReloadKill", "SwitchReloadHit", "SwitchReloadShot",
 		"SwitchDynStats", "SwitchReconBars", "ButtonQuitAimTrainer"
@@ -70,6 +74,8 @@ void function LabTargets_BindRows()
 		"#LAB_TARGETS_FAKEPLAYER_DESC" )
 	Lab_SetupRow( LabTargets_Row( "ButtonFakeEnemy" ), "#LAB_TARGETS_FAKEENEMY",
 		"#LAB_TARGETS_FAKEENEMY_DESC" )
+	LabTargets_SetupSlider( LabTargets_Row( "SldStrafeSpeed" ), "#LAB_TARGETS_STRAFESPEED" )
+	LabTargets_SetupSlider( LabTargets_Row( "SldBotHealth" ), "#LAB_TARGETS_BOTHEALTH" )
 	Lab_SetupRow( LabTargets_Row( "SwitchAimMode" ), "#LAB_TARGETS_AIMMODE",
 		"#LAB_TARGETS_AIMMODE_DESC", true )
 	Lab_SetupRow( LabTargets_Row( "SwitchDuration" ), "#LAB_TARGETS_DURATION",
@@ -104,12 +110,32 @@ void function LabTargets_BindRows()
 	AddButtonEventHandler( LabTargets_Row( "ButtonChallengeStop" ), UIE_CLICK, LabTargets_ClickStop )
 	AddButtonEventHandler( LabTargets_Row( "ButtonQuitAimTrainer" ), UIE_CLICK, LabTargets_ClickQuit )
 
+	AddButtonEventHandler( LabTargets_Row( "SldStrafeSpeed" ), UIE_CHANGE, LabTargets_OnStrafeSpeed )
+	AddButtonEventHandler( LabTargets_Row( "SldBotHealth" ), UIE_CHANGE, LabTargets_OnBotHealth )
 	AddButtonEventHandler( LabTargets_Row( "SwitchDuration" ), UIE_CHANGE, LabTargets_OnDuration )
 	AddButtonEventHandler( LabTargets_Row( "SwitchReloadKill" ), UIE_CHANGE, LabTargets_OnReloadKill )
 	AddButtonEventHandler( LabTargets_Row( "SwitchReloadHit" ), UIE_CHANGE, LabTargets_OnReloadHit )
 	AddButtonEventHandler( LabTargets_Row( "SwitchReloadShot" ), UIE_CHANGE, LabTargets_OnReloadShot )
 	AddButtonEventHandler( LabTargets_Row( "SwitchDynStats" ), UIE_CHANGE, LabTargets_OnDynStats )
 	AddButtonEventHandler( LabTargets_Row( "SwitchReconBars" ), UIE_CHANGE, LabTargets_OnReconBars )
+}
+
+// Slider rows carry their own label/desc: a SliderControl has no SwitchButton
+// RUI, so Lab_SetupRow (SetButtonRuiText on the row) does not apply. The title
+// goes on the slider's BtnDropButton child; the details pane fills on focus.
+void function LabTargets_SetupSlider( var slider, string title )
+{
+	if ( Hud_HasChild( slider, "BtnDropButton" ) )
+		SetButtonRuiText( Hud_GetChild( slider, "BtnDropButton" ), title )
+	Hud_AddEventHandler( slider, UIE_GET_FOCUS, LabTargets_SliderFocus )
+}
+
+void function LabTargets_SliderFocus( var slider )
+{
+	if ( slider == LabTargets_Row( "SldStrafeSpeed" ) )
+		Lab_SetDetails( Localize( "#LAB_TARGETS_STRAFESPEED" ), Localize( "#LAB_TARGETS_STRAFESPEED_DESC" ) )
+	else if ( slider == LabTargets_Row( "SldBotHealth" ) )
+		Lab_SetDetails( Localize( "#LAB_TARGETS_BOTHEALTH" ), Localize( "#LAB_TARGETS_BOTHEALTH_DESC" ) )
 }
 
 void function LabTargets_BuildAimModeList()
@@ -149,7 +175,7 @@ void function OnLabTargetsPanel_Hide( var panel )
 }
 
 // Server -> client -> UI: reconcile the toggle labels with server truth.
-void function LabTargets_SetState( bool hit, bool shot, bool kill, bool dynStats, bool reconBars, int durationSec )
+void function LabTargets_SetState( bool hit, bool shot, bool kill, bool dynStats, bool reconBars, int durationSec, bool straferGod, int strafeSpeedTenth )
 {
 	if ( file.rows.len() == 0 )
 		return
@@ -162,6 +188,13 @@ void function LabTargets_SetState( bool hit, bool shot, bool kill, bool dynStats
 	Hud_SetDialogListSelectionValue( LabTargets_Row( "SwitchReconBars" ), reconBars ? "1" : "0" )
 	if ( durationSec > 0 )
 		Hud_SetDialogListSelectionValue( LabTargets_Row( "SwitchDuration" ), string( durationSec ) )
+	if ( strafeSpeedTenth >= 5 && strafeSpeedTenth <= 20 )
+	{
+		file.lastSpeedSent = float( strafeSpeedTenth ) / 10.0
+		Hud_SliderControl_SetCurrentValue( LabTargets_Row( "SldStrafeSpeed" ), file.lastSpeedSent )
+	}
+	file.lastGodSent = straferGod
+	Hud_SliderControl_SetCurrentValue( LabTargets_Row( "SldBotHealth" ), straferGod ? 1.0 : 0.0 )
 	file.applyingValues = false
 }
 
@@ -192,6 +225,30 @@ void function LabTargets_ClickStrafer( var button ) { LabTargets_Send( "flowstat
 void function LabTargets_ClickStraferFast( var button ) { LabTargets_Send( "flowstate_hard_auto" ) }
 void function LabTargets_ClickStop( var button ) { LabTargets_Send( "stop" ) }
 void function LabTargets_ClickQuit( var button ) { LabTargets_Send( "quit" ) }
+
+void function LabTargets_OnStrafeSpeed( var button )
+{
+	if ( LabTargets_Ignore() )
+		return
+
+	float speed = Hud_SliderControl_GetCurrentValue( button )
+	if ( fabs( speed - file.lastSpeedSent ) < 0.049 )
+		return
+	file.lastSpeedSent = speed
+	ClientCommand( format( "dev_aimtrainer strafe_speed %d", int( speed * 10.0 + 0.5 ) ) )
+}
+
+void function LabTargets_OnBotHealth( var button )
+{
+	if ( LabTargets_Ignore() )
+		return
+
+	bool god = Hud_SliderControl_GetCurrentValue( button ) >= 0.5
+	if ( god == file.lastGodSent )
+		return
+	file.lastGodSent = god
+	ClientCommand( format( "dev_aimtrainer bot_health %d", god ? 1 : 0 ) )
+}
 
 void function LabTargets_ClickFakePlayer( var button )
 {
