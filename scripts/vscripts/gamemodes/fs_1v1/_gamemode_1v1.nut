@@ -493,6 +493,7 @@ void function _Gamemode1v1Standalone_Init()
 	AddCallback_OnClientConnected( _OnPlayerConnected1v1 )
 	AddCallback_OnPlayerKilled( _OnPlayerKilled1v1 )
 	AddCallback_OnTdmStateEnter_InProgress( _OnTdmStateEnter_InProgress1v1 )
+	AddCallback_OnWeaponAttack( FS_1v1_OnWeaponAttack )
 
 	if( GetCurrentPlaylistName() == "fs_vamp_1v1" )
 	{
@@ -978,14 +979,95 @@ void function FS_1v1_OnPlayerDamaged_Score( entity victim, var damageInfo )
 	if ( !Gamemode1v1_IsMatchValid( group ) )
 		return
 
-	Gamemode1v1_RecordMatchStats( attacker, group, dmg, 1, 1, false )
+	if ( Flowstate_IsLGDuels() )
+	{
+		Gamemode1v1_RecordMatchStats( attacker, group, dmg, 1, 1, false )
+		attacker.p.fs_stats_hits++
+		attacker.p.fs_stats_shots++
+		if ( IsBitFlagSet( DamageInfo_GetCustomDamageType( damageInfo ), DF_HEADSHOT ) )
+		{
+			Gamemode1v1_RecordMatchHeadshot( attacker, group )
+			attacker.p.fs_stats_headshots++
+		}
+		return
+	}
+
+	entity weap = DamageInfo_GetWeapon( damageInfo )
+	if ( IsValid( weap ) && !FS_1v1_IsAccuracyWeapon( weap, weap.GetWeaponClassName() ) )
+		return
+
+	Gamemode1v1_RecordMatchStats( attacker, group, dmg, 1, 0, false )
 	attacker.p.fs_stats_hits++
-	attacker.p.fs_stats_shots++
 	if ( IsBitFlagSet( DamageInfo_GetCustomDamageType( damageInfo ), DF_HEADSHOT ) )
 	{
 		Gamemode1v1_RecordMatchHeadshot( attacker, group )
 		attacker.p.fs_stats_headshots++
 	}
+	FS_1v1_PushAccuracy( attacker )
+}
+
+bool function FS_1v1_IsAccuracyWeapon( entity weapon, string weaponName )
+{
+	if ( !IsValid( weapon ) )
+		return false
+	if ( weaponName == "mp_ability_sniper_ult" || weaponName == "mp_weapon_mobile_hmg" )
+		return true
+	if ( weapon.IsWeaponOffhand() )
+		return false
+	int flags = weapon.GetWeaponTypeFlags()
+	if ( IsBitFlagSet( flags, WPT_TACTICAL )
+		|| IsBitFlagSet( flags, WPT_ULTIMATE )
+		|| IsBitFlagSet( flags, WPT_CONSUMABLE )
+		|| IsBitFlagSet( flags, WPT_SURVIVAL ) )
+		return false
+	return true
+}
+
+void function FS_1v1_PushAccuracy( entity player )
+{
+	if ( !IsValid( player ) || Flowstate_IsLGDuels() )
+		return
+
+	int shots = player.p.fs_stats_shots
+	int hits = player.p.fs_stats_hits
+	int acc = 0
+	if ( shots > 0 )
+	{
+		acc = int( ( float( hits ) / float( shots ) ) * 100.0 )
+		if ( acc > 100 )
+			acc = 100
+	}
+	player.SetPlayerNetInt( "accuracy", acc )
+}
+
+void function FS_1v1_OnWeaponAttack( entity player, entity weapon, string weaponName, int ammoUsed, vector attackOrigin, vector attackDir )
+{
+	if ( !IsValid( player ) || !player.IsPlayer() )
+		return
+	if ( Flowstate_IsLGDuels() )
+		return
+	if ( FS_1v1_IsLobbyState( Gamemode1v1_GetPlayerGamestate( player ) ) )
+		return
+	if ( !FS_1v1_IsAccuracyWeapon( weapon, weaponName ) )
+		return
+
+	int n = 1
+	if ( IsValid( weapon ) )
+	{
+		n = weapon.GetProjectilesPerShot()
+		if ( ammoUsed > n )
+			n = ammoUsed
+		if ( n < 1 )
+			n = 1
+	}
+
+	player.p.fs_stats_shots += n
+
+	MatchGroup group = Gamemode1v1_GetPlayerSoloGroup( player )
+	if ( Gamemode1v1_IsMatchValid( group ) )
+		Gamemode1v1_RecordMatchStats( player, group, 0, 0, n, false )
+
+	FS_1v1_PushAccuracy( player )
 }
 
 bool function FS_1v1_ShouldPlayerBeEliminated( entity player )
@@ -1061,6 +1143,7 @@ void function _OnPlayerConnected1v1( entity player )
 	player.p.fs_stats_hits = 0
 	player.p.fs_stats_shots = 0
 	player.p.fs_stats_headshots = 0
+	player.SetPlayerNetInt( "accuracy", 0 )
 
 	if ( !player.IsBot() )
 		thread FS_1v1_NetworkedLatencyThread( player )
@@ -3263,11 +3346,10 @@ void function _ResetPlayerStats1v1( entity player )
 	player.p.fs_stats_hits = 0
 	player.p.fs_stats_shots = 0
 	player.p.fs_stats_headshots = 0
+	player.SetPlayerNetInt( "accuracy", 0 )
 
-	// LG Duels specific
 	if( GetCurrentPlaylistName() == "fs_lgduels_1v1" )
 	{
-		player.SetPlayerNetInt( "accuracy", 0 )
 		player.p.totalLGHits = 0
 		player.p.totalLGShots = 0
 	}

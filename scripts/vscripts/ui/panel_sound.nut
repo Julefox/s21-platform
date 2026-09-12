@@ -108,6 +108,8 @@ void function InitSoundPanel( var panel )
 	file.audioLanguageButton = Hud_GetChild( contentPanel, "SwchAudioLanguage" )
 	SetupSettingsButton( file.audioLanguageButton, "#AUDIO_LANGUAGE", "#OPTIONS_MENU_AUDIO_LANGUAGE_DESC", $"rui/menu/settings/settings_audio" )
 	AddButtonEventHandler( file.audioLanguageButton, UIE_CHANGE, OnAudioLanguageControlChanged )
+	Hud_Hide( file.audioLanguageButton )
+	Hud_SetEnabled( file.audioLanguageButton, false )
 
 	file.miles_language = GetConVarString( "miles_language" )
 
@@ -209,7 +211,8 @@ void function OnSoundPanel_Show( var panel )
 	file.active = true
 
 	ScrollPanel_SetActive( panel, true )
-	Hud_SetEnabled( file.audioLanguageButton, IsAudioLanguageChangeAllowed() )
+	Hud_Hide( file.audioLanguageButton )
+	Hud_SetEnabled( file.audioLanguageButton, false )
 
 	thread UpdateVoiceMeter()
 
@@ -397,7 +400,7 @@ void function RestoreSoundDefaults()
 
 bool function IsAudioLanguageChangeAllowed()
 {
-	return Hud_IsVisible( file.audioLanguageButton ) && IsLobby()
+	return false
 }
 
 

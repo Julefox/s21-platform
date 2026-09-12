@@ -980,6 +980,7 @@ void function FS1v1_RemoteStats_SubmitSession()
 	body += ",\"playlist\":\"" + FS1v1_RemoteStats_JsonEscape( playlist ) + "\""
 	body += ",\"duration\":" + string( duration )
 	body += ",\"sessionId\":\"" + string( Time() ) + "-" + FS1v1_RemoteStats_JsonEscape( playlist ) + "\""
+	body += ",\"shotSource\":\"fire\""
 	if ( winnerId != "" )
 		body += ",\"winnerId\":" + winnerId
 	body += ",\"players\":[" + playersJson + "]"

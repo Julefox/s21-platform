@@ -84,7 +84,7 @@ def section_of(k: str) -> str:
 		return "HUB"
 	if k.startswith("LAB_"):
 		return "LAB"
-	if k.startswith("SETTING_MANTLE"):
+	if k.startswith("SETTING_") or k.startswith("FRSETTING_"):
 		return "HUD"
 	if k.startswith("BRIDGE_SB_") or k in (
 		"MAINMENU_BROWSE_SERVERS",

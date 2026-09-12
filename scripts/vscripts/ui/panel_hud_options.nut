@@ -80,6 +80,7 @@ void function InitHudOptionsPanel( var panel )
 
 	SetupSettingsButton( Hud_GetChild( contentPanel, "SwitchHealthbarStyle" ), "#BRIDGE_HEALTHBAR_STYLE", "#BRIDGE_HEALTHBAR_STYLE_DESC", $"rui/menu/settings/settings_hud" )
 	SetupSettingsButton( Hud_GetChild( contentPanel, "SwitchChatSetting" ), "#BRIDGE_CHAT_SETTING", "#BRIDGE_CHAT_SETTING_DESC", $"rui/menu/settings/settings_hud" )
+	SetupSettingsButton( Hud_GetChild( contentPanel, "SwitchVisualClutter" ), "#SETTING_VISUAL_CLUTTER", "#SETTING_VISUAL_CLUTTER_DESC", $"rui/menu/settings/settings_hud" )
 
 	SetupSettingsButton( Hud_GetChild( contentPanel, "SwitchLootPromptStyle" ), "#HUD_SETTING_LOOTPROMPTYSTYLE", "#HUD_SETTING_LOOTPROMPTYSTYLE_DESC", $"rui/menu/settings/settings_hud" )
 	SetupSettingsButton( Hud_GetChild( contentPanel, "SwitchShotButtonHints" ), "#HUD_SHOW_BUTTON_HINTS", "#HUD_SHOW_BUTTON_HINTS_DESC", $"rui/menu/settings/settings_hud" )
@@ -177,9 +178,9 @@ void function InitHudOptionsPanel( var panel )
 #endif
 
 
-	SetupSettingsSlider( Hud_GetChild( contentPanel, "ObserverSlowSpeed" ), "Observer Slow Speed", "Sets the slowest speed of the observer camera.", $"rui/menu/settings/settings_hud")
-	SetupSettingsSlider( Hud_GetChild( contentPanel, "ObserverBaseSpeed" ), "Observer Base Speed", "Sets the base movement speed of the observer camera.", $"rui/menu/settings/settings_hud")
-	SetupSettingsSlider( Hud_GetChild( contentPanel, "ObserverFastSpeed" ), "Observer Fast Speed", "Sets the fastest speed of the observer camera.", $"rui/menu/settings/settings_hud")
+	SetupSettingsSlider( Hud_GetChild( contentPanel, "ObserverSlowSpeed" ), "#SETTING_OBSERVER_SLOW", "#SETTING_OBSERVER_SLOW_DESC", $"rui/menu/settings/settings_hud")
+	SetupSettingsSlider( Hud_GetChild( contentPanel, "ObserverBaseSpeed" ), "#SETTING_OBSERVER_BASE", "#SETTING_OBSERVER_BASE_DESC", $"rui/menu/settings/settings_hud")
+	SetupSettingsSlider( Hud_GetChild( contentPanel, "ObserverFastSpeed" ), "#SETTING_OBSERVER_FAST", "#SETTING_OBSERVER_FAST_DESC", $"rui/menu/settings/settings_hud")
 
 
 	AddPanelFooterOption( panel, LEFT, BUTTON_B, true, "#B_BUTTON_BACK", "#B_BUTTON_BACK" )
@@ -204,6 +205,7 @@ void function InitHudOptionsPanel( var panel )
 	file.conVarDataList.append( CreateSettingsConVarData( "hud_setting_accessibleChat", eConVarType.INT ) )
 	file.conVarDataList.append( CreateSettingsConVarData( "hud_setting_damageIndicatorStyle", eConVarType.INT ) )
 	file.conVarDataList.append( CreateSettingsConVarData( "hud_setting_damageTextStyle", eConVarType.INT ) )
+	file.conVarDataList.append( CreateSettingsConVarData( "cl_visual_clutter", eConVarType.INT ) )
 	file.conVarDataList.append( CreateSettingsConVarData( "hud_setting_pingAlpha", eConVarType.FLOAT ) )
 	file.conVarDataList.append( CreateSettingsConVarData( "hud_setting_minimapRotate", eConVarType.INT ) )
 	file.conVarDataList.append( CreateSettingsConVarData( "hud_setting_streamerMode", eConVarType.INT ) )

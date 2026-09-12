@@ -182,11 +182,13 @@ void function SetupSettings()
 	SetupSettingsButton( file.generalSettingsToHud[ eFRSettingType.FRDUMMIESPEED ], "#FRSETTING_DUMMIESTRAFESPEED", "#FRSETTING_DUMMIESTRAFESPEED_DESC", $"", false, true  )
 	AddButtonEventHandler( file.generalSettingsToHud[ eFRSettingType.FRDUMMIESPEED ], UIE_CHANGE, void function( var btn ){ Firing_Range_GeneralSettingChanged( eFRSettingType.FRDUMMIESPEED, btn ) } )
 
-	SetupSettingsButton( file.generalSettingsToHud[ eFRSettingType.FRDUMMIESTRAFEDURATIONMIN ], "Dummie Strafe Duration Min", "Shortest time a dummie holds one strafe direction before switching. Lower = faster, more reactive-feeling movement.", $"", false, true  )
+	SetupSettingsButton( file.generalSettingsToHud[ eFRSettingType.FRDUMMIESTRAFEDURATIONMIN ], "#FRSETTING_DUMMIESTRAFEDURATIONMIN", "#FRSETTING_DUMMIESTRAFEDURATIONMIN_DESC", $"", false, true  )
 	AddButtonEventHandler( file.generalSettingsToHud[ eFRSettingType.FRDUMMIESTRAFEDURATIONMIN ], UIE_CHANGE, void function( var btn ){ Firing_Range_GeneralSettingChanged( eFRSettingType.FRDUMMIESTRAFEDURATIONMIN, btn ) } )
+	FiringRange_FillStrafeDurationList( file.generalSettingsToHud[ eFRSettingType.FRDUMMIESTRAFEDURATIONMIN ] )
 
-	SetupSettingsButton( file.generalSettingsToHud[ eFRSettingType.FRDUMMIESTRAFEDURATIONMAX ], "Dummie Strafe Duration Max", "Longest time a dummie holds one strafe direction before switching. Higher = slower, more predictable movement.", $"", false, true  )
+	SetupSettingsButton( file.generalSettingsToHud[ eFRSettingType.FRDUMMIESTRAFEDURATIONMAX ], "#FRSETTING_DUMMIESTRAFEDURATIONMAX", "#FRSETTING_DUMMIESTRAFEDURATIONMAX_DESC", $"", false, true  )
 	AddButtonEventHandler( file.generalSettingsToHud[ eFRSettingType.FRDUMMIESTRAFEDURATIONMAX ], UIE_CHANGE, void function( var btn ){ Firing_Range_GeneralSettingChanged( eFRSettingType.FRDUMMIESTRAFEDURATIONMAX, btn ) } )
+	FiringRange_FillStrafeDurationList( file.generalSettingsToHud[ eFRSettingType.FRDUMMIESTRAFEDURATIONMAX ] )
 
 	SetupSettingsButton( file.generalSettingsToHud[ eFRSettingType.FRDUMMIEMOVEMENT ], "#FRSETTING_DUMMIEMOVEMENT", "#FRSETTING_DUMMIEMOVEMENT_DESC", $"", false, true  )
 	AddButtonEventHandler( file.generalSettingsToHud[ eFRSettingType.FRDUMMIEMOVEMENT ], UIE_CHANGE, void function( var btn ){ Firing_Range_GeneralSettingChanged( eFRSettingType.FRDUMMIEMOVEMENT, btn ) } )
@@ -222,6 +224,25 @@ void function SetupSettings()
 	option = CreateFiringRangeOption( "#FRDOORS_RESET_LABEL", "#FRDOORS_RESET_DESC", CRng_ResetDoors )
 	SetUpOptionsButton( Hud_GetChild( file.contentPanel, "SwitchResetDoors" ), option )
 
+}
+
+void function FiringRange_FillStrafeDurationList( var button )
+{
+	array< string > labels = [
+		"#FRSETTING_DUMMIESTRAFEDURATION_010",
+		"#FRSETTING_DUMMIESTRAFEDURATION_015",
+		"#FRSETTING_DUMMIESTRAFEDURATION_020",
+		"#FRSETTING_DUMMIESTRAFEDURATION_025",
+		"#FRSETTING_DUMMIESTRAFEDURATION_030",
+		"#FRSETTING_DUMMIESTRAFEDURATION_040",
+		"#FRSETTING_DUMMIESTRAFEDURATION_050",
+		"#FRSETTING_DUMMIESTRAFEDURATION_060",
+		"#FRSETTING_DUMMIESTRAFEDURATION_075",
+		"#FRSETTING_DUMMIESTRAFEDURATION_090",
+	]
+	Hud_DialogList_ClearList( button )
+	for ( int i = 0; i < labels.len(); i++ )
+		Hud_DialogList_AddListItem( button, Localize( labels[ i ] ), string( i ) )
 }
 
 void function OnFiringRangeSettingsGeneralPanel_Show( var panel )

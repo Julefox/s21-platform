@@ -553,7 +553,21 @@ float function FRDummie_StrafeDurationIndexToSeconds( int index )
 
 string function FRDummie_StrafeDurationIndexToLabel( int index )
 {
-	return format( "%.2fs", FRDummie_StrafeDurationIndexToSeconds( index ) )
+	array< string > labels = [
+		"#FRSETTING_DUMMIESTRAFEDURATION_010",
+		"#FRSETTING_DUMMIESTRAFEDURATION_015",
+		"#FRSETTING_DUMMIESTRAFEDURATION_020",
+		"#FRSETTING_DUMMIESTRAFEDURATION_025",
+		"#FRSETTING_DUMMIESTRAFEDURATION_030",
+		"#FRSETTING_DUMMIESTRAFEDURATION_040",
+		"#FRSETTING_DUMMIESTRAFEDURATION_050",
+		"#FRSETTING_DUMMIESTRAFEDURATION_060",
+		"#FRSETTING_DUMMIESTRAFEDURATION_075",
+		"#FRSETTING_DUMMIESTRAFEDURATION_090",
+	]
+	if( ( index < 0 ) || ( index >= labels.len() ) )
+		index = 2
+	return labels[ index ]
 }
 
 #if SERVER

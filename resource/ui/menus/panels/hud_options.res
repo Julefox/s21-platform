@@ -76,7 +76,7 @@
         className               "SettingScrollSizer"
         style					DialogListButton
         navUp					SwitchHealthbarStyle
-        navDown					SwitchLootPromptStyle
+        navDown					SwitchVisualClutter
         ConVar					"hud_setting_chat"
         list
         {
@@ -91,13 +91,34 @@
         childGroupAlways        ChoiceButtonAlways
     }
 
-    SwitchLootPromptStyle
+    SwitchVisualClutter
     {
         ControlName				RuiButton
         InheritProperties		SwitchButton
         className               "SettingScrollSizer"
         style					DialogListButton
         navUp					SwitchChatSetting
+        navDown					SwitchLootPromptStyle
+        ConVar					"cl_visual_clutter"
+        list
+        {
+            "#SETTING_VISUAL_CLUTTER_FULL"	0
+            "#SETTING_VISUAL_CLUTTER_MINIMAL"	1
+        }
+
+        pin_to_sibling			SwitchChatSetting
+        pin_corner_to_sibling	TOP_LEFT
+        pin_to_sibling_corner	BOTTOM_LEFT
+        childGroupAlways        ChoiceButtonAlways
+    }
+
+    SwitchLootPromptStyle
+    {
+        ControlName				RuiButton
+        InheritProperties		SwitchButton
+        className               "SettingScrollSizer"
+        style					DialogListButton
+        navUp					SwitchVisualClutter
         navDown					SwitchShotButtonHints
         ConVar					"hud_setting_showMedals"
         list
@@ -106,7 +127,7 @@
             "#SETTING_DEFAULT"	1
         }
 
-        pin_to_sibling			SwitchChatSetting
+        pin_to_sibling			SwitchVisualClutter
         pin_corner_to_sibling	TOP_LEFT
         pin_to_sibling_corner	BOTTOM_LEFT
         childGroupAlways        ChoiceButtonAlways
@@ -456,7 +477,7 @@
             "#SETTING_OFF"	0
             "#SETTING_ON"	1
         }
-		navDown					SwitchEnemyHealthBar
+		navDown					SwitchStreamerMode
         pin_to_sibling			SwitchOffscreenPortraits
         pin_corner_to_sibling	TOP_LEFT
         pin_to_sibling_corner	BOTTOM_LEFT
@@ -934,7 +955,7 @@
         pin_corner_to_sibling	LEFT
         pin_to_sibling_corner	LEFT
         use_pin_locale_direction    1
-        labelText				"Observer Settings"
+        labelText				"#SETTING_OBSERVER_HEADER"
     }
 
     ObserverSlowSpeed
