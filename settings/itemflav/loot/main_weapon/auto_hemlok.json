@@ -1,0 +1,22 @@
+{
+	"_donor": "settings/itemflav/loot/main_weapon/flatline.rpak",
+	"layoutAsset": "settings_layout/settings_itemtype_loot_main_weapon_layout.rpak",
+	"uniqueId": 1090000001,
+	"settings": {
+		"assetName": "settings/itemflav/loot/main_weapon/auto_hemlok.rpak",
+		"itemType": "loot_main_weapon",
+		"settingsAssetID": "SAID01090000001",
+		"devDescription": "bridge disk-authored flavor",
+		"localizationKey_NAME": "#WPN_HEMLOK",
+		"localizationKey_NAME_SHORT": "#WPN_HEMLOK_SHORT",
+		"localizationKey_DESCRIPTION_LONG": "#WPN_HEMLOK_LONGDESC",
+		"localizationKey_DESCRIPTION_SHORT": "#WPN_HEMLOK_DESC",
+		"icon": "rui/menu/battlepass/weapon_icons/icon_bps1_weapon_hemlok",
+		"entityClassname": "mp_weapon_auto_hemlok",
+		"loreFlav": "settings/itemflav/lore/weapon/lore_hemlok.rpak",
+		"category": "settings/itemflav/weapon_category/ar.rpak",
+		"statsCategory": "ar",
+		"armoryScale": 1.060000,
+		"battlePassScale": 1.800000
+	}
+}
