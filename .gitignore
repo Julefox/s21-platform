@@ -44,3 +44,4 @@ cfg/**/sdk_detours_quarantine.txt*
 localization/_merge_bak*/
 playlists_r5_patch.txt.*
 rsx_cache_db.bin
+/logs

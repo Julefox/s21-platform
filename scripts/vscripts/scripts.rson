@@ -227,7 +227,7 @@ gamemodes/freeroam_weapons_menu/sv_freeroam_weapons_menu.nut
 	mapeditor/sh_mapeditor_catalog.gnut
 	mapeditor/_mapeditor.nut
 	mapeditor/_mapeditor_palette.nut
-	_mapeditor.gnut
+	_remap.gnut
 	_remap_map.gnut
 	sh_persistent_data.gnut
 	sh_mp_utility_all.gnut
