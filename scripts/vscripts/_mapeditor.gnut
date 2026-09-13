@@ -1,0 +1,44 @@
+global function ReMap_Init
+global function ReMap_Clear
+global function ReMap_CreateProp
+global function RMF_CreateProp
+
+struct
+{
+	array< entity > entities
+} file
+
+void function ReMap_Init()
+{
+	ReMap_Clear()
+	ReMap_LoadMap()
+}
+
+void function ReMap_Clear()
+{
+	foreach ( entity ent in file.entities )
+	{
+		if ( IsValid( ent ) )
+			ent.Destroy()
+	}
+
+	file.entities.clear()
+}
+
+entity function ReMap_CreateProp( asset model, vector origin, vector angles, float scale = 1.0, bool mantle = false, float fadeDistance = -1.0 )
+{
+	entity prop = CreatePropDynamic( model, origin, angles, SOLID_VPHYSICS, fadeDistance )
+	prop.SetScriptName( "remap_prop" )
+	prop.SetModelScale( scale )
+
+	if ( mantle )
+		prop.AllowMantle()
+
+	file.entities.append( prop )
+	return prop
+}
+
+entity function RMF_CreateProp( asset model, vector origin, vector angles, float scale = 1.0, bool mantle = false, float fadeDistance = -1.0 )
+{
+	return ReMap_CreateProp( model, origin, angles, scale, mantle, fadeDistance )
+}
