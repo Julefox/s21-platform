@@ -311,7 +311,7 @@
     "FS_MATCHING_FOR": "正在匹配：%s",
     "FS_MATCHMAKING_COUNTDOWN": "Matchmaking in %s...",
     "FS_MATCH_FOUND": "比賽配對!",
-    "FS_MAX_FPS_DESC": "將顯示卡限制為指定的每秒幀數。\n\n設置為 -1 使用桌面更新率。\n設置為 0 沒有限制。\n300 是引擎的最大值。",
+    "FS_MAX_FPS_DESC": "將遊戲限制為指定的每秒幀數。\n\n0 表示沒有限制。\n360 為滑桿最大值。更高上限請用主控台。",
     "FS_MKB": "%s 使用滑鼠和鍵盤 %MOUSE3%",
     "FS_MOTD_HEADER": "伺服器今日公告",
     "FS_MOVEMENT_RECORDER": "Flowstate 動作記錄器 \n\n 由 CafeFPS 和 mkos 製作",

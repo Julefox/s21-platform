@@ -613,17 +613,14 @@ void function RemoteFunctions_Init_Begin()
 	}
 
 
-	                     
-		foreach ( string platform in PLATFORM_LIST )
-		{
-			RegisterNetworkedVariable( "nv_currentRankedLadderPosition_" + platform, SNDC_PLAYER_GLOBAL, SNVT_BIG_INT, -2 )
-		}
-		if ( IsLobby() )
-		{
-			#if CLIENT
-				RankedRumble_RegisterNetworkFunctions()
-			#endif
-		}
+	// PC-only. Extra PLATFORM_LIST suffixes collide in the 250-slot namehash table.
+	RegisterNetworkedVariable( "nv_currentRankedLadderPosition_pc", SNDC_PLAYER_GLOBAL, SNVT_BIG_INT, -2 )
+	if ( IsLobby() )
+	{
+		#if CLIENT
+			RankedRumble_RegisterNetworkFunctions()
+		#endif
+	}
        
 
 	                   

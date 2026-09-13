@@ -28626,7 +28626,7 @@
 	"FS_MATCHING_FOR" "Dopasowywanie dla: %s"
 	"FS_MATCHMAKING_COUNTDOWN" "Matchmaking in %s..."
 	"FS_MATCH_FOUND" "Mecz Znaleziony!"
-	"FS_MAX_FPS_DESC" "Ogranicza liczbę klatek na sekundę karty graficznej do określonej liczby.\n\nUstaw na -1 dla odświeżania pulpitu.\nUstaw na 0, aby wyłączyć limit.\n300 to maksymalna wartość silnika."
+	"FS_MAX_FPS_DESC" "Ogranicza grę do podanej liczby klatek na sekundę.\n\n0 oznacza brak limitu.\n360 to maksimum suwaka. Wyższy limit ustaw w konsoli."
 	"FS_MKB" "%s używa Myszki & Klawiatury %MOUSE3%"
 	"FS_MOTD_HEADER" "Wiadomość dnia serwera"
 	"FS_MOVEMENT_RECORDER" "Flowstate Ruchowy Rejestrator \n\n Stworzony przez CafeFPS \n i mkos"

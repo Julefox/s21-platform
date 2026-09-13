@@ -28626,7 +28626,7 @@
 	"FS_MATCHING_FOR" "Pareando para: %s"
 	"FS_MATCHMAKING_COUNTDOWN" "Matchmaking in %s..."
 	"FS_MATCH_FOUND" "Partida Encontrada!"
-	"FS_MAX_FPS_DESC" "Limita sua placa de vídeo a uma quantidade especificada de quadros por segundo.\n\nDefina como -1 para a taxa de atualização da área de trabalho.\nDefina como 0 para desbloqueado.\n300 é o máximo do motor."
+	"FS_MAX_FPS_DESC" "Limita o jogo a esta quantidade de quadros por segundo.\n\n0 é sem limite.\n360 é o máximo do controle. Use o console para um teto maior."
 	"FS_MKB" "%s usando Mouse & Teclado %MOUSE3%"
 	"FS_MOTD_HEADER" "Mensagem do dia do servidor"
 	"FS_MOVEMENT_RECORDER" "Gravador de Movimento Flowstate \n\n Feito por CafeFPS \n e mkos"

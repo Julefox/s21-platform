@@ -3859,17 +3859,7 @@ string function GetMergedPlatformIdForPlayer( entity player )
 	#if CLIENT || UI
 	Assert( player == GetLocalClientPlayer() )
 	#endif
-
-	string platformId = ""
-	#if CLIENT
-	platformId = HARDWARE_TO_MERGED_PLATFORM[GetHardwareFromName( player.GetHardwareName() )]
-	#elseif UI
-	platformId = HARDWARE_TO_MERGED_PLATFORM[GetHardwareFromName( GetPlayerHardware() )]
-	#else // SERVER
-	platformId = "pc"
-	#endif
-	Assert( platformId != "" )
-	return platformId
+	return "pc"
 }
 
 bool function IsDevGamemode()

@@ -130,6 +130,8 @@ void function Heatwave_UpdateRui_Thread()
 	bool heatwaveActive = false
 	bool firstLoop = true
 
+	if ( !IsValidSignal( "GameStateChanged" ) )
+		RegisterSignal( "GameStateChanged" )
 	while ( GetGameState() < eGameState.Playing )
 		GetLocalClientPlayer().WaitSignal( "GameStateChanged" )
 

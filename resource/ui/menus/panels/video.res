@@ -6,7 +6,7 @@
 
 		zpos                    0
 		wide					%100
-		tall					1150
+		tall					1200
 		visible					0
 		enabled 				1
 		scaleImage				1
@@ -198,21 +198,47 @@
         pin_corner_to_sibling	TOP_LEFT
         pin_to_sibling_corner	BOTTOM_LEFT
         navUp					SwchVSync
-        navDown					SldAdaptiveRes
+        navDown					SldFPS
         // list is populated by code
         childGroupAlways        MultiChoiceButtonAlways
+    }
+    SldFPS
+    {
+        ControlName				SliderControl
+        InheritProperties		SliderControl
+        pin_to_sibling			SwchReflex
+        pin_corner_to_sibling	TOP_LEFT
+        pin_to_sibling_corner	BOTTOM_LEFT
+        minValue				0
+        maxValue				360
+        stepSize				1
+        navUp					SwchReflex
+        navDown					SldAdaptiveRes
+        // no conCommand -- bind writes the clamped value into the cvar
+    }
+    TextEntrySldFPS
+    {
+        ControlName				TextEntry
+        InheritProperties       SliderControlTextEntry
+        NumericInputOnly        1
+        skipFontSizeAdjustment  1
+        floatPrecisionDigits	0
+        pin_to_sibling			SldFPS
+        pin_corner_to_sibling	RIGHT
+        pin_to_sibling_corner	RIGHT
+        use_pin_locale_direction    1
     }
     SldAdaptiveRes
     {
         ControlName				SliderControl
         InheritProperties		SliderControl
         classname				"AdvancedVideoButtonClass"
-        pin_to_sibling			SwchReflex
+        pin_to_sibling			SldFPS
         pin_corner_to_sibling	TOP_LEFT
         pin_to_sibling_corner	BOTTOM_LEFT
         minValue				0
         stepSize				1
-        navUp					SwchReflex
+        navUp					SldFPS
         navDown					SwchAdaptiveSupersample
     }
     TextEntryAdaptiveRes

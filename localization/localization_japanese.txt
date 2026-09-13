@@ -28626,7 +28626,7 @@
 	"FS_MATCHING_FOR" "マッチング中: %s"
 	"FS_MATCHMAKING_COUNTDOWN" "Matchmaking in %s..."
 	"FS_MATCH_FOUND" "マッチ発見!"
-	"FS_MAX_FPS_DESC" "ビデオカードを指定されたフレーム数に制限します。\n\n-1に設定してデスクトップリフレッシュを行います。\n0に設定して無制限にします。\nエンジンの最大値は300です。"
+	"FS_MAX_FPS_DESC" "ゲームのフレームレートを指定した値に制限します。\n\n0は無制限です。\n360がスライダーの上限です。それ以上はコンソールで設定してください。"
 	"FS_MKB" "%s がマウス＆キーボードを使用しています %MOUSE3%"
 	"FS_MOTD_HEADER" "サーバーの今日のメッセージ"
 	"FS_MOVEMENT_RECORDER" "フローステートムーブメントレコーダー \n\n 作成者: CafeFPS \n と mkos"

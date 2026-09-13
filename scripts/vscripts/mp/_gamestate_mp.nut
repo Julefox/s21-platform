@@ -728,6 +728,8 @@ void function GameState_OnPlayerChangedTeam( entity player, int oldTeam, int new
 
 void function WaittillGameStateOrHigher( int state )
 {
+	if ( !IsValidSignal( "GameStateChanged" ) )
+		RegisterSignal( "GameStateChanged" )
 	for ( ;; )
 	{
 		if ( GetGameState() >= state )
@@ -738,6 +740,8 @@ void function WaittillGameStateOrHigher( int state )
 
 void function GameStateWait( int gameState )
 {
+	if ( !IsValidSignal( "GameStateChanged" ) )
+		RegisterSignal( "GameStateChanged" )
 	while ( GetGameState() != gameState )
 	{
 		svGlobal.levelEnt.WaitSignal( "GameStateChanged" )

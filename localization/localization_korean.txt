@@ -28626,7 +28626,7 @@
 	"FS_MATCHING_FOR" "매칭 중: %s"
 	"FS_MATCHMAKING_COUNTDOWN" "Matchmaking in %s..."
 	"FS_MATCH_FOUND" "매치 발견!"
-	"FS_MAX_FPS_DESC" "비디오 카드를 지정된 초당 프레임 수로 제한합니다.\n\n-1로 설정하여 데스크탑 새로 고침을 따릅니다.\n0으로 설정하여 제한을 해제합니다.\n엔진의 최대값은 300입니다."
+	"FS_MAX_FPS_DESC" "게임을 지정한 초당 프레임 수로 제한합니다.\n\n0은 제한 없음입니다.\n360은 슬라이더 최대값입니다. 더 높은 값은 콘솔에서 설정하세요."
 	"FS_MKB" "%s가 마우스 & 키보드를 사용 중 %MOUSE3%"
 	"FS_MOTD_HEADER" "서버의 오늘의 메시지"
 	"FS_MOVEMENT_RECORDER" "플로우스테이트 무브먼트 레코더 \n\n 제작자: CafeFPS \n 및 mkos"

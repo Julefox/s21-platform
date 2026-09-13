@@ -970,7 +970,9 @@ void function RankedRumble_RegisterNetworkFunctions()
 {
 	for ( int i = 0; i < PLATFORM_LIST.len(); i++ )
 	{
-		RegisterNetVarIntChangeCallback( "nv_currentRankedLadderPosition_" + PLATFORM_LIST[i], void function ( entity player, int newVal ) : ( i )
+		if ( PLATFORM_LIST[i] != "pc" )
+			continue
+		RegisterNetVarIntChangeCallback( "nv_currentRankedLadderPosition_pc", void function ( entity player, int newVal ) : ( i )
 		{
 			OnRankedPlatformLadderPositionChanged( player, newVal, i )
 		} )
