@@ -23,8 +23,6 @@ void function CodeCallback_PostEntityInit()
 
 	FlagSet( "EntitiesDidLoad" )
 
-	ReMap_Init()
-
 	#if DEVELOPER
 		array<entity> startPoints = GetEntArrayByClass_Expensive( "info_player_start" )
 		foreach ( start in startPoints )

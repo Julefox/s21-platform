@@ -602,6 +602,8 @@ void function SV_CL_Init()
                          
        
 
+	Sh_ReMap_Init()
+
 	#if DEVELOPER
 		SpawnDebugger_Init()
 	#endif
