@@ -2,6 +2,9 @@ global function SV_CL_Shared_Init
 
 void function SV_CL_Shared_Init()
 {
+	if ( !IsValidSignal( "GameStateChanged" ) )
+		RegisterSignal( "GameStateChanged" )
+
 	#if CLIENT
 	if ( !IsLobby() )
 		ClMinimap_Pre_Init()

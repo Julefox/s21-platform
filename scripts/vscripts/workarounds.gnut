@@ -180,9 +180,8 @@ global function RequestLoadStickerPak
 global function SetEntMaterialToSticker
 global function AddStickerDecalToEntity
 global function IsStickerInstancePlaced
-#if SERVER || CLIENT
 global function GetPlayerHardware
-#endif
+global function GetUnspoofedPlayerHardware
 #if SERVER
 #endif
 
@@ -397,12 +396,15 @@ bool function IsStickerInstancePlaced( int instance )
 	return false
 }
 
-#if SERVER || CLIENT
 string function GetPlayerHardware()
 {
 	return "PC"
 }
-#endif
+
+string function GetUnspoofedPlayerHardware()
+{
+	return "PC"
+}
 
 #if SERVER
 
@@ -622,23 +624,6 @@ bool function HasCallback_OnPartyMemberRemoved( void functionref() callbackFunc 
 
 int function GetHardwareFromName( string name )
 {
-	switch ( name )
-	{
-		case "PC":
-			return HARDWARE_PC
-		case "PC_STEAM":
-			return HARDWARE_PC_STEAM
-		case "PS4":
-			return HARDWARE_PS4
-		case "PS5":
-			return HARDWARE_PS5
-		case "X1":
-			return HARDWARE_XBOXONE
-		case "XB5":
-			return HARDWARE_XB5
-		case "NX":
-			return HARDWARE_NX
-	}
 	return HARDWARE_PC
 }
 
@@ -659,23 +644,6 @@ string function LocalizePresenceState( ... )
 
 string function GetNameFromHardware( int hardware )
 {
-	switch ( hardware )
-	{
-		case HARDWARE_PC:
-			return "PC"
-		case HARDWARE_PC_STEAM:
-			return "PC_STEAM"
-		case HARDWARE_PS4:
-			return "PS4"
-		case HARDWARE_PS5:
-			return "PS5"
-		case HARDWARE_XBOXONE:
-			return "X1"
-		case HARDWARE_XB5:
-			return "XB5"
-		case HARDWARE_NX:
-			return "NX"
-	}
 	return "PC"
 }
 

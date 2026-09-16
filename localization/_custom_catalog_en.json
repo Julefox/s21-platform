@@ -1422,7 +1422,7 @@
     "FS_MATCHING_FOR": "Matching for: %s",
     "FS_MATCHMAKING_COUNTDOWN": "Matchmaking in %s...",
     "FS_MATCH_FOUND": "Match Found!",
-    "FS_MAX_FPS_DESC": "Limit your video card to specified frames per second.\n\nSet to -1 for desktop refresh.\nSet to 0 for uncapped.\n300 is the engine max.",
+    "FS_MAX_FPS_DESC": "Limit the game to this many frames per second.\n\n0 is uncapped.\n360 is the slider max. Use the console for a higher cap.",
     "FS_MKB": "%s using Mouse & Key %MOUSE3%",
     "FS_MOTD_HEADER": "Server message of the day",
     "FS_MOVEMENT_RECORDER": "Flowstate Movement Recorder \n\n Made by CafeFPS \n and mkos",

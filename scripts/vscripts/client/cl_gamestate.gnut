@@ -129,7 +129,8 @@ void function ClientCodeCallback_ToggleGamePaused( bool isPaused )
 
 void function ClGameState_Init()
 {
-	RegisterSignal( "GameStateChanged" )
+	if ( !IsValidSignal( "GameStateChanged" ) )
+		RegisterSignal( "GameStateChanged" )
 	RegisterSignal( "GameModes_CompletedResolutionCleanup" )
 	RegisterNetVarIntChangeCallback( "gameState", ClGameState_Changed )
 	RegisterNetVarBoolChangeCallback( "badRepPresent", UpdateScoreboardBadRepPresentMessage )
@@ -768,6 +769,8 @@ void function ClGameState_Changed( entity playerEnt, int newVal )
 	file.cachedGameState = gameState
 
 	entity player = GetLocalClientPlayer()
+	if ( !IsValidSignal( "GameStateChanged" ) )
+		RegisterSignal( "GameStateChanged" )
 	Signal( player, "GameStateChanged", { newState = gameState } )
 	
 	
@@ -947,6 +950,8 @@ void function AddCallback_OnGameStateChanged( void functionref( int ) func )
 
 void function ClWaittillGameStateOrHigher( int state )
 {
+	if ( !IsValidSignal( "GameStateChanged" ) )
+		RegisterSignal( "GameStateChanged" )
 	while( GetGameState() < state && IsValid( clGlobal.levelEnt ) )
 	{
 		clGlobal.levelEnt.WaitSignal( "GameStateChanged" )

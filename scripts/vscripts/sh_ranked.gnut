@@ -2841,7 +2841,8 @@ void function Ranked_OnPlayerRankedLadderPositionFound( entity player, string ra
 		foreach( platform, position in platformPositions )
 		{
 			ehiss.platformLadderPosition[platform] <- position
-			player.SetPlayerNetInt( "nv_currentRankedLadderPosition_" + platform, position )
+			if ( platform == "pc" )
+				player.SetPlayerNetInt( "nv_currentRankedLadderPosition_pc", position )
 		}
 	}
 

@@ -311,7 +311,7 @@
     "FS_MATCHING_FOR": "Correspondance pour : %s",
     "FS_MATCHMAKING_COUNTDOWN": "Matchmaking in %s...",
     "FS_MATCH_FOUND": "Match Trouve!",
-    "FS_MAX_FPS_DESC": "Limitez votre carte vidéo à un nombre spécifié d'images par seconde.\n\nDéfinir à -1 pour le rafraîchissement de bureau.\nDéfinir à 0 pour illimité.\n300 est le maximum du moteur.",
+    "FS_MAX_FPS_DESC": "Limite le jeu à ce nombre d'images par seconde.\n\n0 désactive la limite.\n360 est le maximum du curseur. Utilisez la console pour un plafond plus élevé.",
     "FS_MKB": "%s utilise la souris et le clavier %MOUSE3%",
     "FS_MOTD_HEADER": "Message du jour du serveur",
     "FS_MOVEMENT_RECORDER": "Enregistreur de mouvements Flowstate \n\n Fait par CafeFPS \n et mkos",

@@ -25,6 +25,8 @@ struct
 	array<ConVarData>    conVarDataList
 
 	bool videoSettingsChanged = false
+	bool loggedMissingFpsSlider = false
+	bool fpsTextApplying = false
 
 	
 
@@ -96,6 +98,19 @@ void function InitVideoPanel( var panel )
 
 		SetupSettingsButton( Hud_GetChild( file.videoPanel, "SwchVSync" ), "#VSYNC", "#ADVANCED_VIDEO_MENU_VSYNC_DESC", $"rui/menu/settings/settings_video" )
 		SetupSettingsButton( Hud_GetChild( file.videoPanel, "SwchReflex" ), "#REFLEX", "#ADVANCED_VIDEO_MENU_REFLEX_DESC", $"rui/menu/settings/settings_video" )
+		if ( Hud_HasChild( file.videoPanel, "SldFPS" ) )
+		{
+			SetupSettingsSlider( Hud_GetChild( file.videoPanel, "SldFPS" ), "#FS_FPS_MAX", "#FS_MAX_FPS_DESC", $"rui/menu/settings/settings_video" )
+			AddButtonEventHandler( Hud_GetChild( file.videoPanel, "SldFPS" ), UIE_CHANGE, FPSSlider_Changed )
+			if ( Hud_HasChild( file.videoPanel, "TextEntrySldFPS" ) )
+				AddButtonEventHandler( Hud_GetChild( file.videoPanel, "TextEntrySldFPS" ), UIE_CHANGE, FPSTextEntry_Changed )
+			FPSControls_PullFromCvar()
+		}
+		else if ( !file.loggedMissingFpsSlider )
+		{
+			file.loggedMissingFpsSlider = true
+			print( "SldFPS missing -- fps_max slider not bound\n" )
+		}
 		SetupSettingsButton( Hud_GetChild( file.videoPanel, "SwchAntialiasing" ), "#ANTIALIASING", "#ADVANCED_VIDEO_MENU_ANTIALIASING_DESC", $"rui/menu/settings/settings_video" )
 		SetupSettingsButton( Hud_GetChild( file.videoPanel, "SwchFilteringMode" ), "#MENU_TEXTURE_FILTERING", "#ADVANCED_VIDEO_MENU_FILTERING_MODE_DESC", $"rui/menu/settings/settings_video" )
 		SetupSettingsButton( Hud_GetChild( file.videoPanel, "SwchSunShadowCoverage" ), "#MENU_SUN_SHADOW_COVERAGE", "#ADVANCED_VIDEO_MENU_SUN_SHADOW_COVERAGE_DESC", $"rui/menu/settings/settings_video" )
@@ -216,10 +231,7 @@ void function OnVideoPanel_Show( var panel )
 			Hud_ClearToolTipData( resolutionButton )
 		}
 
-
-
-
-
+		FPSControls_PullFromCvar()
 }
 
 
@@ -241,6 +253,8 @@ void function OnVideoPanel_Hide( var panel )
 
 void function AdvancedVideoButton_Changed( var button )
 {
+	if ( Hud_HasChild( file.videoPanel, "SldFPS" ) && button == Hud_GetChild( file.videoPanel, "SldFPS" ) )
+		return
 
 
 		if ( button == Hud_GetChild( file.videoPanel, "SwchDisplayMode" ) )
@@ -308,6 +322,9 @@ void function OnConfirmDialogResult( int result )
 void function RestoreVideoDefaults()
 {
 	VideoOptions_ResetToRecommended( file.videoPanel )
+	SetConVarInt( "fps_max", 0 )
+	SetConVarInt( "fps_max_unlimited", 0 )
+	FPSControls_PullFromCvar()
 }
 
 
@@ -432,6 +449,80 @@ void function FOV_Changed( var button )
 void function FOVTextEntry_Changed( var button )
 {
 	VideoOptions_FOVTextChanged( file.videoPanel )
+}
+
+
+void function FPSControls_PullFromCvar()
+{
+	if ( !Hud_HasChild( file.videoPanel, "SldFPS" ) )
+		return
+
+	int cur = GetConVarInt( "fps_max" )
+	int shown = cur
+	if ( shown < 0 )
+		shown = 0
+	if ( shown > 360 )
+		shown = 360
+
+	file.fpsTextApplying = true
+	Hud_SliderControl_SetCurrentValue( Hud_GetChild( file.videoPanel, "SldFPS" ), float( shown ) )
+	if ( Hud_HasChild( file.videoPanel, "TextEntrySldFPS" ) )
+		Hud_SetText( Hud_GetChild( file.videoPanel, "TextEntrySldFPS" ), string( cur ) )
+	file.fpsTextApplying = false
+}
+
+
+void function FPSSlider_Changed( var button )
+{
+	if ( file.fpsTextApplying )
+		return
+
+	int want = int( Hud_SliderControl_GetCurrentValue( button ) + 0.5 )
+	if ( want < 0 )
+		want = 0
+	if ( want > 360 )
+		want = 360
+
+	SetConVarInt( "fps_max", want )
+	if ( !Hud_HasChild( file.videoPanel, "TextEntrySldFPS" ) )
+		return
+
+	file.fpsTextApplying = true
+	Hud_SetText( Hud_GetChild( file.videoPanel, "TextEntrySldFPS" ), string( want ) )
+	file.fpsTextApplying = false
+}
+
+
+void function FPSTextEntry_Changed( var button )
+{
+	if ( file.fpsTextApplying )
+		return
+	if ( !Hud_HasChild( file.videoPanel, "TextEntrySldFPS" ) )
+		return
+
+	var entry = Hud_GetChild( file.videoPanel, "TextEntrySldFPS" )
+	string text = strip( Hud_GetUTF8Text( entry ) )
+	if ( text == "" )
+		return
+
+	int parsed = text.tointeger()
+	int cur = GetConVarInt( "fps_max" )
+	if ( parsed == cur )
+		return
+
+	int want = parsed
+	if ( want < 0 )
+		want = 0
+	if ( want > 360 )
+		want = 360
+
+	SetConVarInt( "fps_max", want )
+	file.fpsTextApplying = true
+	if ( want != parsed )
+		Hud_SetText( entry, string( want ) )
+	if ( Hud_HasChild( file.videoPanel, "SldFPS" ) )
+		Hud_SliderControl_SetCurrentValue( Hud_GetChild( file.videoPanel, "SldFPS" ), float( want ) )
+	file.fpsTextApplying = false
 }
 
 

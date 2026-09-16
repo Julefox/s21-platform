@@ -28626,7 +28626,7 @@
 	"FS_MATCHING_FOR" "Übereinstimmung für: %s"
 	"FS_MATCHMAKING_COUNTDOWN" "Matchmaking in %s..."
 	"FS_MATCH_FOUND" "Match Gefunden!"
-	"FS_MAX_FPS_DESC" "Begrenzen Sie Ihre Grafikkarte auf eine bestimmte Bildrate pro Sekunde.\n\nAuf -1 setzen für Desktop-Aktualisierungsrate.\nAuf 0 setzen für unbegrenzt.\n300 ist das Engine-Limit."
+	"FS_MAX_FPS_DESC" "Begrenzt das Spiel auf die angegebene Bildrate.\n\n0 ist unbegrenzt.\n360 ist das Slider-Maximum. Höhere Werte über die Konsole."
 	"FS_MKB" "%s verwendet Maus & Tastatur %MOUSE3%"
 	"FS_MOTD_HEADER" "Server-Nachricht des Tages"
 	"FS_MOVEMENT_RECORDER" "Flowstate Bewegungsrekorder \n\n Erstellt von CafeFPS \n und mkos"

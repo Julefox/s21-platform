@@ -63,6 +63,7 @@ void function FS_Hud_BindScoreBarRules()
 void function FS_Hud_EnsureSurvivalHudSignals()
 {
 	array<string> signals = [
+		"GameStateChanged",
 		"Sur_EndTrackPrimary",
 		"Sur_EndTrackAmmo",
 		"Sur_EndTrackOffhandWeaponSlot0",

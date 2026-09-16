@@ -37,7 +37,8 @@ void function GameState_Init()
 
 	RegisterSignal( "RoundEnd" )
 	RegisterSignal( "GameEnd" )
-	RegisterSignal( "GameStateChanged" )
+	if ( !IsValidSignal( "GameStateChanged" ) )
+		RegisterSignal( "GameStateChanged" )
 	RegisterSignal( "CatchUpFallBehindVO" )
 	RegisterSignal( "ClearedPlayers" )
 
